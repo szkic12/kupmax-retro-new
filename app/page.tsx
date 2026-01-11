@@ -9,6 +9,14 @@ import RollupVideo from '@/components/RollupVideo';
 
 const Rollup3D = dynamic(() => import('@/components/Rollup3D'), { ssr: false });
 const RollupCharacter = dynamic(() => import('@/components/RollupCharacter'), { ssr: false });
+const TetrisGame = dynamic(() => import('@/components/TetrisGame/TetrisGame'), { ssr: false });
+const ReactRadio = dynamic(() => import('@/components/ReactRadio/ReactRadio'), { ssr: false });
+const Chatroom = dynamic(() => import('@/components/Chatroom/Chatroom'), { ssr: false });
+const PrivateChatroom = dynamic(() => import('@/components/PrivateChatroom/PrivateChatroom'), { ssr: false });
+const Guestbook = dynamic(() => import('@/components/Guestbook/Guestbook'), { ssr: false });
+const PhotoGallery = dynamic(() => import('@/components/PhotoGallery/PhotoGallery'), { ssr: false });
+const Downloads = dynamic(() => import('@/components/Downloads/Downloads'), { ssr: false });
+const Webring = dynamic(() => import('@/components/Webring/Webring'), { ssr: false });
 
 interface DesktopIcon {
   id: string;
@@ -370,27 +378,13 @@ export default function Home() {
         <Window
           title="Webring - Netscape Navigator"
           icon="🌐"
-          width="600px"
-          height="450px"
+          width="850px"
+          height="650px"
           x={280}
           y={110}
           onClose={() => setWindows({ ...windows, webring: false })}
         >
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4 text-center">🌐 KUPMAX Webring</h2>
-            <div className="flex items-center justify-center gap-4 my-8">
-              <button className="win95-button">◄ Previous</button>
-              <div className="text-center">
-                <div className="text-4xl mb-2">🌐</div>
-                <p className="font-bold">Random Retro Site</p>
-              </div>
-              <button className="win95-button">Next ►</button>
-            </div>
-            <div className="text-center text-sm">
-              <p>Part of the retro web community!</p>
-              <p className="text-xs text-gray-600 mt-2">Join the ring - share the nostalgia</p>
-            </div>
-          </div>
+          <Webring currentUrl="https://kupmax.pl" />
         </Window>
       )}
 
@@ -398,34 +392,13 @@ export default function Home() {
         <Window
           title="Guestbook - Sign Here!"
           icon="📖"
-          width="650px"
-          height="500px"
+          width="700px"
+          height="600px"
           x={190}
           y={85}
           onClose={() => setWindows({ ...windows, guestbook: false })}
         >
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">📖 Sign Our Guestbook!</h2>
-            <div className="border-2 border-gray-400 p-3 bg-white mb-4">
-              <input
-                type="text"
-                placeholder="Your Name"
-                className="w-full border p-1 mb-2"
-              />
-              <textarea
-                placeholder="Leave a message..."
-                className="w-full border p-1 h-24"
-              />
-              <button className="win95-button mt-2">Sign Guestbook</button>
-            </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              <div className="border-2 border-gray-400 p-2 bg-white">
-                <p className="font-bold">Guest #1 - John</p>
-                <p className="text-sm">Great retro website! Love the Windows 95 vibes!</p>
-                <p className="text-xs text-gray-500">2026-01-11 20:30</p>
-              </div>
-            </div>
-          </div>
+          <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
         </Window>
       )}
 
@@ -433,31 +406,13 @@ export default function Home() {
         <Window
           title="KUPMAX Chat - mIRC"
           icon="💬"
-          width="700px"
-          height="550px"
+          width="750px"
+          height="600px"
           x={160}
           y={70}
           onClose={() => setWindows({ ...windows, chat: false })}
         >
-          <div className="p-4 bg-white h-full flex flex-col">
-            <h2 className="text-xl font-bold mb-4">💬 Retro Chatroom v1.0</h2>
-            <div className="flex-1 border-2 border-gray-400 p-2 bg-white overflow-y-auto mb-2">
-              <div className="text-xs space-y-1">
-                <p><span className="text-blue-600 font-bold">[System]</span> Welcome to KUPMAX Chat!</p>
-                <p><span className="text-green-600 font-bold">[Admin]</span> Hello everyone!</p>
-                <p><span className="text-purple-600 font-bold">[User123]</span> Hey! Love this retro vibe!</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 border-2 border-gray-400 px-2 py-1 text-sm"
-              />
-              <button className="win95-button">Send</button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">Users online: 42</p>
-          </div>
+          <Chatroom />
         </Window>
       )}
 
@@ -465,32 +420,13 @@ export default function Home() {
         <Window
           title="Private Chat - Secure Channel"
           icon="🔒"
-          width="650px"
-          height="500px"
+          width="750px"
+          height="600px"
           x={200}
           y={100}
           onClose={() => setWindows({ ...windows, privateChat: false })}
         >
-          <div className="p-4 bg-white h-full flex flex-col">
-            <h2 className="text-xl font-bold mb-4">🔒 Private Chatroom v2.0</h2>
-            <div className="border-2 border-gray-400 p-3 bg-yellow-50 mb-4">
-              <p className="text-sm font-bold">🔐 End-to-End Encrypted</p>
-              <p className="text-xs">Your messages are secure and private.</p>
-            </div>
-            <div className="flex-1 border-2 border-gray-400 p-2 bg-white overflow-y-auto mb-2">
-              <div className="text-xs space-y-1">
-                <p><span className="text-blue-600 font-bold">[System]</span> Secure channel established.</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type private message..."
-                className="flex-1 border-2 border-gray-400 px-2 py-1 text-sm"
-              />
-              <button className="win95-button">Send</button>
-            </div>
-          </div>
+          <PrivateChatroom />
         </Window>
       )}
 
@@ -498,23 +434,13 @@ export default function Home() {
         <Window
           title="Photo Gallery - Microsoft Photo Editor"
           icon="📸"
-          width="800px"
-          height="600px"
+          width="850px"
+          height="650px"
           x={150}
           y={60}
           onClose={() => setWindows({ ...windows, photos: false })}
         >
-          <div className="p-4 bg-white h-full overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">📸 Photo Gallery v2.0</h2>
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                <div key={num} className="border-2 border-gray-400 p-2 bg-gray-200 aspect-square flex items-center justify-center cursor-pointer hover:bg-gray-300">
-                  <span className="text-4xl">🖼️</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-4 text-center">Gallery photos will be loaded from server</p>
-          </div>
+          <PhotoGallery />
         </Window>
       )}
 
@@ -522,37 +448,13 @@ export default function Home() {
         <Window
           title="Downloads - File Manager"
           icon="💾"
-          width="600px"
-          height="450px"
+          width="700px"
+          height="550px"
           x={250}
           y={120}
           onClose={() => setWindows({ ...windows, downloads: false })}
         >
-          <div className="p-4 bg-white h-full">
-            <h2 className="text-xl font-bold mb-4">💾 Retro Downloads v1.0</h2>
-            <div className="space-y-2">
-              <div className="border-2 border-gray-400 p-3 bg-white flex items-center justify-between hover:bg-blue-100 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📄</span>
-                  <div>
-                    <p className="font-bold text-sm">KUPMAX_Brochure.pdf</p>
-                    <p className="text-xs text-gray-500">Size: 2.5 MB</p>
-                  </div>
-                </div>
-                <button className="win95-button text-xs px-2 py-1">Download</button>
-              </div>
-              <div className="border-2 border-gray-400 p-3 bg-white flex items-center justify-between hover:bg-blue-100 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">💿</span>
-                  <div>
-                    <p className="font-bold text-sm">RetroSoftware_v1.0.zip</p>
-                    <p className="text-xs text-gray-500">Size: 15.8 MB</p>
-                  </div>
-                </div>
-                <button className="win95-button text-xs px-2 py-1">Download</button>
-              </div>
-            </div>
-          </div>
+          <Downloads />
         </Window>
       )}
 
@@ -560,29 +462,13 @@ export default function Home() {
         <Window
           title="Radio Player - Winamp"
           icon="📻"
-          width="400px"
-          height="350px"
+          width="420px"
+          height="450px"
           x={300}
           y={150}
           onClose={() => setWindows({ ...windows, radio: false })}
         >
-          <div className="p-4 bg-gradient-to-b from-gray-800 to-gray-900 h-full text-white">
-            <h2 className="text-lg font-bold mb-4">📻 WEB 2.0 RADIO</h2>
-            <div className="border-2 border-gray-600 p-3 bg-black mb-4">
-              <p className="text-green-400 font-mono text-sm">♪ Now Playing...</p>
-              <p className="text-white text-xs mt-1">Select a station to start</p>
-            </div>
-            <div className="space-y-2 mb-4">
-              <button className="w-full win95-button text-xs text-left">📻 Radio ZET (Pop)</button>
-              <button className="w-full win95-button text-xs text-left">📻 RMF FM (Rock)</button>
-              <button className="w-full win95-button text-xs text-left">📻 Radio Maryja (Religious)</button>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <button className="win95-button px-4">▶️</button>
-              <button className="win95-button px-4">⏸️</button>
-              <button className="win95-button px-4">⏹️</button>
-            </div>
-          </div>
+          <ReactRadio />
         </Window>
       )}
 
@@ -590,30 +476,13 @@ export default function Home() {
         <Window
           title="Tetris - Classic Game"
           icon="🕹️"
-          width="400px"
-          height="550px"
+          width="700px"
+          height="650px"
           x={350}
           y={50}
           onClose={() => setWindows({ ...windows, tetris: false })}
         >
-          <div className="p-4 bg-black h-full flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-bold mb-4 text-green-400">🕹️ TETRIS</h2>
-            <div className="border-4 border-gray-600 bg-gray-900 w-64 h-96 mb-4 flex items-center justify-center">
-              <p className="text-white text-center">
-                <span className="text-6xl block mb-4">🎮</span>
-                <span className="text-sm">Press START to play</span>
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button className="win95-button px-4">START</button>
-              <button className="win95-button px-4">PAUSE</button>
-              <button className="win95-button px-4">RESET</button>
-            </div>
-            <div className="mt-4 text-white text-xs">
-              <p>Score: 0</p>
-              <p>Level: 1</p>
-            </div>
-          </div>
+          <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
         </Window>
       )}
 
