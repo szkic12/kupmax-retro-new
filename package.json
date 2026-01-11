@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.71.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@supabase/supabase-js": "^2.90.1",
     "framer-motion": "^12.25.0",
     "next": "16.1.1",
     "react": "19.2.3",

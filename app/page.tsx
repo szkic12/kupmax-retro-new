@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Window from '@/components/Window';
 import HeroSlider from '@/components/HeroSlider';
@@ -27,6 +27,9 @@ interface DesktopIcon {
 }
 
 export default function Home() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
   const [windows, setWindows] = useState({
     gallery: true, // Auto-open on startup
     news: false,
@@ -47,6 +50,28 @@ export default function Home() {
   });
 
   const [showStartMenu, setShowStartMenu] = useState(false);
+
+  // Fetch products when shop opens
+  useEffect(() => {
+    if (windows.shop && products.length === 0 && !loadingProducts) {
+      fetchProducts();
+    }
+  }, [windows.shop]);
+
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const response = await fetch('/api/products?perPage=12');
+      const data = await response.json();
+      if (data.products) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const slides = [
     {
@@ -253,29 +278,55 @@ export default function Home() {
         <Window
           title="KUPMAX Shop - Internet Explorer"
           icon="🛒"
-          width="800px"
-          height="600px"
+          width="850px"
+          height="650px"
           x={180}
           y={100}
           onClose={() => setWindows({ ...windows, shop: false })}
         >
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">🛒 Online Shop</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="border-2 border-gray-400 p-3 bg-white text-center cursor-pointer hover:bg-gray-100">
-                <div className="text-4xl mb-2">📦</div>
-                <p className="text-sm font-bold">Product 1</p>
-                <p className="text-xs text-green-600 font-bold">$99.99</p>
+          <div className="p-4 h-full overflow-y-auto bg-white">
+            <h2 className="text-xl font-bold mb-4">🛒 KUPMAX Online Shop</h2>
+
+            {loadingProducts ? (
+              <div className="text-center py-8">
+                <p className="text-sm">Loading products...</p>
               </div>
-              <div className="border-2 border-gray-400 p-3 bg-white text-center cursor-pointer hover:bg-gray-100">
-                <div className="text-4xl mb-2">📦</div>
-                <p className="text-sm font-bold">Product 2</p>
-                <p className="text-xs text-green-600 font-bold">$149.99</p>
+            ) : products.length === 0 ? (
+              <div className="text-center py-8 border-2 border-gray-400 bg-yellow-50 p-4">
+                <p className="text-sm font-bold mb-2">⚠️ No products available</p>
+                <p className="text-xs">Make sure Supabase is running (npx supabase start)</p>
               </div>
-              <div className="border-2 border-gray-400 p-3 bg-white text-center">
-                <p className="text-xs text-gray-500 mt-4">Products from Supabase</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="border-2 border-gray-400 p-3 bg-white cursor-pointer hover:bg-blue-50 transition-colors"
+                  >
+                    <div className="aspect-square bg-gray-200 mb-2 flex items-center justify-center">
+                      {product.images && product.images[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-4xl">📦</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-bold truncate">{product.name}</p>
+                    <p className="text-xs text-gray-600 truncate mb-2">{product.category}</p>
+                    <p className="text-sm font-bold text-green-600">
+                      {product.price} {product.currency}
+                    </p>
+                    {product.stock !== null && (
+                      <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+                    )}
+                    <button className="win95-button w-full mt-2 text-xs">Add to Cart</button>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </Window>
       )}
