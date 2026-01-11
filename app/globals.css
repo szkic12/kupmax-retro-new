@@ -1,26 +1,142 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Windows 95 Retro Colors */
+  --win95-gray: #c0c0c0;
+  --win95-dark-gray: #808080;
+  --win95-light-gray: #dfdfdf;
+  --win95-title: #000080;
+  --win95-title-text: #ffffff;
+  --win95-desktop: #008080;
+  --win95-highlight: #000080;
+  --win95-shadow-dark: #000000;
+  --win95-shadow-light: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--win95-desktop);
+  --color-foreground: #000000;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--win95-desktop);
+  color: #000000;
+  font-family: 'MS Sans Serif', 'Microsoft Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 11px;
+  overflow: hidden;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Windows 95 Button Style */
+.win95-button {
+  background: var(--win95-gray);
+  border: 2px solid;
+  border-color: var(--win95-light-gray) var(--win95-shadow-dark) var(--win95-shadow-dark) var(--win95-light-gray);
+  padding: 2px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+  min-width: 75px;
+  height: 23px;
+}
+
+.win95-button:active {
+  border-color: var(--win95-shadow-dark) var(--win95-light-gray) var(--win95-light-gray) var(--win95-shadow-dark);
+  padding: 3px 7px 1px 9px;
+}
+
+.win95-button:disabled {
+  color: var(--win95-dark-gray);
+  cursor: default;
+}
+
+/* Window Frame */
+.win95-window {
+  background: var(--win95-gray);
+  border: 2px solid;
+  border-color: var(--win95-light-gray) var(--win95-shadow-dark) var(--win95-shadow-dark) var(--win95-light-gray);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Window Title Bar */
+.win95-titlebar {
+  background: linear-gradient(90deg, var(--win95-title) 0%, #1084d0 100%);
+  color: var(--win95-title-text);
+  padding: 2px 4px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 18px;
+  user-select: none;
+}
+
+/* Window Content */
+.win95-content {
+  background: var(--win95-gray);
+  border: 2px solid;
+  border-color: var(--win95-shadow-dark) var(--win95-light-gray) var(--win95-light-gray) var(--win95-shadow-dark);
+  margin: 2px;
+}
+
+/* Desktop Icons */
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px;
+  width: 80px;
+}
+
+.desktop-icon:hover {
+  background: rgba(0, 0, 128, 0.2);
+}
+
+.desktop-icon.selected {
+  background: rgba(0, 0, 128, 0.3);
+}
+
+.desktop-icon img {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.desktop-icon span {
+  color: white;
+  text-shadow: 1px 1px 2px black;
+  font-size: 11px;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--win95-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--win95-gray);
+  border: 2px solid;
+  border-color: var(--win95-light-gray) var(--win95-shadow-dark) var(--win95-shadow-dark) var(--win95-light-gray);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--win95-gray);
 }
