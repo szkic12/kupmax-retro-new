@@ -17,6 +17,8 @@ const Guestbook = dynamic(() => import('@/components/Guestbook/Guestbook'), { ss
 const PhotoGallery = dynamic(() => import('@/components/PhotoGallery/PhotoGallery'), { ssr: false });
 const Downloads = dynamic(() => import('@/components/Downloads/Downloads'), { ssr: false });
 const Webring = dynamic(() => import('@/components/Webring/Webring'), { ssr: false });
+const Clippy = dynamic(() => import('@/components/Clippy'), { ssr: false });
+const ClippyChat = dynamic(() => import('@/components/ClippyChat'), { ssr: false });
 
 interface DesktopIcon {
   id: string;
@@ -29,6 +31,7 @@ interface DesktopIcon {
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [showClippyChat, setShowClippyChat] = useState(false);
 
   const [windows, setWindows] = useState({
     gallery: true, // Auto-open on startup
@@ -536,6 +539,12 @@ export default function Home() {
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
         </Window>
       )}
+
+      {/* Clippy Assistant */}
+      <Clippy onOpenChat={() => setShowClippyChat(true)} />
+
+      {/* Clippy Chat Window */}
+      <ClippyChat isOpen={showClippyChat} onClose={() => setShowClippyChat(false)} />
 
       {/* Taskbar */}
       <div className="absolute bottom-0 left-0 right-0 h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
