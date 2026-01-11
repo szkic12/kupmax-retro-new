@@ -1,0 +1,171 @@
+.guestbook {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.title {
+  margin: 0 0 1rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.formSection {
+  order: 1;
+}
+
+.listSection {
+  order: 2;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+
+  p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 1.1rem;
+  }
+}
+
+// Layout dla większych ekranów
+@media (min-width: 1024px) {
+  .content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 4rem;
+  }
+
+  .formSection {
+    flex: 0 0 500px;
+    order: 1;
+    position: sticky;
+    top: 2rem;
+  }
+
+  .listSection {
+    flex: 1;
+    order: 2;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .guestbook {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .content {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .guestbook {
+    padding: 1rem 0.5rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .content {
+    gap: 1.5rem;
+  }
+}
+
+// Wariant dla strony produktu
+.guestbook.productPage {
+  .header {
+    border-bottom: none;
+    margin-bottom: 2rem;
+    padding-bottom: 0;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+}
+
+// Wariant kompaktowy
+.guestbook.compact {
+  padding: 1rem;
+  max-width: 800px;
+
+  .header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .content {
+    gap: 2rem;
+  }
+}

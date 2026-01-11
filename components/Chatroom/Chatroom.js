@@ -1,0 +1,394 @@
+import { useState, useRef, useEffect } from 'react';
+import useSimpleChat from '../../hooks/useSimpleChat';
+import styles from './Chatroom.module.scss';
+
+/**
+ * Komponent Chatroom w stylu retro Windows 95
+ */
+export default function Chatroom() {
+  const {
+    isConnected,
+    messages,
+    users,
+    currentUser,
+    joinChat,
+    sendMessage,
+    leaveChat,
+    formatTime,
+    usersCount
+  } = useSimpleChat();
+
+  const [nickname, setNickname] = useState('');
+  const [messageInput, setMessageInput] = useState('');
+  const [showLogin, setShowLogin] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState(null);
+  const [banningUserId, setBanningUserId] = useState(null);
+  const messageInputRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // Sprawdź czy zalogowany jako admin (ma JWT cookie)
+  useEffect(() => {
+    fetch('/api/forum/verify-session', {
+      method: 'GET',
+      credentials: 'same-origin'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.isAdmin) {
+          setIsAdmin(true);
+        }
+      })
+      .catch(() => {
+        setIsAdmin(false);
+      });
+  }, []);
+
+  // Focus na input i scroll przy wejściu do czatu
+  useEffect(() => {
+    if (!showLogin) {
+      messageInputRef.current?.focus();
+      // Początkowy scroll na dół bez animacji tylko przy wejściu
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      }, 0);
+    }
+  }, [showLogin]);
+
+  /**
+   * Obsługa logowania do czatu
+   */
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (!nickname.trim()) return;
+
+    joinChat({ nickname: nickname.trim() });
+    setShowLogin(false);
+  };
+
+  /**
+   * Obsługa wysyłania wiadomości
+   */
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!messageInput.trim()) return;
+
+    sendMessage(messageInput);
+    setMessageInput('');
+
+    // Ponowny focus na input po wysłaniu
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+    }
+  };
+
+  /**
+   * Obsługa klawisza Enter w input
+   */
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
+  };
+
+  /**
+   * Obsługa opuszczania czatu
+   */
+  const handleLeaveChat = () => {
+    leaveChat();
+    setShowLogin(true);
+    setNickname('');
+  };
+
+  /**
+   * Obsługa usuwania wiadomości (tylko admin)
+   */
+  const handleDeleteMessage = async (messageId) => {
+    if (!confirm('Czy na pewno chcesz usunąć tę wiadomość?')) {
+      return;
+    }
+
+    setDeletingMessageId(messageId);
+
+    try {
+      const response = await fetch(`/api/chat/simple?messageId=${messageId}`, {
+        method: 'DELETE',
+        credentials: 'same-origin' // Wysyła JWT cookie
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Wiadomość usunięta!');
+        // Odśwież czat - messages automatycznie zaktualizuje się przez polling
+      } else {
+        alert(`Błąd: ${data.error}`);
+      }
+    } catch (err) {
+      alert('Błąd podczas usuwania wiadomości');
+      console.error('Delete error:', err);
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
+  /**
+   * Obsługa banowania użytkownika (tylko admin)
+   */
+  const handleBanUser = async (userId, userNickname) => {
+    if (!confirm(`Czy na pewno chcesz zbanować użytkownika ${userNickname}?`)) {
+      return;
+    }
+
+    setBanningUserId(userId);
+
+    try {
+      const response = await fetch('/api/chat/simple', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin', // Wysyła JWT cookie
+        body: JSON.stringify({
+          userId: userId,
+          ban: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Użytkownik ${userNickname} został zbanowany!`);
+        // Lista użytkowników automatycznie zaktualizuje się przez polling
+      } else {
+        alert(`Błąd: ${data.error}`);
+      }
+    } catch (err) {
+      alert('Błąd podczas banowania użytkownika');
+      console.error('Ban error:', err);
+    } finally {
+      setBanningUserId(null);
+    }
+  };
+
+  /**
+   * Renderowanie wiadomości z różnymi stylami
+   */
+  const renderMessage = (message) => {
+    const isOwnMessage = message.userId === currentUser?.id;
+    const isSystemMessage = message.type === 'system';
+    const isActionMessage = message.type === 'action';
+
+    return (
+      <div
+        key={message.id}
+        className={`${styles.message} ${
+          isOwnMessage ? styles.ownMessage :
+          isSystemMessage ? styles.systemMessage :
+          isActionMessage ? styles.actionMessage :
+          styles.otherMessage
+        }`}
+      >
+        <div className={styles.messageHeader}>
+          {!isSystemMessage && !isActionMessage && (
+            <span className={styles.avatar}>{message.avatar}</span>
+          )}
+          <span className={styles.nickname}>
+            {message.nickname}
+            {!isSystemMessage && !isActionMessage && (
+              <span className={styles.time}>{formatTime(message.timestamp)}</span>
+            )}
+          </span>
+        </div>
+        <div className={styles.messageContent}>
+          {message.message}
+        </div>
+
+        {/* Przycisk usuwania dla admina (tylko dla wiadomości użytkowników, nie systemowych) */}
+        {isAdmin && !isSystemMessage && (
+          <div className={styles.adminActions}>
+            <button
+              onClick={() => handleDeleteMessage(message.id)}
+              className={styles.deleteButton}
+              disabled={deletingMessageId === message.id}
+              title="Usuń wiadomość"
+            >
+              {deletingMessageId === message.id ? '⏳' : '🗑️'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Ekran logowania
+  if (showLogin) {
+    return (
+      <div className={styles.chatroom}>
+        <div className={styles.loginWindow}>
+          <div className={styles.windowHeader}>
+            <span>💬 Retro Chatroom - Logowanie</span>
+            <div className={styles.windowControls}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+          
+          <div className={styles.loginContent}>
+            <div className={styles.loginIcon}>💬</div>
+            <h3>Witaj w Retro Chatroom!</h3>
+            <p>Podaj swój nick aby dołączyć do czatu</p>
+            
+            <form onSubmit={handleLogin} className={styles.loginForm}>
+              <div className={styles.fieldGroup}>
+                <label htmlFor="nickname">Twój nick:</label>
+                <input
+                  id="nickname"
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Wprowadź swój nick..."
+                  maxLength={20}
+                  autoFocus
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className={styles.loginButton}
+                disabled={!nickname.trim()}
+              >
+                🚀 Dołącz do czatu
+              </button>
+            </form>
+            
+            <div className={styles.loginInfo}>
+              <p>💡 <strong>Komendy czatu:</strong></p>
+              <ul>
+                <li><code>/help</code> - pomoc</li>
+                <li><code>/users</code> - lista użytkowników</li>
+                <li><code>/clear</code> - wyczyść czat</li>
+                <li><code>/me [akcja]</code> - akcja użytkownika</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Główne okno czatu
+  return (
+    <div className={styles.chatroom}>
+      <div className={styles.chatWindow}>
+        {/* Nagłówek okna */}
+        <div className={styles.windowHeader}>
+          <span>💬 Retro Chatroom ({usersCount} online)</span>
+          <div className={styles.windowControls}>
+            <span title="Minimalizuj"></span>
+            <span title="Maksymalizuj"></span>
+            <span title="Zamknij" onClick={handleLeaveChat}></span>
+          </div>
+        </div>
+
+        {/* Główna zawartość */}
+        <div className={styles.chatContent}>
+          {/* Panel użytkowników */}
+          <div className={styles.usersPanel}>
+            <div className={styles.panelHeader}>
+              <span>👥 Użytkownicy ({usersCount})</span>
+            </div>
+            <div className={styles.usersList}>
+              {users.map(user => (
+                <div key={user.id} className={styles.userItem}>
+                  <span className={styles.userAvatar}>{user.avatar}</span>
+                  <span className={styles.userName}>
+                    {user.nickname}
+                    {user.id === currentUser?.id && ' (Ty)'}
+                  </span>
+                  <span className={styles.userStatus}>●</span>
+
+                  {/* Przycisk banowania dla admina (nie można zbanować samego siebie) */}
+                  {isAdmin && user.id !== currentUser?.id && (
+                    <button
+                      onClick={() => handleBanUser(user.id, user.nickname)}
+                      className={styles.banButton}
+                      disabled={banningUserId === user.id}
+                      title={`Zbanuj ${user.nickname}`}
+                    >
+                      {banningUserId === user.id ? '⏳' : '🚫'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Panel czatu */}
+          <div className={styles.chatPanel}>
+            {/* Wiadomości */}
+            <div
+              className={styles.messagesContainer}
+              ref={messagesContainerRef}
+            >
+              {messages.length === 0 ? (
+                <div className={styles.emptyChat}>
+                  <div className={styles.emptyIcon}>💬</div>
+                  <p>Brak wiadomości</p>
+                  <small>Bądź pierwszy i napisz coś!</small>
+                </div>
+              ) : (
+                messages.map(renderMessage)
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input wiadomości */}
+            <form onSubmit={handleSendMessage} className={styles.messageForm}>
+              <div className={styles.inputContainer}>
+                <input
+                  ref={messageInputRef}
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Napisz wiadomość... (Enter wyślij, /help komendy)"
+                  maxLength={280}
+                  disabled={!currentUser} // Blokuj tylko gdy nie ma użytkownika, nie gdy brak WebSocket
+                />
+                <button 
+                  type="submit" 
+                  className={styles.sendButton}
+                  disabled={!messageInput.trim() || !currentUser} // Blokuj tylko gdy nie ma użytkownika
+                  title="Wyślij wiadomość (Enter)"
+                >
+                  📤
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Status bar */}
+        <div className={styles.statusBar}>
+          <span className={styles.connectionStatus}>
+            {isConnected ? '🟢 Połączono' : '🔴 Rozłączono'}
+          </span>
+          <span className={styles.userInfo}>
+            Zalogowany jako: <strong>{currentUser?.nickname}</strong>
+          </span>
+          <button 
+            onClick={handleLeaveChat}
+            className={styles.leaveButton}
+            title="Opuść czat"
+          >
+            🚪 Wyjdź
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

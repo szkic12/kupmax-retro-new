@@ -27,9 +27,12 @@ export default function Home() {
     video: false,
     model3d: false,
     character: false,
+    chat: false,
+    privateChat: false,
     forum: false,
     webring: false,
     guestbook: false,
+    photos: false,
     downloads: false,
     radio: false,
     tetris: false,
@@ -92,11 +95,32 @@ export default function Home() {
       action: () => window.open('https://www.roblox.com', '_blank'),
     },
     {
-      id: 'forum',
+      id: 'chat',
       icon: '💬',
+      label: 'Chat.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, chat: true }),
+    },
+    {
+      id: 'privateChat',
+      icon: '🔒',
+      label: 'Private Chat.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, privateChat: true }),
+    },
+    {
+      id: 'forum',
+      icon: '🗨️',
       label: 'Forum.exe',
       type: 'app',
       action: () => setWindows({ ...windows, forum: true }),
+    },
+    {
+      id: 'photos',
+      icon: '📸',
+      label: 'Photos.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, photos: true }),
     },
     {
       id: 'webring',
@@ -147,13 +171,16 @@ export default function Home() {
             key === 'video' ? '🎬' :
             key === 'model3d' ? '👕' :
             key === 'character' ? '🧑' :
-            key === 'forum' ? '💬' :
+            key === 'chat' ? '💬' :
+            key === 'privateChat' ? '🔒' :
+            key === 'forum' ? '🗨️' :
+            key === 'photos' ? '📸' :
             key === 'webring' ? '🌐' :
             key === 'guestbook' ? '📖' :
             key === 'downloads' ? '💾' :
             key === 'radio' ? '📻' :
             key === 'tetris' ? '🕹️' : '📁',
-      label: key.charAt(0).toUpperCase() + key.slice(1),
+      label: key === 'privateChat' ? 'Private Chat' : key.charAt(0).toUpperCase() + key.slice(1),
     }));
 
   return (
@@ -397,6 +424,194 @@ export default function Home() {
                 <p className="text-sm">Great retro website! Love the Windows 95 vibes!</p>
                 <p className="text-xs text-gray-500">2026-01-11 20:30</p>
               </div>
+            </div>
+          </div>
+        </Window>
+      )}
+
+      {windows.chat && (
+        <Window
+          title="KUPMAX Chat - mIRC"
+          icon="💬"
+          width="700px"
+          height="550px"
+          x={160}
+          y={70}
+          onClose={() => setWindows({ ...windows, chat: false })}
+        >
+          <div className="p-4 bg-white h-full flex flex-col">
+            <h2 className="text-xl font-bold mb-4">💬 Retro Chatroom v1.0</h2>
+            <div className="flex-1 border-2 border-gray-400 p-2 bg-white overflow-y-auto mb-2">
+              <div className="text-xs space-y-1">
+                <p><span className="text-blue-600 font-bold">[System]</span> Welcome to KUPMAX Chat!</p>
+                <p><span className="text-green-600 font-bold">[Admin]</span> Hello everyone!</p>
+                <p><span className="text-purple-600 font-bold">[User123]</span> Hey! Love this retro vibe!</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="flex-1 border-2 border-gray-400 px-2 py-1 text-sm"
+              />
+              <button className="win95-button">Send</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Users online: 42</p>
+          </div>
+        </Window>
+      )}
+
+      {windows.privateChat && (
+        <Window
+          title="Private Chat - Secure Channel"
+          icon="🔒"
+          width="650px"
+          height="500px"
+          x={200}
+          y={100}
+          onClose={() => setWindows({ ...windows, privateChat: false })}
+        >
+          <div className="p-4 bg-white h-full flex flex-col">
+            <h2 className="text-xl font-bold mb-4">🔒 Private Chatroom v2.0</h2>
+            <div className="border-2 border-gray-400 p-3 bg-yellow-50 mb-4">
+              <p className="text-sm font-bold">🔐 End-to-End Encrypted</p>
+              <p className="text-xs">Your messages are secure and private.</p>
+            </div>
+            <div className="flex-1 border-2 border-gray-400 p-2 bg-white overflow-y-auto mb-2">
+              <div className="text-xs space-y-1">
+                <p><span className="text-blue-600 font-bold">[System]</span> Secure channel established.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type private message..."
+                className="flex-1 border-2 border-gray-400 px-2 py-1 text-sm"
+              />
+              <button className="win95-button">Send</button>
+            </div>
+          </div>
+        </Window>
+      )}
+
+      {windows.photos && (
+        <Window
+          title="Photo Gallery - Microsoft Photo Editor"
+          icon="📸"
+          width="800px"
+          height="600px"
+          x={150}
+          y={60}
+          onClose={() => setWindows({ ...windows, photos: false })}
+        >
+          <div className="p-4 bg-white h-full overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">📸 Photo Gallery v2.0</h2>
+            <div className="grid grid-cols-4 gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                <div key={num} className="border-2 border-gray-400 p-2 bg-gray-200 aspect-square flex items-center justify-center cursor-pointer hover:bg-gray-300">
+                  <span className="text-4xl">🖼️</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-4 text-center">Gallery photos will be loaded from server</p>
+          </div>
+        </Window>
+      )}
+
+      {windows.downloads && (
+        <Window
+          title="Downloads - File Manager"
+          icon="💾"
+          width="600px"
+          height="450px"
+          x={250}
+          y={120}
+          onClose={() => setWindows({ ...windows, downloads: false })}
+        >
+          <div className="p-4 bg-white h-full">
+            <h2 className="text-xl font-bold mb-4">💾 Retro Downloads v1.0</h2>
+            <div className="space-y-2">
+              <div className="border-2 border-gray-400 p-3 bg-white flex items-center justify-between hover:bg-blue-100 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📄</span>
+                  <div>
+                    <p className="font-bold text-sm">KUPMAX_Brochure.pdf</p>
+                    <p className="text-xs text-gray-500">Size: 2.5 MB</p>
+                  </div>
+                </div>
+                <button className="win95-button text-xs px-2 py-1">Download</button>
+              </div>
+              <div className="border-2 border-gray-400 p-3 bg-white flex items-center justify-between hover:bg-blue-100 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💿</span>
+                  <div>
+                    <p className="font-bold text-sm">RetroSoftware_v1.0.zip</p>
+                    <p className="text-xs text-gray-500">Size: 15.8 MB</p>
+                  </div>
+                </div>
+                <button className="win95-button text-xs px-2 py-1">Download</button>
+              </div>
+            </div>
+          </div>
+        </Window>
+      )}
+
+      {windows.radio && (
+        <Window
+          title="Radio Player - Winamp"
+          icon="📻"
+          width="400px"
+          height="350px"
+          x={300}
+          y={150}
+          onClose={() => setWindows({ ...windows, radio: false })}
+        >
+          <div className="p-4 bg-gradient-to-b from-gray-800 to-gray-900 h-full text-white">
+            <h2 className="text-lg font-bold mb-4">📻 WEB 2.0 RADIO</h2>
+            <div className="border-2 border-gray-600 p-3 bg-black mb-4">
+              <p className="text-green-400 font-mono text-sm">♪ Now Playing...</p>
+              <p className="text-white text-xs mt-1">Select a station to start</p>
+            </div>
+            <div className="space-y-2 mb-4">
+              <button className="w-full win95-button text-xs text-left">📻 Radio ZET (Pop)</button>
+              <button className="w-full win95-button text-xs text-left">📻 RMF FM (Rock)</button>
+              <button className="w-full win95-button text-xs text-left">📻 Radio Maryja (Religious)</button>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <button className="win95-button px-4">▶️</button>
+              <button className="win95-button px-4">⏸️</button>
+              <button className="win95-button px-4">⏹️</button>
+            </div>
+          </div>
+        </Window>
+      )}
+
+      {windows.tetris && (
+        <Window
+          title="Tetris - Classic Game"
+          icon="🕹️"
+          width="400px"
+          height="550px"
+          x={350}
+          y={50}
+          onClose={() => setWindows({ ...windows, tetris: false })}
+        >
+          <div className="p-4 bg-black h-full flex flex-col items-center justify-center">
+            <h2 className="text-2xl font-bold mb-4 text-green-400">🕹️ TETRIS</h2>
+            <div className="border-4 border-gray-600 bg-gray-900 w-64 h-96 mb-4 flex items-center justify-center">
+              <p className="text-white text-center">
+                <span className="text-6xl block mb-4">🎮</span>
+                <span className="text-sm">Press START to play</span>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="win95-button px-4">START</button>
+              <button className="win95-button px-4">PAUSE</button>
+              <button className="win95-button px-4">RESET</button>
+            </div>
+            <div className="mt-4 text-white text-xs">
+              <p>Score: 0</p>
+              <p>Level: 1</p>
             </div>
           </div>
         </Window>

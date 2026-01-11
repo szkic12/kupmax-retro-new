@@ -1,0 +1,473 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Courier New', monospace;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  min-height: 100vh;
+  color: #00ff00;
+}
+
+// Nagłówek
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 2px solid #00ff00;
+  padding-bottom: 20px;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px #00ff00;
+  
+  .icon {
+    margin-right: 15px;
+    animation: pulse 2s infinite;
+  }
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #80ff80;
+  opacity: 0.8;
+}
+
+// Grid zdjęć
+.photosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+// Karta zdjęcia
+.photoCard {
+  background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+  border: 2px solid #00ff00;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 0, 0.1);
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 255, 0, 0.3);
+    border-color: #80ff80;
+    
+    .viewProduct {
+      color: #80ff80;
+      text-shadow: 0 0 5px #80ff80;
+    }
+  }
+}
+
+.photoContainer {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  
+  .photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover .photo {
+    transform: scale(1.05);
+  }
+}
+
+.mainImageBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #00ff00;
+  color: #000;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.photoInfo {
+  padding: 15px;
+  
+  .productName {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #00ff00;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  
+  .viewProduct {
+    font-size: 0.8rem;
+    color: #80ff80;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+}
+
+// Loading indicator
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.loading {
+  text-align: center;
+  
+  .loadingSpinner {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    animation: spin 1s linear infinite;
+  }
+  
+  .loadingText {
+    font-size: 1rem;
+    color: #80ff80;
+  }
+}
+
+// End message
+.endMessage {
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid #00ff00;
+  margin-top: 20px;
+  
+  .endIcon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    animation: bounce 2s infinite;
+  }
+  
+  .endText {
+    font-size: 1.2rem;
+    color: #80ff80;
+    line-height: 1.5;
+  }
+}
+
+// No photos message
+.noPhotos {
+  text-align: center;
+  padding: 60px 20px;
+  
+  .noPhotosIcon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+  
+  .noPhotosText {
+    font-size: 1.3rem;
+    color: #80ff80;
+    line-height: 1.6;
+    opacity: 0.7;
+  }
+}
+
+// Error message
+.error {
+  text-align: center;
+  padding: 60px 20px;
+  
+  .errorIcon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: #ff4444;
+  }
+  
+  p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    color: #ff8080;
+  }
+}
+
+.retryButton {
+  background: #ff4444;
+  color: #000;
+  border: 2px solid #ff4444;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #ff6666;
+    border-color: #ff6666;
+    transform: scale(1.05);
+  }
+}
+
+// Modal styles
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+  border: 3px solid #00ff00;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 10px 50px rgba(0, 255, 0, 0.3);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+  
+  .modalTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    
+    .modalIcon {
+      margin-right: 10px;
+    }
+  }
+  
+  .closeButton {
+    background: none;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: #00ff00;
+      color: #000;
+    }
+  }
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.modalPhotoContainer {
+  position: relative;
+  flex: 1;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  
+  .modalPhoto {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+  }
+  
+  .modalMainImageBadge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #00ff00;
+    color: #000;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+}
+
+.modalInfo {
+  padding: 25px;
+  border-top: 2px solid #00ff00;
+  
+  .modalProductName {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #00ff00;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  
+  button {
+    padding: 12px 20px;
+    border: 2px solid;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .buttonIcon {
+      font-size: 1.1rem;
+    }
+  }
+  
+  .viewProductButton {
+    background: #00ff00;
+    color: #000;
+    border-color: #00ff00;
+    
+    &:hover {
+      background: #80ff80;
+      border-color: #80ff80;
+      transform: scale(1.05);
+    }
+  }
+  
+  .closeModalButton {
+    background: transparent;
+    color: #ff4444;
+    border-color: #ff4444;
+    
+    &:hover {
+      background: #ff4444;
+      color: #000;
+      transform: scale(1.05);
+    }
+  }
+}
+
+.modalFooter {
+  padding: 15px 25px;
+  border-top: 1px solid #00ff00;
+  background: rgba(0, 255, 0, 0.05);
+  
+  .modalHint {
+    font-size: 0.9rem;
+    color: #80ff80;
+    text-align: center;
+    opacity: 0.8;
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .photosGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  
+  .modal {
+    margin: 10px;
+    max-height: 95vh;
+  }
+  
+  .modalPhotoContainer {
+    min-height: 300px;
+    
+    .modalPhoto {
+      max-height: 300px;
+    }
+  }
+  
+  .modalActions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .photosGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .modalHeader {
+    padding: 15px;
+    
+    .modalTitle {
+      font-size: 1.2rem;
+    }
+  }
+  
+  .modalInfo {
+    padding: 20px;
+  }
+}

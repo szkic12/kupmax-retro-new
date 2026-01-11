@@ -1,0 +1,603 @@
+// Retro Downloads Styling - Windows 95/DOS Era
+
+.downloads {
+  font-family: 'Courier New', monospace;
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 16px;
+  color: #000;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// Loading
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.retroSpinner {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #000080;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+// Header
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px inset #c0c0c0;
+}
+
+.title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #000080;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #808080;
+}
+
+.stats span {
+  background: #e0e0e0;
+  padding: 4px 8px;
+  border: 1px inset #c0c0c0;
+}
+
+.uploadButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 8px 16px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  cursor: pointer;
+  
+  &:hover {
+    background: #d0d0d0;
+  }
+  
+  &:active {
+    border: 2px inset #c0c0c0;
+  }
+}
+
+// Toolbar
+.toolbar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.searchForm {
+  display: flex;
+  flex: 1;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 6px 8px;
+  border: 2px inset #c0c0c0;
+  background: #fff;
+  font-family: 'Courier New', monospace;
+  
+  &:focus {
+    outline: none;
+    border: 2px inset #000080;
+  }
+}
+
+.searchButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 6px 12px;
+  margin-left: 4px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  
+  &:hover {
+    background: #d0d0d0;
+  }
+  
+  &:active {
+    border: 2px inset #c0c0c0;
+  }
+}
+
+.categorySelect {
+  padding: 6px 8px;
+  border: 2px inset #c0c0c0;
+  background: #fff;
+  font-family: 'Courier New', monospace;
+  min-width: 150px;
+  
+  &:focus {
+    outline: none;
+    border: 2px inset #000080;
+  }
+}
+
+// Error
+.error {
+  background: #ffc0c0;
+  border: 2px inset #ff8080;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  color: #800000;
+  font-weight: bold;
+}
+
+// File List
+.fileList {
+  background: #fff;
+  border: 2px inset #c0c0c0;
+  min-height: 300px;
+}
+
+.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #808080;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #c0c0c0;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:hover {
+    background: #e8f4ff;
+  }
+}
+
+.fileIcon {
+  font-size: 24px;
+  margin-right: 16px;
+  min-width: 40px;
+}
+
+.fileInfo {
+  flex: 1;
+}
+
+.fileName {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #000080;
+}
+
+.fileMeta {
+  font-size: 12px;
+  color: #808080;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.category {
+  background: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.fileDescription {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #404040;
+  font-style: italic;
+}
+
+.fileActions {
+  display: flex;
+  gap: 8px;
+}
+
+.downloadButton, .detailsButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #d0d0d0;
+  }
+  
+  &:active {
+    border: 2px inset #c0c0c0;
+  }
+  
+  &:disabled {
+    background: #e0e0e0;
+    color: #a0a0a0;
+    cursor: not-allowed;
+  }
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 2px inset #c0c0c0;
+}
+
+.pageButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: #d0d0d0;
+  }
+  
+  &:active:not(:disabled) {
+    border: 2px inset #c0c0c0;
+  }
+  
+  &:disabled {
+    background: #e0e0e0;
+    color: #a0a0a0;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  font-weight: bold;
+  color: #000080;
+}
+
+// Modal Styles
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #000080;
+  color: #fff;
+  
+  h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+}
+
+.closeButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  color: #000;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  padding: 4px 8px;
+  
+  &:hover {
+    background: #d0d0d0;
+  }
+  
+  &:active {
+    border: 2px inset #c0c0c0;
+  }
+}
+
+.modalContent {
+  padding: 20px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px;
+  border-top: 2px inset #c0c0c0;
+}
+
+.cancelButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 8px 16px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  
+  &:hover {
+    background: #d0d0d0;
+  }
+  
+  &:active {
+    border: 2px inset #c0c0c0;
+  }
+}
+
+// Upload Modal Specific
+.dropZone {
+  border: 2px dashed #808080;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 20px;
+  background: #e8e8e8;
+  
+  &:hover {
+    background: #f0f0f0;
+    border-color: #000080;
+  }
+}
+
+.dropZoneContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropZoneIcon {
+  font-size: 48px;
+}
+
+.dropZoneText {
+  font-weight: bold;
+  color: #404040;
+}
+
+.dropZoneHint {
+  font-size: 12px;
+  color: #808080;
+  margin-top: 8px;
+}
+
+.fileSelected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 12px;
+  border: 2px inset #c0c0c0;
+}
+
+.removeFile {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: auto;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.progressContainer {
+  margin-bottom: 20px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 20px;
+  background: #fff;
+  border: 2px inset #c0c0c0;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  background: #000080;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  text-align: center;
+  font-weight: bold;
+  color: #000080;
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formGroup label {
+  font-weight: bold;
+  color: #000080;
+}
+
+.textInput {
+  padding: 6px 8px;
+  border: 2px inset #c0c0c0;
+  background: #fff;
+  font-family: 'Courier New', monospace;
+  
+  &:focus {
+    outline: none;
+    border: 2px inset #000080;
+  }
+}
+
+// Details Modal Specific
+.fileHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px inset #c0c0c0;
+}
+
+.fileIconLarge {
+  font-size: 48px;
+}
+
+.fileTitle h3 {
+  margin: 0 0 4px 0;
+  color: #000080;
+}
+
+.fileType {
+  font-size: 12px;
+  color: #808080;
+  font-style: italic;
+}
+
+.fileInfoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.infoLabel {
+  font-weight: bold;
+  color: #000080;
+}
+
+.infoValue {
+  color: #000;
+}
+
+.categoryTag {
+  background: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.descriptionSection, .tagsSection, .previewSection {
+  margin-bottom: 20px;
+  
+  h4 {
+    margin: 0 0 8px 0;
+    color: #000080;
+    border-bottom: 1px solid #c0c0c0;
+    padding-bottom: 4px;
+  }
+}
+
+.descriptionText {
+  background: #fff;
+  border: 2px inset #c0c0c0;
+  padding: 12px;
+  font-style: italic;
+}
+
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  border: 1px inset #c0c0c0;
+}
+
+.imagePreview {
+  display: flex;
+  justify-content: center;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 300px;
+  border: 2px inset #c0c0c0;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .fileItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .fileActions {
+    align-self: flex-end;
+  }
+  
+  .modal {
+    width: 95%;
+    margin: 20px;
+  }
+}
