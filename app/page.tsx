@@ -33,6 +33,17 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showClippyChat, setShowClippyChat] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('--:--');
+
+  // Update clock only on client side to avoid hydration mismatch
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [windows, setWindows] = useState({
     reklama: true, // Auto-open on startup - Reklama fotografki
@@ -301,7 +312,7 @@ export default function Home() {
 
         {/* Clock */}
         <div className="text-xs px-2 border-2 border-[#808080] border-t-black border-l-black h-6 flex items-center ml-1">
-          {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+          {currentTime}
         </div>
 
         {/* Start Menu - opens DOWNWARD */}
