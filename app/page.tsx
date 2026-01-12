@@ -52,6 +52,25 @@ export default function Home() {
     tetris: false,
   });
 
+  const [minimized, setMinimized] = useState({
+    gallery: false,
+    news: false,
+    shop: false,
+    image: false,
+    video: false,
+    model3d: false,
+    character: false,
+    chat: false,
+    privateChat: false,
+    forum: false,
+    webring: false,
+    guestbook: false,
+    photos: false,
+    downloads: false,
+    radio: false,
+    tetris: false,
+  });
+
   const [showStartMenu, setShowStartMenu] = useState(false);
 
   // Fetch products when shop opens
@@ -239,7 +258,7 @@ export default function Home() {
           <span>Start</span>
         </button>
 
-        {/* Taskbar Buttons for Open Windows */}
+        {/* Taskbar Buttons for Open Windows - click to restore */}
         <div className="flex gap-1 flex-1 overflow-x-auto">
           {openWindows.map((win) => (
             <button
@@ -248,6 +267,10 @@ export default function Home() {
               style={{
                 borderStyle: 'inset',
                 background: '#dfdfdf'
+              }}
+              onClick={() => {
+                // Restore minimized window
+                setMinimized({ ...minimized, [win.key]: false });
               }}
             >
               <span>{win.icon}</span>
@@ -331,6 +354,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.gallery}
+          onMinimize={() => setMinimized({ ...minimized, gallery: true })}
           onClose={() => setWindows({ ...windows, gallery: false })}
         >
           <div className="w-full h-full">
@@ -347,6 +372,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.news}
+          onMinimize={() => setMinimized({ ...minimized, news: true })}
           onClose={() => setWindows({ ...windows, news: false })}
         >
           <div className="p-4">
@@ -370,6 +397,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.shop}
+          onMinimize={() => setMinimized({ ...minimized, shop: true })}
           onClose={() => setWindows({ ...windows, shop: false })}
         >
           <div className="p-4 h-full overflow-y-auto bg-white">
@@ -427,6 +456,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.image}
+          onMinimize={() => setMinimized({ ...minimized, image: true })}
           onClose={() => setWindows({ ...windows, image: false })}
         >
           <div className="p-4">
@@ -447,6 +478,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.video}
+          onMinimize={() => setMinimized({ ...minimized, video: true })}
           onClose={() => setWindows({ ...windows, video: false })}
         >
           <div className="p-4">
@@ -463,6 +496,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.model3d}
+          onMinimize={() => setMinimized({ ...minimized, model3d: true })}
           onClose={() => setWindows({ ...windows, model3d: false })}
         >
           <Rollup3D src="/models/koszulka.glb" />
@@ -477,6 +512,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.character}
+          onMinimize={() => setMinimized({ ...minimized, character: true })}
           onClose={() => setWindows({ ...windows, character: false })}
         >
           <RollupCharacter src="/models/postac.glb" />
@@ -491,6 +528,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.forum}
+          onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
           <div className="p-4">
@@ -521,6 +560,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.webring}
+          onMinimize={() => setMinimized({ ...minimized, webring: true })}
           onClose={() => setWindows({ ...windows, webring: false })}
         >
           <Webring currentUrl="https://kupmax.pl" />
@@ -535,6 +576,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.guestbook}
+          onMinimize={() => setMinimized({ ...minimized, guestbook: true })}
           onClose={() => setWindows({ ...windows, guestbook: false })}
         >
           <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
@@ -549,6 +592,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.chat}
+          onMinimize={() => setMinimized({ ...minimized, chat: true })}
           onClose={() => setWindows({ ...windows, chat: false })}
         >
           <Chatroom />
@@ -563,6 +608,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.privateChat}
+          onMinimize={() => setMinimized({ ...minimized, privateChat: true })}
           onClose={() => setWindows({ ...windows, privateChat: false })}
         >
           <PrivateChatroom />
@@ -577,6 +624,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.photos}
+          onMinimize={() => setMinimized({ ...minimized, photos: true })}
           onClose={() => setWindows({ ...windows, photos: false })}
         >
           <PhotoGallery />
@@ -591,6 +640,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.downloads}
+          onMinimize={() => setMinimized({ ...minimized, downloads: true })}
           onClose={() => setWindows({ ...windows, downloads: false })}
         >
           <Downloads />
@@ -605,6 +656,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.radio}
+          onMinimize={() => setMinimized({ ...minimized, radio: true })}
           onClose={() => setWindows({ ...windows, radio: false })}
         >
           <ReactRadio />
@@ -619,6 +672,8 @@ export default function Home() {
           height="min(70vh, 550px)"
           x={4}
           y={260}
+          minimized={minimized.tetris}
+          onMinimize={() => setMinimized({ ...minimized, tetris: true })}
           onClose={() => setWindows({ ...windows, tetris: false })}
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />

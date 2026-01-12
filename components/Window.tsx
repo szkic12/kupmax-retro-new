@@ -1,44 +1,39 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface WindowProps {
   title: string;
   children: ReactNode;
-  defaultOpen?: boolean;
   icon?: string;
   width?: string;
   height?: string;
   x?: number;
   y?: number;
+  minimized?: boolean;
   onClose?: () => void;
+  onMinimize?: () => void;
 }
 
 export default function Window({
   title,
   children,
-  defaultOpen = true,
   icon,
   width = '600px',
   height = '400px',
   x = 50,
   y = 50,
-  onClose
+  minimized = false,
+  onClose,
+  onMinimize
 }: WindowProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [isMinimized, setIsMinimized] = useState(false);
 
-  const handleClose = () => {
-    setIsOpen(false);
-    if (onClose) onClose();
-  };
-
-  if (!isOpen) return null;
+  if (minimized) return null;
 
   return (
     <AnimatePresence>
-      {!isMinimized && (
+      {!minimized && (
         <motion.div
           className="win95-window absolute z-10"
           style={{
@@ -63,13 +58,13 @@ export default function Window({
             <div className="flex gap-1">
               <button
                 className="win95-button px-2 py-0 min-w-0 h-[14px] text-[10px] font-bold"
-                onClick={() => setIsMinimized(true)}
+                onClick={onMinimize}
               >
                 _
               </button>
               <button
                 className="win95-button px-2 py-0 min-w-0 h-[14px] text-[10px] font-bold"
-                onClick={handleClose}
+                onClick={onClose}
               >
                 ×
               </button>
