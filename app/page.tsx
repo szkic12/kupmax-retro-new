@@ -19,6 +19,7 @@ const Downloads = dynamic(() => import('@/components/Downloads/Downloads'), { ss
 const Webring = dynamic(() => import('@/components/Webring/Webring'), { ssr: false });
 const Clippy = dynamic(() => import('@/components/Clippy'), { ssr: false });
 const ClippyChat = dynamic(() => import('@/components/ClippyChat'), { ssr: false });
+const LegalNoticeBoard = dynamic(() => import('@/components/LegalNoticeBoard'), { ssr: false });
 
 interface DesktopIcon {
   id: string;
@@ -50,6 +51,7 @@ export default function Home() {
     downloads: false,
     radio: false,
     tetris: false,
+    bulletin: false,
   });
 
   const [minimized, setMinimized] = useState({
@@ -69,6 +71,7 @@ export default function Home() {
     downloads: false,
     radio: false,
     tetris: false,
+    bulletin: false,
   });
 
   const [showStartMenu, setShowStartMenu] = useState(false);
@@ -219,6 +222,13 @@ export default function Home() {
       type: 'app',
       action: () => setShowClippyChat(true),
     },
+    {
+      id: 'bulletin',
+      icon: '📌',
+      label: 'Tablica.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, bulletin: true }),
+    },
   ];
 
   // Get list of open windows for taskbar buttons
@@ -241,7 +251,8 @@ export default function Home() {
             key === 'guestbook' ? '📖' :
             key === 'downloads' ? '💾' :
             key === 'radio' ? '📻' :
-            key === 'tetris' ? '🕹️' : '📁',
+            key === 'tetris' ? '🕹️' :
+            key === 'bulletin' ? '📌' : '📁',
       label: key === 'privateChat' ? 'Private Chat' : key.charAt(0).toUpperCase() + key.slice(1),
     }));
 
@@ -677,6 +688,22 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, tetris: false })}
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
+        </Window>
+      )}
+
+      {windows.bulletin && (
+        <Window
+          title="Tablica Ogłoszeń - Bulletin Board"
+          icon="📌"
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
+          minimized={minimized.bulletin}
+          onMinimize={() => setMinimized({ ...minimized, bulletin: true })}
+          onClose={() => setWindows({ ...windows, bulletin: false })}
+        >
+          <LegalNoticeBoard />
         </Window>
       )}
 
