@@ -343,10 +343,10 @@ export default function Home() {
         <Window
           title="KUPMAX News - Netscape Navigator"
           icon="📰"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, news: false })}
         >
           <div className="p-4">
@@ -366,10 +366,10 @@ export default function Home() {
         <Window
           title="KUPMAX Shop - Internet Explorer"
           icon="🛒"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, shop: false })}
         >
           <div className="p-4 h-full overflow-y-auto bg-white">
@@ -423,10 +423,10 @@ export default function Home() {
         <Window
           title="Chlapak.bmp - Paint"
           icon="📷"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, image: false })}
         >
           <div className="p-4">
@@ -443,10 +443,10 @@ export default function Home() {
         <Window
           title="Movie.avi - Windows Media Player"
           icon="🎬"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, video: false })}
         >
           <div className="p-4">
@@ -459,10 +459,10 @@ export default function Home() {
         <Window
           title="Shirt3D.obj - 3D Viewer"
           icon="👕"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, model3d: false })}
         >
           <Rollup3D src="/models/koszulka.glb" />
@@ -473,10 +473,10 @@ export default function Home() {
         <Window
           title="Character.3ds - 3D Studio MAX"
           icon="🧑"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, character: false })}
         >
           <RollupCharacter src="/models/postac.glb" />
@@ -487,10 +487,10 @@ export default function Home() {
         <Window
           title="KUPMAX Forum - Microsoft Internet Explorer"
           icon="💬"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
           <div className="p-4">
@@ -517,10 +517,10 @@ export default function Home() {
         <Window
           title="Webring - Netscape Navigator"
           icon="🌐"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, webring: false })}
         >
           <Webring currentUrl="https://kupmax.pl" />
@@ -531,10 +531,10 @@ export default function Home() {
         <Window
           title="Guestbook - Sign Here!"
           icon="📖"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, guestbook: false })}
         >
           <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
@@ -545,10 +545,10 @@ export default function Home() {
         <Window
           title="KUPMAX Chat - mIRC"
           icon="💬"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, chat: false })}
         >
           <Chatroom />
@@ -559,10 +559,10 @@ export default function Home() {
         <Window
           title="Private Chat - Secure Channel"
           icon="🔒"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, privateChat: false })}
         >
           <PrivateChatroom />
@@ -573,10 +573,10 @@ export default function Home() {
         <Window
           title="Photo Gallery - Microsoft Photo Editor"
           icon="📸"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, photos: false })}
         >
           <PhotoGallery />
@@ -587,10 +587,10 @@ export default function Home() {
         <Window
           title="Downloads - File Manager"
           icon="💾"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, downloads: false })}
         >
           <Downloads />
@@ -601,10 +601,10 @@ export default function Home() {
         <Window
           title="Radio Player - Winamp"
           icon="📻"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, radio: false })}
         >
           <ReactRadio />
@@ -615,10 +615,10 @@ export default function Home() {
         <Window
           title="Tetris - Classic Game"
           icon="🕹️"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(70vh, 550px)"
+          x={4}
+          y={260}
           onClose={() => setWindows({ ...windows, tetris: false })}
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
