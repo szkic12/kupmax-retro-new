@@ -16,7 +16,7 @@ export function useGuestbook() {
     setError(null);
 
     try {
-      const response = await fetch('/api/guestbook/entries', {
+      const response = await fetch('/api/guestbook', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export function useGuestbookEntries(options = {}) {
     setError(null);
     
     try {
-      const response = await fetch(`/api/guestbook/entries?limit=${first}`);
+      const response = await fetch(`/api/guestbook?limit=${first}`);
       const result = await response.json();
 
       if (result.success) {

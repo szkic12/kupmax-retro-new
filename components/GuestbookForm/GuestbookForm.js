@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useGuestbook } from '../../hooks/useGuestbook';
 import styles from './GuestbookForm.module.scss';

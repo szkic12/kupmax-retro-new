@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
 
-    return NextResponse.json({ entries });
+    return NextResponse.json({ success: true, entries });
   } catch (error) {
     console.error('Error fetching guestbook:', error);
     return NextResponse.json(
@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, message } = await req.json();
+    const body = await req.json();
+    const name = body.name || body.nickname;
+    const message = body.message;
 
     if (!name || !message) {
       return NextResponse.json(

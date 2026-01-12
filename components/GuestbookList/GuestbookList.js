@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useGuestbookEntries } from '../../hooks/useGuestbook';
 import styles from './GuestbookList.module.scss';
@@ -15,55 +17,8 @@ export default function GuestbookList({ maxEntries = 10 }) {
     refetch
   } = useGuestbookEntries({ first: maxEntries });
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [deletingEntryId, setDeletingEntryId] = useState(null);
-
-  // Sprawdź czy zalogowany jako admin (ma JWT cookie)
-  useEffect(() => {
-    fetch('/api/forum/verify-session', {
-      method: 'GET',
-      credentials: 'same-origin'
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.isAdmin) {
-          setIsAdmin(true);
-        }
-      })
-      .catch(() => {
-        setIsAdmin(false);
-      });
-  }, []);
-
-  // Funkcja usuwania wpisu
-  const handleDeleteEntry = async (entryId) => {
-    if (!confirm('Czy na pewno chcesz usunąć ten wpis?')) {
-      return;
-    }
-
-    setDeletingEntryId(entryId);
-
-    try {
-      const response = await fetch(`/api/guestbook/entries?id=${entryId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin' // Wysyła JWT cookie
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('Wpis usunięty!');
-        refetch(); // Odśwież listę
-      } else {
-        alert(`Błąd: ${data.error}`);
-      }
-    } catch (err) {
-      alert('Błąd podczas usuwania wpisu');
-      console.error('Delete error:', err);
-    } finally {
-      setDeletingEntryId(null);
-    }
-  };
+  // Admin functionality - disabled for now (TODO: implement admin panel later)
+  const isAdmin = false;
 
   // Loading state
   if (loading && !entries.length) {
@@ -155,7 +110,7 @@ export default function GuestbookList({ maxEntries = 10 }) {
             <div className={styles.entryHeader}>
               <div className={styles.authorInfo}>
                 <span className={styles.nickname}>
-                  {entry.nickname || 'Anonim'}
+                  {entry.nickname || entry.name || 'Anonim'}
                 </span>
                 {entry.productRef && (
                   <span className={styles.productTag}>
@@ -164,7 +119,7 @@ export default function GuestbookList({ maxEntries = 10 }) {
                 )}
               </div>
               <span className={styles.date}>
-                {formatDate(entry.date)}
+                {formatDate(entry.date || entry.timestamp)}
               </span>
             </div>
             
@@ -175,19 +130,6 @@ export default function GuestbookList({ maxEntries = 10 }) {
             {entry.email && (
               <div className={styles.authorEmail}>
                 ✉️ {entry.email}
-              </div>
-            )}
-
-            {/* Przycisk usuwania dla admina */}
-            {isAdmin && (
-              <div className={styles.adminActions}>
-                <button
-                  onClick={() => handleDeleteEntry(entry.id)}
-                  className={styles.deleteButton}
-                  disabled={deletingEntryId === entry.id}
-                >
-                  {deletingEntryId === entry.id ? 'Usuwanie...' : '🗑️ Usuń'}
-                </button>
               </div>
             )}
           </div>
