@@ -1,18 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-import { promises as fs } from 'fs';
+import s3Service from '../../../../../lib/aws-s3.js';
+
+// Domyślne stacje
+const DEFAULT_STATIONS = [
+  {
+    id: '1',
+    name: 'Fun Radio',
+    url: 'https://vrt.streamabc.net/vrt-klaracontinuo-mp3-128-6851541',
+    genre: 'International',
+  },
+  {
+    id: '2',
+    name: 'DiscoPolo80',
+    url: 'http://s1.discoparty.pl:7432/;',
+    genre: 'DiscoPolo',
+  },
+];
+
+// Pobierz stacje z S3
+async function getStations() {
+  const result = await s3Service.loadJsonData('stations', DEFAULT_STATIONS);
+  return result.data || DEFAULT_STATIONS;
+}
+
+// Zapisz stacje do S3
+async function saveStations(stations: any[]) {
+  return await s3Service.saveJsonData('stations', stations);
+}
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const jsonDirectory = path.join(process.cwd(), 'data');
-  const filePath = path.join(jsonDirectory, 'stations.json');
 
   try {
-    const fileContents = await fs.readFile(filePath, 'utf8');
-    let stations = JSON.parse(fileContents);
+    let stations = await getStations();
     const stationIndex = stations.findIndex((station: any) => station.id.toString() === id);
 
     if (stationIndex === -1) {
@@ -20,7 +43,9 @@ export async function DELETE(
     }
 
     stations.splice(stationIndex, 1);
-    await fs.writeFile(filePath, JSON.stringify(stations, null, 2));
+
+    // Zapisz do S3
+    await saveStations(stations);
 
     return NextResponse.json({ message: 'Stacja została usunięta.' });
   } catch (error) {
@@ -34,8 +59,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const jsonDirectory = path.join(process.cwd(), 'data');
-  const filePath = path.join(jsonDirectory, 'stations.json');
 
   try {
     const { name, url, genre } = await req.json();
@@ -44,8 +67,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Wszystkie pola są wymagane.' }, { status: 400 });
     }
 
-    const fileContents = await fs.readFile(filePath, 'utf8');
-    let stations = JSON.parse(fileContents);
+    let stations = await getStations();
     const stationIndex = stations.findIndex((station: any) => station.id.toString() === id);
 
     if (stationIndex === -1) {
@@ -60,7 +82,9 @@ export async function PUT(
     };
 
     stations[stationIndex] = updatedStation;
-    await fs.writeFile(filePath, JSON.stringify(stations, null, 2));
+
+    // Zapisz do S3
+    await saveStations(stations);
 
     return NextResponse.json(updatedStation);
   } catch (error) {

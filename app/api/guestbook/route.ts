@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import s3Service from '../../../lib/aws-s3.js';
 
-// In-memory storage for guestbook entries (temporary)
-// In production, use Supabase
-let guestbookEntries: Array<{
-  id: string;
-  name: string;
-  message: string;
-  timestamp: number;
-  approved: boolean;
-}> = [
+// Domyślne wpisy (używane gdy S3 jest puste)
+const DEFAULT_ENTRIES = [
   {
     id: '1',
     name: 'RetroFan',
@@ -19,7 +13,7 @@ let guestbookEntries: Array<{
   {
     id: '2',
     name: 'WebSurfer98',
-    message: 'This is the coolest retro website I\'ve seen! The Tetris game is awesome! 🕹️',
+    message: 'This is the coolest retro website I\'ve seen! The games are awesome! 🕹️',
     timestamp: Date.now() - 7200000,
     approved: true,
   },
@@ -32,15 +26,28 @@ let guestbookEntries: Array<{
   },
 ];
 
+// Pobierz wpisy z S3
+async function getGuestbookEntries() {
+  const result = await s3Service.loadJsonData('guestbook', DEFAULT_ENTRIES);
+  return result.data || DEFAULT_ENTRIES;
+}
+
+// Zapisz wpisy do S3
+async function saveGuestbookEntries(entries: any[]) {
+  return await s3Service.saveJsonData('guestbook', entries);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '15');
 
+    const guestbookEntries = await getGuestbookEntries();
+
     // Get approved entries, sorted by newest first
     const entries = guestbookEntries
-      .filter((entry) => entry.approved)
-      .sort((a, b) => b.timestamp - a.timestamp)
+      .filter((entry: any) => entry.approved)
+      .sort((a: any, b: any) => b.timestamp - a.timestamp)
       .slice(0, limit);
 
     return NextResponse.json({ success: true, entries });
@@ -73,6 +80,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const guestbookEntries = await getGuestbookEntries();
+
     const newEntry = {
       id: Date.now().toString(),
       name: name.substring(0, 50),
@@ -84,10 +93,18 @@ export async function POST(req: NextRequest) {
     guestbookEntries.push(newEntry);
 
     // Keep only last 100 entries
-    if (guestbookEntries.length > 100) {
-      guestbookEntries = guestbookEntries
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 100);
+    const sortedEntries = guestbookEntries
+      .sort((a: any, b: any) => b.timestamp - a.timestamp)
+      .slice(0, 100);
+
+    // Zapisz do S3
+    const saveResult = await saveGuestbookEntries(sortedEntries);
+
+    if (!saveResult.success) {
+      return NextResponse.json(
+        { error: 'Failed to save to S3' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, entry: newEntry });
@@ -95,6 +112,46 @@ export async function POST(req: NextRequest) {
     console.error('Error saving guestbook entry:', error);
     return NextResponse.json(
       { error: 'Failed to save entry' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Entry ID is required' },
+        { status: 400 }
+      );
+    }
+
+    let guestbookEntries = await getGuestbookEntries();
+    const initialLength = guestbookEntries.length;
+
+    guestbookEntries = guestbookEntries.filter((entry: any) => entry.id !== id);
+
+    if (guestbookEntries.length === initialLength) {
+      return NextResponse.json(
+        { error: 'Entry not found' },
+        { status: 404 }
+      );
+    }
+
+    // Zapisz do S3
+    await saveGuestbookEntries(guestbookEntries);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Entry deleted'
+    });
+  } catch (error) {
+    console.error('Error deleting guestbook entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete entry' },
       { status: 500 }
     );
   }

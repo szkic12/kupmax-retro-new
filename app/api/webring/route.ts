@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import s3Service from '../../../lib/aws-s3.js';
 
-// Webring sites database
-let webringSites = [
+// Domyślne strony webring (używane gdy S3 jest puste)
+const DEFAULT_SITES = [
   {
     id: '1',
     name: 'KUPMAX Retro',
@@ -64,15 +65,28 @@ let webringSites = [
   },
 ];
 
+// Pobierz strony z S3
+async function getWebringSites() {
+  const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
+  return result.data || DEFAULT_SITES;
+}
+
+// Zapisz strony do S3
+async function saveWebringSites(sites: any[]) {
+  return await s3Service.saveJsonData('webring', sites);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const currentUrl = searchParams.get('currentUrl');
 
+    const webringSites = await getWebringSites();
+
     // Get approved sites
     const approvedSites = webringSites
-      .filter((site) => site.approved)
-      .sort((a, b) => a.addedAt - b.addedAt);
+      .filter((site: any) => site.approved)
+      .sort((a: any, b: any) => a.addedAt - b.addedAt);
 
     if (!currentUrl) {
       return NextResponse.json({ sites: approvedSites });
@@ -80,7 +94,7 @@ export async function GET(req: NextRequest) {
 
     // Find current site index
     const currentIndex = approvedSites.findIndex(
-      (site) => site.url === currentUrl
+      (site: any) => site.url === currentUrl
     );
 
     const total = approvedSites.length;
@@ -115,6 +129,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const webringSites = await getWebringSites();
+
     const newSite = {
       id: Date.now().toString(),
       name: name.substring(0, 100),
@@ -124,21 +140,71 @@ export async function POST(req: NextRequest) {
       icon: icon || '🌐',
       owner: 'Admin',
       tags: [] as string[],
-      approved: true, // Admin-added sites are auto-approved
+      approved: true,
       addedAt: Date.now(),
     };
 
-    (webringSites as any[]).push(newSite);
+    webringSites.push(newSite);
+
+    // Zapisz do S3
+    const saveResult = await saveWebringSites(webringSites);
+
+    if (!saveResult.success) {
+      return NextResponse.json(
+        { error: 'Failed to save to S3' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       site: newSite,
-      message: 'Site submitted for approval'
+      message: 'Site added to webring'
     });
   } catch (error) {
     console.error('Error adding to webring:', error);
     return NextResponse.json(
       { error: 'Failed to add site' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Site ID is required' },
+        { status: 400 }
+      );
+    }
+
+    let webringSites = await getWebringSites();
+    const initialLength = webringSites.length;
+
+    webringSites = webringSites.filter((site: any) => site.id !== id);
+
+    if (webringSites.length === initialLength) {
+      return NextResponse.json(
+        { error: 'Site not found' },
+        { status: 404 }
+      );
+    }
+
+    // Zapisz do S3
+    await saveWebringSites(webringSites);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Site removed from webring'
+    });
+  } catch (error) {
+    console.error('Error deleting from webring:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete site' },
       { status: 500 }
     );
   }
