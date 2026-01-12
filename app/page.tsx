@@ -250,10 +250,10 @@ export default function Home() {
         <Window
           title="KUPMAX Gallery - Internet Explorer"
           icon="🖼️"
-          width="min(92vw, 650px)"
-          height="min(55vh, 380px)"
-          x={8}
-          y={260}
+          width="min(95vw, 680px)"
+          height="min(52vh, 360px)"
+          x={5}
+          y={290}
           onClose={() => setWindows({ ...windows, gallery: false })}
         >
           <div className="w-full h-full">
