@@ -229,7 +229,7 @@ export default function Home() {
     {
       id: 'tetris',
       icon: '🕹️',
-      label: 'Tetris.exe',
+      label: 'BlockBlitz.exe',
       type: 'app',
       action: () => setWindows({ ...windows, tetris: true }),
     },
@@ -687,12 +687,12 @@ export default function Home() {
 
       {windows.tetris && (
         <Window
-          title="Tetris - Classic Game"
+          title="Block Blitz - Extreme Puzzle"
           icon="🕹️"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width="min(98vw, 800px)"
+          height="min(85vh, 650px)"
+          x={2}
+          y={20}
           minimized={minimized.tetris}
           onMinimize={() => setMinimized({ ...minimized, tetris: true })}
           onClose={() => setWindows({ ...windows, tetris: false })}
