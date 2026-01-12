@@ -245,15 +245,15 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Windows - positioned below icons */}
+      {/* Windows - positioned below taskbar */}
       {windows.gallery && (
         <Window
           title="KUPMAX Gallery - Internet Explorer"
           icon="🖼️"
-          width="min(95vw, 680px)"
-          height="min(52vh, 360px)"
-          x={5}
-          y={290}
+          width="min(96vw, 700px)"
+          height="min(65vh, 500px)"
+          x={4}
+          y={250}
           onClose={() => setWindows({ ...windows, gallery: false })}
         >
           <div className="w-full h-full">
@@ -551,8 +551,8 @@ export default function Home() {
       {/* Clippy Chat Window - Clippy icon is now on desktop */}
       <ClippyChat isOpen={showClippyChat} onClose={() => setShowClippyChat(false)} />
 
-      {/* Taskbar - with safe area for Android navigation */}
-      <div className="absolute left-0 right-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50" style={{ bottom: 'max(env(safe-area-inset-bottom, 0px), 55px)' }}>
+      {/* Taskbar - positioned at TOP under icons */}
+      <div className="absolute left-0 right-0 top-[200px] h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
         {/* Start Button */}
         <button
           className="win95-button px-3 h-6 font-bold flex items-center gap-2"
@@ -616,9 +616,9 @@ export default function Home() {
           {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
         </div>
 
-        {/* Start Menu */}
+        {/* Start Menu - opens DOWNWARD from taskbar */}
         {showStartMenu && (
-          <div className="absolute bottom-14 sm:bottom-10 left-2 w-52 max-h-[45vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
+          <div className="absolute top-10 sm:top-8 left-2 w-52 max-h-[50vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
             <div className="bg-gradient-to-b from-blue-800 to-blue-600 text-white font-bold p-2 text-lg">
               KUPMAX Retro
             </div>
