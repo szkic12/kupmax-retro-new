@@ -121,11 +121,14 @@ export async function POST(req: NextRequest) {
       url,
       description: description?.substring(0, 200) || '',
       category: category || 'general',
+      icon: '🌐',
+      owner: 'User Submitted',
+      tags: [] as string[],
       approved: false, // Requires approval
       addedAt: Date.now(),
     };
 
-    webringSites.push(newSite);
+    (webringSites as any[]).push(newSite);
 
     return NextResponse.json({
       success: true,
