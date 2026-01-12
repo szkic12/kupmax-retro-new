@@ -150,8 +150,9 @@ export async function POST(req: NextRequest) {
     const saveResult = await saveWebringSites(webringSites);
 
     if (!saveResult.success) {
+      console.error('Save result:', saveResult);
       return NextResponse.json(
-        { error: 'Failed to save to S3' },
+        { error: 'Failed to save to S3', details: saveResult.error },
         { status: 500 }
       );
     }
