@@ -1,3 +1,5 @@
+'use client';
+
 // Komponent Webring - nawigacja między stronami retro z pełną funkcjonalnością
 import { useState, useEffect } from 'react';
 import styles from './Webring.module.scss';
