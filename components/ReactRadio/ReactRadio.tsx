@@ -3,13 +3,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './ReactRadio.module.scss';
 
-const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
-  const [stations, setStations] = useState(initialStation ? [initialStation] : []);
-  const [currentStation, setCurrentStation] = useState(initialStation);
-  const [isPlaying, setIsPlaying] = useState(false); // Zawsze startuj wstrzymany
+interface Station {
+  id: string | number;
+  name: string;
+  url: string;
+  genre: string;
+}
+
+interface ReactRadioProps {
+  initialStation?: Station | null;
+  isPlayerPage?: boolean;
+}
+
+const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayerPage = false }) => {
+  const [stations, setStations] = useState<Station[]>(initialStation ? [initialStation] : []);
+  const [currentStation, setCurrentStation] = useState<Station | null>(initialStation);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
-  const [error, setError] = useState(null);
-  const audioRef = useRef(null);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (!isPlayerPage) {
@@ -30,8 +42,8 @@ const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.play().then(() => {
-          setError(null); // Wyczyść błąd, gdy odtwarzanie się powiedzie
-        }).catch(e => {
+          setError(null);
+        }).catch(() => {
           setError('Błąd odtwarzania. Spróbuj ponownie.');
           setIsPlaying(false);
         });
@@ -47,7 +59,7 @@ const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
     }
   }, [volume]);
 
-  const handleSelectStation = (station) => {
+  const handleSelectStation = (station: Station) => {
     setCurrentStation(station);
     setError(null);
   };
@@ -70,8 +82,15 @@ const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
     }
   };
 
-  const handleVolumeChange = (e) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVolume(parseFloat(e.target.value));
+  };
+
+  const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    const target = e.target as HTMLAudioElement;
+    if (target.error && target.error.code !== 4) {
+      setError('Błąd ładowania strumienia.');
+    }
   };
 
   return (
@@ -86,12 +105,7 @@ const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
           ref={audioRef}
           src={currentStation.url}
           onEnded={handleStop}
-          onError={(e) => {
-            // Ignoruj błąd "aborted by the user" przy zmianie stacji
-            if (e.target.error.code !== 4) {
-               setError('Błąd ładowania strumienia.');
-            }
-          }}
+          onError={handleAudioError}
         />
       )}
 
@@ -106,22 +120,22 @@ const ReactRadio = ({ initialStation = null, isPlayerPage = false }) => {
                 <strong>{currentStation.name}</strong>
                 <span className={styles.genre}>{currentStation.genre}</span>
               </div>
-              
+
               {error && (
                 <div className={styles.errorMessage}>
                   ⚠️ {error}
                 </div>
               )}
-              
+
               <div className={styles.playerControls}>
-                <button 
+                <button
                   className={styles.controlBtn}
                   onClick={handlePrimaryAction}
                   disabled={!currentStation}
                 >
                   {isPlayerPage ? (isPlaying ? '⏸ PAUSE' : '▶ PLAY') : '▶ OTWÓRZ W NOWEJ KARCIE'}
                 </button>
-                <button 
+                <button
                   className={styles.controlBtn}
                   onClick={handleStop}
                   disabled={!currentStation}
