@@ -253,7 +253,7 @@ export default function Home() {
           width="min(92vw, 650px)"
           height="min(55vh, 380px)"
           x={8}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, gallery: false })}
         >
           <div className="w-full h-full">
@@ -269,7 +269,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(55vh, 350px)"
           x={15}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, news: false })}
         >
           <div className="p-4">
@@ -292,7 +292,7 @@ export default function Home() {
           width="min(90vw, 550px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, shop: false })}
         >
           <div className="p-4 h-full overflow-y-auto bg-white">
@@ -349,7 +349,7 @@ export default function Home() {
           width="min(90vw, 400px)"
           height="min(55vh, 320px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, image: false })}
         >
           <div className="p-4">
@@ -369,7 +369,7 @@ export default function Home() {
           width="min(90vw, 450px)"
           height="min(55vh, 350px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, video: false })}
         >
           <div className="p-4">
@@ -385,7 +385,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(60vh, 380px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, model3d: false })}
         >
           <Rollup3D src="/models/koszulka.glb" />
@@ -399,7 +399,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(60vh, 380px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, character: false })}
         >
           <RollupCharacter src="/models/postac.glb" />
@@ -413,7 +413,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(55vh, 380px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
           <div className="p-4">
@@ -443,7 +443,7 @@ export default function Home() {
           width="min(90vw, 550px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, webring: false })}
         >
           <Webring currentUrl="https://kupmax.pl" />
@@ -457,7 +457,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, guestbook: false })}
         >
           <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
@@ -471,7 +471,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, chat: false })}
         >
           <Chatroom />
@@ -485,7 +485,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, privateChat: false })}
         >
           <PrivateChatroom />
@@ -499,7 +499,7 @@ export default function Home() {
           width="min(90vw, 550px)"
           height="min(60vh, 400px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, photos: false })}
         >
           <PhotoGallery />
@@ -513,7 +513,7 @@ export default function Home() {
           width="min(90vw, 500px)"
           height="min(55vh, 380px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, downloads: false })}
         >
           <Downloads />
@@ -527,7 +527,7 @@ export default function Home() {
           width="min(90vw, 350px)"
           height="min(55vh, 350px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, radio: false })}
         >
           <ReactRadio />
@@ -541,7 +541,7 @@ export default function Home() {
           width="min(90vw, 450px)"
           height="min(70vh, 450px)"
           x={10}
-          y={220}
+          y={260}
           onClose={() => setWindows({ ...windows, tetris: false })}
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
@@ -552,7 +552,7 @@ export default function Home() {
       <ClippyChat isOpen={showClippyChat} onClose={() => setShowClippyChat(false)} />
 
       {/* Taskbar - with safe area for Android navigation */}
-      <div className="absolute left-0 right-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50" style={{ bottom: 'max(env(safe-area-inset-bottom, 0px), 40px)' }}>
+      <div className="absolute left-0 right-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50" style={{ bottom: 'max(env(safe-area-inset-bottom, 0px), 55px)' }}>
         {/* Start Button */}
         <button
           className="win95-button px-3 h-6 font-bold flex items-center gap-2"
@@ -618,7 +618,7 @@ export default function Home() {
 
         {/* Start Menu */}
         {showStartMenu && (
-          <div className="absolute bottom-12 sm:bottom-10 left-2 w-52 max-h-[50vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
+          <div className="absolute bottom-14 sm:bottom-10 left-2 w-52 max-h-[45vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
             <div className="bg-gradient-to-b from-blue-800 to-blue-600 text-white font-bold p-2 text-lg">
               KUPMAX Retro
             </div>
