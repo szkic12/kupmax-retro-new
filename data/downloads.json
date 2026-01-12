@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "id": "1759144736423",
+      "name": "1759144736423-gemini.png",
+      "s3Key": "downloads/1759144736423-gemini.png",
+      "size": 2100000,
+      "type": "image/png",
+      "downloads": 2,
+      "uploadedAt": "2025-09-29T13:31:42.423Z",
+      "description": "Plik zsynchronizowany z S3 - 1759144736423-gemini.png",
+      "category": "Synchronized",
+      "tags": []
+    }
+  ],
+  "downloadStats": {
+    "2025-09-29": 2
+  },
+  "totalDownloads": 2,
+  "totalSize": 2100000
+}

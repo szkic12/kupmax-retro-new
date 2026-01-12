@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useDownloads } from '../../hooks/useDownloads';
 import FileUploadModal from './FileUploadModal';

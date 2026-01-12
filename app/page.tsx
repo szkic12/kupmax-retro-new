@@ -35,7 +35,7 @@ export default function Home() {
   const [showClippyChat, setShowClippyChat] = useState(false);
 
   const [windows, setWindows] = useState({
-    gallery: true, // Auto-open on startup
+    reklama: true, // Auto-open on startup - Reklama fotografki
     news: false,
     shop: false,
     image: false,
@@ -55,7 +55,7 @@ export default function Home() {
   });
 
   const [minimized, setMinimized] = useState({
-    gallery: false,
+    reklama: false,
     news: false,
     shop: false,
     image: false,
@@ -117,6 +117,13 @@ export default function Home() {
   ];
 
   const desktopIcons: DesktopIcon[] = [
+    {
+      id: 'reklama',
+      icon: '📷',
+      label: 'Reklama.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, reklama: true }),
+    },
     {
       id: 'news',
       icon: '📰',
@@ -236,7 +243,7 @@ export default function Home() {
     .filter(([_, isOpen]) => isOpen)
     .map(([key]) => ({
       key,
-      icon: key === 'gallery' ? '🖼️' :
+      icon: key === 'reklama' ? '📷' :
             key === 'news' ? '📰' :
             key === 'shop' ? '🛒' :
             key === 'image' ? '📷' :
@@ -253,7 +260,9 @@ export default function Home() {
             key === 'radio' ? '📻' :
             key === 'tetris' ? '🕹️' :
             key === 'bulletin' ? '📌' : '📁',
-      label: key === 'privateChat' ? 'Private Chat' : key.charAt(0).toUpperCase() + key.slice(1),
+      label: key === 'privateChat' ? 'Private Chat' :
+             key === 'reklama' ? 'Reklama' :
+             key.charAt(0).toUpperCase() + key.slice(1),
     }));
 
   return (
@@ -302,16 +311,6 @@ export default function Home() {
               KUPMAX Retro
             </div>
             <div className="p-1">
-              <button
-                className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
-                onClick={() => {
-                  setWindows({ ...windows, gallery: true });
-                  setShowStartMenu(false);
-                }}
-              >
-                <span>🖼️</span>
-                <span>Gallery</span>
-              </button>
               {desktopIcons.map((item) => (
                 <button
                   key={item.id}
@@ -357,17 +356,17 @@ export default function Home() {
       </div>
 
       {/* Windows - positioned below icons */}
-      {windows.gallery && (
+      {windows.reklama && (
         <Window
-          title="KUPMAX Gallery - Internet Explorer"
-          icon="🖼️"
+          title="📷 Reklama - Anna Juszczak Fotografia"
+          icon="📷"
           width="min(96vw, 700px)"
           height="min(70vh, 550px)"
           x={4}
           y={260}
-          minimized={minimized.gallery}
-          onMinimize={() => setMinimized({ ...minimized, gallery: true })}
-          onClose={() => setWindows({ ...windows, gallery: false })}
+          minimized={minimized.reklama}
+          onMinimize={() => setMinimized({ ...minimized, reklama: true })}
+          onClose={() => setWindows({ ...windows, reklama: false })}
         >
           <div className="w-full h-full">
             <HeroSlider slides={slides} />

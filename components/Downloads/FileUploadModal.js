@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef } from 'react';
 import { useDownloads } from '../../hooks/useDownloads';
 import styles from './Downloads.module.scss';
