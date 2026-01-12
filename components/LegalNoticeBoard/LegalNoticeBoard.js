@@ -134,7 +134,7 @@ const LegalNoticeBoard = () => {
   return (
     <>
       <div className={styles.noticeBoardContainer}>
-        <h2 className={styles.boardTitle}>📌 Tablica Ogłoszeń</h2>
+        <h2 className={styles.boardTitle}>📜 Regulamin Serwisu</h2>
         <div className={styles.noticeBoard}>
           {notices.map((notice) => (
             <div

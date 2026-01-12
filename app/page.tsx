@@ -242,8 +242,8 @@ export default function Home() {
     },
     {
       id: 'bulletin',
-      icon: '📌',
-      label: 'Tablica.exe',
+      icon: '📜',
+      label: 'Regulamin.exe',
       type: 'app',
       action: () => setWindows({ ...windows, bulletin: true }),
     },
@@ -703,8 +703,8 @@ export default function Home() {
 
       {windows.bulletin && (
         <Window
-          title="Tablica Ogłoszeń - Bulletin Board"
-          icon="📌"
+          title="Regulamin Serwisu - Terms of Service"
+          icon="📜"
           width="min(96vw, 700px)"
           height="min(70vh, 550px)"
           x={4}
