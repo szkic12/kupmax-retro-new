@@ -228,8 +228,85 @@ export default function Home() {
 
   return (
     <main className="w-screen h-screen relative overflow-hidden">
-      {/* Desktop Icons - 6 icons per row, 3 rows */}
-      <div className="absolute top-2 left-2 right-2 grid grid-cols-6 sm:grid-cols-8 gap-1 z-10">
+      {/* Taskbar - at very TOP */}
+      <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
+        {/* Start Button */}
+        <button
+          className="win95-button px-3 h-6 font-bold flex items-center gap-2"
+          onClick={() => setShowStartMenu(!showStartMenu)}
+        >
+          <span className="text-lg">🪟</span>
+          <span>Start</span>
+        </button>
+
+        {/* Taskbar Buttons for Open Windows */}
+        <div className="flex gap-1 flex-1 overflow-x-auto">
+          {openWindows.map((win) => (
+            <button
+              key={win.key}
+              className="win95-button px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] max-w-[120px]"
+              style={{
+                borderStyle: 'inset',
+                background: '#dfdfdf'
+              }}
+            >
+              <span>{win.icon}</span>
+              <span className="truncate">{win.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Clock */}
+        <div className="text-xs px-2 border-2 border-[#808080] border-t-black border-l-black h-6 flex items-center ml-1">
+          {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+
+        {/* Start Menu - opens DOWNWARD */}
+        {showStartMenu && (
+          <div className="absolute top-10 sm:top-8 left-2 w-52 max-h-[50vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
+            <div className="bg-gradient-to-b from-blue-800 to-blue-600 text-white font-bold p-2 text-lg">
+              KUPMAX Retro
+            </div>
+            <div className="p-1">
+              <button
+                className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
+                onClick={() => {
+                  setWindows({ ...windows, gallery: true });
+                  setShowStartMenu(false);
+                }}
+              >
+                <span>🖼️</span>
+                <span>Gallery</span>
+              </button>
+              {desktopIcons.map((item) => (
+                <button
+                  key={item.id}
+                  className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
+                  onClick={() => {
+                    item.action();
+                    setShowStartMenu(false);
+                  }}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label.replace('.exe', '').replace('.lnk', '').replace('.htm', '').replace('.url', '').replace('.apk', '')}</span>
+                </button>
+              ))}
+              <hr className="my-1 border-gray-400" />
+              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
+                <span>⚙️</span>
+                <span>Settings</span>
+              </button>
+              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
+                <span>⏻</span>
+                <span>Shut Down...</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Icons - below taskbar */}
+      <div className="absolute top-12 sm:top-10 left-2 right-2 grid grid-cols-6 sm:grid-cols-8 gap-1 z-10">
         {desktopIcons.map((item) => (
           <div
             key={item.id}
@@ -245,15 +322,15 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Windows - positioned below taskbar */}
+      {/* Windows - positioned below icons */}
       {windows.gallery && (
         <Window
           title="KUPMAX Gallery - Internet Explorer"
           icon="🖼️"
           width="min(96vw, 700px)"
-          height="min(65vh, 500px)"
+          height="min(70vh, 550px)"
           x={4}
-          y={250}
+          y={260}
           onClose={() => setWindows({ ...windows, gallery: false })}
         >
           <div className="w-full h-full">
@@ -550,115 +627,6 @@ export default function Home() {
 
       {/* Clippy Chat Window - Clippy icon is now on desktop */}
       <ClippyChat isOpen={showClippyChat} onClose={() => setShowClippyChat(false)} />
-
-      {/* Taskbar - positioned at TOP under icons */}
-      <div className="absolute left-0 right-0 top-[200px] h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
-        {/* Start Button */}
-        <button
-          className="win95-button px-3 h-6 font-bold flex items-center gap-2"
-          onClick={() => setShowStartMenu(!showStartMenu)}
-        >
-          <span className="text-lg">🪟</span>
-          <span>Start</span>
-        </button>
-
-        {/* Taskbar Buttons for Open Windows */}
-        <div className="flex gap-1 flex-1 overflow-x-auto">
-          {openWindows.map((win) => (
-            <button
-              key={win.key}
-              className="win95-button px-2 h-6 text-xs flex items-center gap-1 min-w-[100px] max-w-[150px]"
-              style={{
-                borderStyle: 'inset',
-                background: '#dfdfdf'
-              }}
-            >
-              <span>{win.icon}</span>
-              <span className="truncate">{win.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* System Tray - Quick Launch Icons */}
-        <div className="flex items-center gap-1 border-l-2 border-l-[#808080] pl-2">
-          <button
-            className="w-5 h-5 flex items-center justify-center hover:bg-blue-200 cursor-pointer"
-            onClick={() => setWindows({ ...windows, image: true })}
-            title="Chlapak"
-          >
-            📷
-          </button>
-          <button
-            className="w-5 h-5 flex items-center justify-center hover:bg-blue-200 cursor-pointer"
-            onClick={() => setWindows({ ...windows, video: true })}
-            title="Video"
-          >
-            🎬
-          </button>
-          <button
-            className="w-5 h-5 flex items-center justify-center hover:bg-blue-200 cursor-pointer"
-            onClick={() => setWindows({ ...windows, model3d: true })}
-            title="3D Shirt"
-          >
-            👕
-          </button>
-          <button
-            className="w-5 h-5 flex items-center justify-center hover:bg-blue-200 cursor-pointer"
-            onClick={() => setWindows({ ...windows, character: true })}
-            title="Character"
-          >
-            🧑
-          </button>
-        </div>
-
-        {/* Clock */}
-        <div className="text-xs px-2 border-2 border-[#808080] border-t-black border-l-black h-6 flex items-center ml-1">
-          {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-        </div>
-
-        {/* Start Menu - opens DOWNWARD from taskbar */}
-        {showStartMenu && (
-          <div className="absolute top-10 sm:top-8 left-2 w-52 max-h-[50vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
-            <div className="bg-gradient-to-b from-blue-800 to-blue-600 text-white font-bold p-2 text-lg">
-              KUPMAX Retro
-            </div>
-            <div className="p-1">
-              <button
-                className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
-                onClick={() => {
-                  setWindows({ ...windows, gallery: true });
-                  setShowStartMenu(false);
-                }}
-              >
-                <span>🖼️</span>
-                <span>Gallery</span>
-              </button>
-              {desktopIcons.map((item) => (
-                <button
-                  key={item.id}
-                  className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
-                  onClick={() => {
-                    item.action();
-                    setShowStartMenu(false);
-                  }}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.label.replace('.exe', '').replace('.lnk', '').replace('.htm', '').replace('.url', '').replace('.apk', '')}</span>
-                </button>
-              ))}
-              <hr className="my-1 border-gray-400" />
-              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
-                <span>⚙️</span>
-                <span>Settings</span>
-              </button>
-              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
-                <span>⏻</span>
-                <span>Shut Down...</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </main>
   );
 }
