@@ -9,11 +9,15 @@ export default function RetroAdmin() {
   const [activeTab, setActiveTab] = useState('radio');
   const [stations, setStations] = useState<any[]>([]);
   const [guestbookEntries, setGuestbookEntries] = useState<any[]>([]);
+  const [webringSites, setWebringSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   // New station form
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
+
+  // New webring site form
+  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '' });
 
   // Simple password check (in production use proper auth)
   const ADMIN_PASSWORD = 'kupmax2024';
@@ -46,6 +50,10 @@ export default function RetroAdmin() {
         const res = await fetch('/api/guestbook');
         const data = await res.json();
         setGuestbookEntries(data.entries || []);
+      } else if (activeTab === 'webring') {
+        const res = await fetch('/api/webring');
+        const data = await res.json();
+        setWebringSites(data.sites || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -73,6 +81,32 @@ export default function RetroAdmin() {
         fetchData();
       } else {
         setMessage('Blad dodawania stacji');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleAddWebsiteSite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSite.name || !newSite.url) {
+      setMessage('Nazwa i URL sa wymagane!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/webring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSite),
+      });
+
+      if (res.ok) {
+        setMessage('Strona dodana do webring!');
+        setNewSite({ name: '', url: '', description: '', category: '', icon: '' });
+        fetchData();
+      } else {
+        setMessage('Blad dodawania strony');
       }
     } catch (error) {
       setMessage('Blad sieci');
@@ -401,23 +435,131 @@ export default function RetroAdmin() {
                 {activeTab === 'webring' && (
                   <div>
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
-                      Zarzadzanie Webring
+                      Zarzadzanie Webring ({webringSites.length} stron)
                     </h3>
-                    <p style={{ color: '#666' }}>
-                      Funkcja w przygotowaniu. Na razie strony webring sa zdefiniowane statycznie w kodzie.
-                    </p>
-                    <Link
-                      href="/webring"
-                      style={{
-                        ...buttonStyle,
-                        display: 'inline-block',
-                        textDecoration: 'none',
-                        color: '#000',
-                        marginTop: '10px',
-                      }}
-                    >
-                      Zobacz katalog webring
-                    </Link>
+
+                    {/* Add new site form */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
+                      <legend style={{ fontWeight: 'bold' }}>Dodaj nowa strone</legend>
+                      <form onSubmit={handleAddWebsiteSite}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa strony *:</label>
+                            <input
+                              type="text"
+                              value={newSite.name}
+                              onChange={(e) => setNewSite({ ...newSite, name: e.target.value })}
+                              style={inputStyle}
+                              placeholder="np. Moja Strona Retro"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>URL *:</label>
+                            <input
+                              type="text"
+                              value={newSite.url}
+                              onChange={(e) => setNewSite({ ...newSite, url: e.target.value })}
+                              style={inputStyle}
+                              placeholder="https://..."
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Opis:</label>
+                            <input
+                              type="text"
+                              value={newSite.description}
+                              onChange={(e) => setNewSite({ ...newSite, description: e.target.value })}
+                              style={inputStyle}
+                              placeholder="Krotki opis strony"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kategoria:</label>
+                            <select
+                              value={newSite.category}
+                              onChange={(e) => setNewSite({ ...newSite, category: e.target.value })}
+                              style={{ ...inputStyle, height: '30px' }}
+                            >
+                              <option value="">Wybierz kategorie</option>
+                              <option value="Retro">Retro</option>
+                              <option value="Aesthetic">Aesthetic</option>
+                              <option value="Archive">Archive</option>
+                              <option value="Museum">Museum</option>
+                              <option value="Personal">Personal</option>
+                              <option value="Gaming">Gaming</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Ikona (emoji):</label>
+                            <input
+                              type="text"
+                              value={newSite.icon}
+                              onChange={(e) => setNewSite({ ...newSite, icon: e.target.value })}
+                              style={inputStyle}
+                              placeholder="np. 🌐 💾 🎮"
+                              maxLength={4}
+                            />
+                          </div>
+                        </div>
+                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px' }}>
+                          + Dodaj strone do Webring
+                        </button>
+                      </form>
+                    </fieldset>
+
+                    {/* Sites list */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+                      <thead>
+                        <tr style={{ background: '#000080', color: '#fff' }}>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Ikona</th>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Nazwa</th>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Kategoria</th>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {webringSites.map((site, i) => (
+                          <tr key={site.id} style={{ background: i % 2 === 0 ? '#fff' : '#f0f0f0' }}>
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc', fontSize: '20px' }}>
+                              {site.icon || '🌐'}
+                            </td>
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
+                              <a href={site.url} target="_blank" rel="noopener noreferrer" style={{ color: '#000080' }}>
+                                {site.name}
+                              </a>
+                              <br />
+                              <small style={{ color: '#666' }}>{site.description}</small>
+                            </td>
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>{site.category}</td>
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
+                              <span style={{
+                                background: site.approved ? '#00aa00' : '#ffaa00',
+                                color: '#fff',
+                                padding: '2px 6px',
+                                fontSize: '11px',
+                              }}>
+                                {site.approved ? 'Aktywna' : 'Oczekuje'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div style={{ marginTop: '15px' }}>
+                      <Link
+                        href="/webring"
+                        target="_blank"
+                        style={{
+                          ...buttonStyle,
+                          display: 'inline-block',
+                          textDecoration: 'none',
+                          color: '#000',
+                        }}
+                      >
+                        Zobacz katalog webring
+                      </Link>
+                    </div>
                   </div>
                 )}
               </>

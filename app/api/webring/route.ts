@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, url, description, category } = await req.json();
+    const { name, url, description, category, icon } = await req.json();
 
     if (!name || !url) {
       return NextResponse.json(
@@ -120,11 +120,11 @@ export async function POST(req: NextRequest) {
       name: name.substring(0, 100),
       url,
       description: description?.substring(0, 200) || '',
-      category: category || 'general',
-      icon: '🌐',
-      owner: 'User Submitted',
+      category: category || 'General',
+      icon: icon || '🌐',
+      owner: 'Admin',
       tags: [] as string[],
-      approved: false, // Requires approval
+      approved: true, // Admin-added sites are auto-approved
       addedAt: Date.now(),
     };
 
