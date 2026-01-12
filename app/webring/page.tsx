@@ -274,12 +274,22 @@ export default function WebringCatalog() {
       <div style={{
         marginTop: '20px',
         textAlign: 'center',
-        color: '#666',
+        color: '#ff00ff',
         fontSize: '12px',
+        overflow: 'hidden',
       }}>
-        <marquee style={{ color: '#ff00ff' }}>
+        <div style={{
+          animation: 'marquee 15s linear infinite',
+          whiteSpace: 'nowrap',
+        }}>
           ★ ★ ★ Welcome to the RETRO WEBRING - Best viewed with Netscape Navigator 4.0 ★ ★ ★
-        </marquee>
+        </div>
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
       </div>
     </div>
   );
