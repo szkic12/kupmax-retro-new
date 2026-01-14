@@ -27,6 +27,8 @@ export default function RetroAdmin() {
     advertiser_email: '',
     end_date: '',
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // New station form
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
@@ -112,6 +114,7 @@ export default function RetroAdmin() {
           advertiser_email: '',
           end_date: '',
         });
+        setImagePreview(null);
         fetchData();
       } else {
         setMessage('Blad zapisywania reklamy');
@@ -158,6 +161,61 @@ export default function RetroAdmin() {
       }
     } catch (error) {
       setMessage('Blad sieci');
+    }
+  };
+
+  // Upload image handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage('Nieprawidlowy typ pliku! Dozwolone: JPG, PNG, WebP, GIF');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Plik za duzy! Maksymalny rozmiar: 5MB');
+      return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    setUploadingImage(true);
+    setMessage('Wysylanie obrazka...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/advertisement/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        setNewAd({ ...newAd, image_url: data.url });
+        setMessage('Obrazek wgrany pomyslnie!');
+      } else {
+        setMessage('Blad uploadu: ' + (data.error || 'Nieznany blad'));
+        setImagePreview(null);
+      }
+    } catch (error) {
+      setMessage('Blad sieci podczas uploadu');
+      setImagePreview(null);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -615,17 +673,86 @@ export default function RetroAdmin() {
                     <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
                       <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowa reklame (zastapi aktualna)</legend>
                       <form onSubmit={handleSaveAdvertisement}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>URL obrazka *:</label>
-                            <input
-                              type="text"
-                              value={newAd.image_url}
-                              onChange={(e) => setNewAd({ ...newAd, image_url: e.target.value })}
-                              style={inputStyle}
-                              placeholder="/images/reklama.jpg lub https://..."
-                            />
+                        {/* Image upload section */}
+                        <div style={{ marginBottom: '15px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px', fontWeight: 'bold' }}>Obrazek reklamy *:</label>
+                          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                            {/* Upload button & preview */}
+                            <div style={{
+                              width: '200px',
+                              height: '130px',
+                              border: '2px dashed #808080',
+                              background: imagePreview || newAd.image_url ? '#f8f8f8' : '#e8e8e8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              cursor: uploadingImage ? 'wait' : 'pointer',
+                            }}>
+                              {(imagePreview || newAd.image_url) ? (
+                                <img
+                                  src={imagePreview || newAd.image_url}
+                                  alt="Preview"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <div style={{ textAlign: 'center', padding: '10px' }}>
+                                  <span style={{ fontSize: '30px' }}>📷</span>
+                                  <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#666' }}>
+                                    {uploadingImage ? 'Wysylanie...' : 'Kliknij aby wybrac'}
+                                  </p>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={handleImageUpload}
+                                disabled={uploadingImage}
+                                style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  height: '100%',
+                                  opacity: 0,
+                                  cursor: uploadingImage ? 'wait' : 'pointer',
+                                }}
+                              />
+                            </div>
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                              <p style={{ margin: '0 0 5px 0', fontSize: '11px', color: '#666' }}>
+                                Dozwolone formaty: JPG, PNG, WebP, GIF<br />
+                                Maksymalny rozmiar: 5MB
+                              </p>
+                              {newAd.image_url && (
+                                <div style={{
+                                  background: '#ccffcc',
+                                  padding: '5px 8px',
+                                  border: '1px solid #00aa00',
+                                  fontSize: '11px',
+                                  wordBreak: 'break-all'
+                                }}>
+                                  <strong>Wgrany:</strong> {newAd.image_url.split('/').pop()}
+                                </div>
+                              )}
+                              {(imagePreview || newAd.image_url) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setImagePreview(null);
+                                    setNewAd({ ...newAd, image_url: '' });
+                                  }}
+                                  style={{ ...buttonStyle, marginTop: '8px', fontSize: '11px', padding: '4px 8px', background: '#ffcccc' }}
+                                >
+                                  Usun obrazek
+                                </button>
+                              )}
+                            </div>
                           </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                           <div>
                             <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytul/Haslo *:</label>
                             <input
