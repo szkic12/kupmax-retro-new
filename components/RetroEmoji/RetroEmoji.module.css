@@ -40,17 +40,17 @@
 
 /* === ANIMACJE DLA RÓŻNYCH EMOTEK === */
 
-/* Idle - delikatne kołysanie */
+/* Idle - delikatne pulsowanie (bez obracania) */
 .animateIdle {
-  animation: idle 3s ease-in-out infinite;
+  animation: idle 2.5s ease-in-out infinite;
 }
 
 @keyframes idle {
   0%, 100% {
-    transform: rotate(-2deg);
+    transform: scale(1);
   }
   50% {
-    transform: rotate(2deg);
+    transform: scale(1.03);
   }
 }
 
