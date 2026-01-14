@@ -426,12 +426,17 @@ export default function PrivateChatroom() {
           <div className={styles.windowHeader}>
             <span>🔒 Prywatne Pokoje Czatu</span>
             <div className={styles.windowControls}>
+              <span
+                title="Otwórz w nowej karcie"
+                onClick={() => window.open('/private-chat', '_blank')}
+                className={styles.newTabButton}
+              >↗</span>
               <span></span>
               <span></span>
               <span></span>
             </div>
           </div>
-          
+
           <div className={styles.selectContent}>
             <div className={styles.selectIcon}>🔒</div>
             <h3>Witaj w Prywatnych Pokojach!</h3>
@@ -476,12 +481,17 @@ export default function PrivateChatroom() {
           <div className={styles.windowHeader}>
             <span>🏠 Tworzenie Prywatnego Pokoju</span>
             <div className={styles.windowControls}>
+              <span
+                title="Otwórz w nowej karcie"
+                onClick={() => window.open('/private-chat', '_blank')}
+                className={styles.newTabButton}
+              >↗</span>
               <span title="Cofnij" onClick={() => setMode('select')}></span>
               <span></span>
               <span></span>
             </div>
           </div>
-          
+
           <div className={styles.createContent}>
             <div className={styles.createIcon}>🏠</div>
             <h3>Stwórz prywatny pokój</h3>
@@ -537,12 +547,17 @@ export default function PrivateChatroom() {
           <div className={styles.windowHeader}>
             <span>🔑 Dołączanie do Pokoju</span>
             <div className={styles.windowControls}>
+              <span
+                title="Otwórz w nowej karcie"
+                onClick={() => window.open('/private-chat', '_blank')}
+                className={styles.newTabButton}
+              >↗</span>
               <span title="Cofnij" onClick={() => setMode('select')}></span>
               <span></span>
               <span></span>
             </div>
           </div>
-          
+
           <div className={styles.joinContent}>
             <div className={styles.joinIcon}>🔑</div>
             <h3>Dołącz do prywatnego pokoju</h3>
@@ -610,6 +625,11 @@ export default function PrivateChatroom() {
         <div className={styles.windowHeader}>
           <span>🔒 Prywatny Pokój: {currentRoom} ({usersCount} online)</span>
           <div className={styles.windowControls}>
+            <span
+              title="Otwórz w nowej karcie"
+              onClick={() => window.open('/private-chat', '_blank')}
+              className={styles.newTabButton}
+            >↗</span>
             <span title="Minimalizuj"></span>
             <span title="Maksymalizuj"></span>
             <span title="Zamknij" onClick={handleLeaveRoom}></span>

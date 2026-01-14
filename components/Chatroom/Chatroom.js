@@ -348,6 +348,11 @@ export default function Chatroom() {
           <div className={styles.windowHeader}>
             <span>💬 Retro Chatroom - Logowanie</span>
             <div className={styles.windowControls}>
+              <span
+                title="Otwórz w nowej karcie"
+                onClick={() => window.open('/chat', '_blank')}
+                className={styles.newTabButton}
+              >↗</span>
               <span></span>
               <span></span>
               <span></span>
@@ -405,6 +410,11 @@ export default function Chatroom() {
         <div className={styles.windowHeader}>
           <span>💬 Retro Chatroom ({usersCount} online)</span>
           <div className={styles.windowControls}>
+            <span
+              title="Otwórz w nowej karcie"
+              onClick={() => window.open('/chat', '_blank')}
+              className={styles.newTabButton}
+            >↗</span>
             <span title="Minimalizuj"></span>
             <span title="Maksymalizuj"></span>
             <span title="Zamknij" onClick={handleLeaveChat}></span>
