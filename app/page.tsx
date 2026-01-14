@@ -35,6 +35,8 @@ export default function Home() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showClippyChat, setShowClippyChat] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('--:--');
+  const [advertisement, setAdvertisement] = useState<any>(null);
+  const [loadingAd, setLoadingAd] = useState(true);
 
   // Update clock only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -44,6 +46,24 @@ export default function Home() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Fetch advertisement from API
+  useEffect(() => {
+    const fetchAdvertisement = async () => {
+      try {
+        const res = await fetch('/api/advertisement');
+        const data = await res.json();
+        if (data.advertisement) {
+          setAdvertisement(data.advertisement);
+        }
+      } catch (error) {
+        console.error('Error fetching advertisement:', error);
+      } finally {
+        setLoadingAd(false);
+      }
+    };
+    fetchAdvertisement();
   }, []);
 
   const [windows, setWindows] = useState({
@@ -382,7 +402,7 @@ export default function Home() {
       {/* Windows - positioned below icons */}
       {windows.reklama && (
         <Window
-          title="📷 Reklama - Anna Juszczak Fotografia"
+          title={`📷 Reklama - ${advertisement?.advertiser_name || 'Ładowanie...'}`}
           icon="📷"
           width="min(96vw, 700px)"
           height="min(70vh, 550px)"
@@ -396,7 +416,49 @@ export default function Home() {
           fullPageUrl="/reklama"
         >
           <div className="w-full h-full">
-            <HeroSlider slides={slides} />
+            {loadingAd ? (
+              <div className="flex items-center justify-center h-full bg-gray-100">
+                <div className="text-center">
+                  <div className="text-4xl animate-pulse mb-2">📷</div>
+                  <p className="text-sm">Ładowanie reklamy...</p>
+                </div>
+              </div>
+            ) : advertisement ? (
+              <a
+                href={advertisement.link_url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full h-full relative group cursor-pointer"
+              >
+                {/* Background image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${advertisement.image_url})` }}
+                />
+                {/* Overlay with text */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
+                  <h2 className="text-white text-2xl md:text-3xl font-bold drop-shadow-lg mb-2">
+                    {advertisement.title}
+                  </h2>
+                  {advertisement.description && (
+                    <p className="text-white/90 text-sm md:text-base drop-shadow-md mb-2">
+                      {advertisement.description}
+                    </p>
+                  )}
+                  <p className="text-white/70 text-xs">
+                    Reklamodawca: {advertisement.advertiser_name}
+                  </p>
+                  {/* Click hint */}
+                  {advertisement.link_url && (
+                    <div className="absolute top-4 right-4 bg-yellow-400 text-black px-3 py-1 text-xs font-bold rounded shadow-lg group-hover:scale-110 transition-transform">
+                      🔗 Kliknij aby odwiedzić
+                    </div>
+                  )}
+                </div>
+              </a>
+            ) : (
+              <HeroSlider slides={slides} />
+            )}
           </div>
         </Window>
       )}

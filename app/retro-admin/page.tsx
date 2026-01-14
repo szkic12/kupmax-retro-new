@@ -7,13 +7,26 @@ import { RetroEmoji, EmojiPicker, EmojiParser, EmojiType, emojiToCode } from '..
 export default function RetroAdmin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('radio');
+  const [activeTab, setActiveTab] = useState('advertisement');
   const [stations, setStations] = useState<any[]>([]);
   const [guestbookEntries, setGuestbookEntries] = useState<any[]>([]);
   const [webringSites, setWebringSites] = useState<any[]>([]);
   const [forumThreads, setForumThreads] = useState<any[]>([]);
+  const [currentAd, setCurrentAd] = useState<any>(null);
+  const [adHistory, setAdHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Advertisement form
+  const [newAd, setNewAd] = useState({
+    image_url: '',
+    title: '',
+    description: '',
+    link_url: '',
+    advertiser_name: '',
+    advertiser_email: '',
+    end_date: '',
+  });
 
   // New station form
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
@@ -44,7 +57,11 @@ export default function RetroAdmin() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'radio') {
+      if (activeTab === 'advertisement') {
+        const res = await fetch('/api/advertisement');
+        const data = await res.json();
+        setCurrentAd(data.advertisement || null);
+      } else if (activeTab === 'radio') {
         const res = await fetch('/api/radio/stations');
         const data = await res.json();
         setStations(data);
@@ -65,6 +82,92 @@ export default function RetroAdmin() {
       console.error('Error fetching data:', error);
     }
     setLoading(false);
+  };
+
+  const handleSaveAdvertisement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAd.image_url || !newAd.title || !newAd.advertiser_name) {
+      setMessage('Obrazek, tytul i nazwa reklamodawcy sa wymagane!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/advertisement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newAd,
+          end_date: newAd.end_date || null,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('Reklama zapisana!');
+        setNewAd({
+          image_url: '',
+          title: '',
+          description: '',
+          link_url: '',
+          advertiser_name: '',
+          advertiser_email: '',
+          end_date: '',
+        });
+        fetchData();
+      } else {
+        setMessage('Blad zapisywania reklamy');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleUpdateAdvertisement = async () => {
+    if (!currentAd || !currentAd.id) return;
+
+    try {
+      const res = await fetch('/api/advertisement', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentAd),
+      });
+
+      if (res.ok) {
+        setMessage('Reklama zaktualizowana!');
+        fetchData();
+      } else {
+        setMessage('Blad aktualizacji reklamy');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleDeleteAdvertisement = async (id: string) => {
+    if (!confirm('Czy na pewno usunac reklame?')) return;
+
+    try {
+      const res = await fetch(`/api/advertisement?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setMessage('Reklama usunieta!');
+        fetchData();
+      } else {
+        setMessage('Blad usuwania reklamy');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  // Oblicz dni do wygasniecia
+  const getDaysUntilExpiry = (endDate: string | null) => {
+    if (!endDate) return null;
+    const end = new Date(endDate);
+    const now = new Date();
+    const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
   };
 
   const handleAddStation = async (e: React.FormEvent) => {
@@ -351,6 +454,9 @@ export default function RetroAdmin() {
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: '2px', marginBottom: '0', flexWrap: 'wrap' }}>
+            <button style={tabStyle(activeTab === 'advertisement')} onClick={() => setActiveTab('advertisement')}>
+              📢 Reklama
+            </button>
             <button style={tabStyle(activeTab === 'radio')} onClick={() => setActiveTab('radio')}>
               📻 Radio
             </button>
@@ -390,6 +496,220 @@ export default function RetroAdmin() {
               </div>
             ) : (
               <>
+                {/* Advertisement Tab */}
+                {activeTab === 'advertisement' && (
+                  <div>
+                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
+                      📢 Zarzadzanie Reklama
+                    </h3>
+
+                    {/* Current advertisement */}
+                    {currentAd && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#006600' }}>✅ Aktualna reklama</legend>
+
+                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                          {/* Preview */}
+                          <div style={{ width: '200px', flexShrink: 0 }}>
+                            <div style={{
+                              width: '100%',
+                              height: '120px',
+                              background: '#f0f0f0',
+                              border: '2px inset #808080',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflow: 'hidden'
+                            }}>
+                              {currentAd.image_url ? (
+                                <img
+                                  src={currentAd.image_url}
+                                  alt={currentAd.title}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <span style={{ fontSize: '40px' }}>📷</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: '200px' }}>
+                            <p><strong>Tytul:</strong> {currentAd.title}</p>
+                            <p><strong>Reklamodawca:</strong> {currentAd.advertiser_name}</p>
+                            {currentAd.link_url && (
+                              <p><strong>Link:</strong> <a href={currentAd.link_url} target="_blank" rel="noopener noreferrer" style={{ color: '#000080' }}>{currentAd.link_url}</a></p>
+                            )}
+                            {currentAd.description && (
+                              <p><strong>Opis:</strong> {currentAd.description}</p>
+                            )}
+
+                            {/* Status wygasania */}
+                            {currentAd.end_date && (
+                              <div style={{
+                                marginTop: '10px',
+                                padding: '8px',
+                                background: getDaysUntilExpiry(currentAd.end_date)! <= 3 ? '#ffcccc' :
+                                           getDaysUntilExpiry(currentAd.end_date)! <= 7 ? '#ffffcc' : '#ccffcc',
+                                border: '1px solid #999',
+                              }}>
+                                {getDaysUntilExpiry(currentAd.end_date)! > 0 ? (
+                                  <span>⏰ Wygasa za: <strong>{getDaysUntilExpiry(currentAd.end_date)} dni</strong> ({new Date(currentAd.end_date).toLocaleDateString('pl-PL')})</span>
+                                ) : (
+                                  <span style={{ color: '#cc0000' }}>⚠️ <strong>REKLAMA WYGASLA!</strong></span>
+                                )}
+                              </div>
+                            )}
+                            {!currentAd.end_date && (
+                              <p style={{ color: '#666', fontSize: '12px', marginTop: '10px' }}>
+                                ℹ️ Brak daty wygasniecia - reklama bezterminowa
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Edit current ad inline */}
+                        <div style={{ marginTop: '15px', paddingTop: '10px', borderTop: '1px dashed #999' }}>
+                          <p style={{ fontSize: '12px', marginBottom: '8px', fontWeight: 'bold' }}>Szybka edycja:</p>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '11px' }}>Data wygasniecia:</label>
+                              <input
+                                type="date"
+                                value={currentAd.end_date ? currentAd.end_date.split('T')[0] : ''}
+                                onChange={(e) => setCurrentAd({ ...currentAd, end_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                style={{ ...inputStyle, marginBottom: 0 }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '5px' }}>
+                              <button onClick={handleUpdateAdvertisement} style={{ ...buttonStyle, background: '#90EE90' }}>
+                                💾 Zapisz zmiany
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAdvertisement(currentAd.id)}
+                                style={{ ...buttonStyle, background: '#ff6666' }}
+                              >
+                                🗑️ Usun
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </fieldset>
+                    )}
+
+                    {!currentAd && (
+                      <div style={{
+                        background: '#ffffcc',
+                        border: '2px dashed #cc6600',
+                        padding: '20px',
+                        textAlign: 'center',
+                        marginBottom: '15px'
+                      }}>
+                        <span style={{ fontSize: '40px' }}>📢</span>
+                        <p style={{ fontWeight: 'bold', marginTop: '10px' }}>Brak aktywnej reklamy</p>
+                        <p style={{ fontSize: '12px', color: '#666' }}>Dodaj nowa reklame ponizej</p>
+                      </div>
+                    )}
+
+                    {/* Add new advertisement form */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
+                      <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowa reklame (zastapi aktualna)</legend>
+                      <form onSubmit={handleSaveAdvertisement}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>URL obrazka *:</label>
+                            <input
+                              type="text"
+                              value={newAd.image_url}
+                              onChange={(e) => setNewAd({ ...newAd, image_url: e.target.value })}
+                              style={inputStyle}
+                              placeholder="/images/reklama.jpg lub https://..."
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytul/Haslo *:</label>
+                            <input
+                              type="text"
+                              value={newAd.title}
+                              onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
+                              style={inputStyle}
+                              placeholder="np. Super Promocja!"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa reklamodawcy *:</label>
+                            <input
+                              type="text"
+                              value={newAd.advertiser_name}
+                              onChange={(e) => setNewAd({ ...newAd, advertiser_name: e.target.value })}
+                              style={inputStyle}
+                              placeholder="np. Anna Juszczak"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link (klikniecie otwiera):</label>
+                            <input
+                              type="text"
+                              value={newAd.link_url}
+                              onChange={(e) => setNewAd({ ...newAd, link_url: e.target.value })}
+                              style={inputStyle}
+                              placeholder="https://strona-reklamodawcy.pl"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Email reklamodawcy:</label>
+                            <input
+                              type="email"
+                              value={newAd.advertiser_email}
+                              onChange={(e) => setNewAd({ ...newAd, advertiser_email: e.target.value })}
+                              style={inputStyle}
+                              placeholder="kontakt@firma.pl"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Data wygasniecia:</label>
+                            <input
+                              type="date"
+                              value={newAd.end_date}
+                              onChange={(e) => setNewAd({ ...newAd, end_date: e.target.value })}
+                              style={inputStyle}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Opis (opcjonalny):</label>
+                          <textarea
+                            value={newAd.description}
+                            onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
+                            style={{ ...inputStyle, height: '60px', resize: 'vertical' }}
+                            placeholder="Krotki opis reklamy..."
+                          />
+                        </div>
+                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px', background: '#90EE90' }}>
+                          📢 Zapisz i aktywuj reklame
+                        </button>
+                      </form>
+                    </fieldset>
+
+                    {/* Info box */}
+                    <div style={{
+                      marginTop: '15px',
+                      padding: '10px',
+                      background: '#e0e0ff',
+                      border: '1px solid #000080',
+                      fontSize: '12px'
+                    }}>
+                      <strong>ℹ️ Jak to dziala:</strong>
+                      <ul style={{ margin: '5px 0 0 15px', padding: 0 }}>
+                        <li>Tylko jedna reklama moze byc aktywna naraz</li>
+                        <li>Dodanie nowej reklamy automatycznie zastapi aktualna</li>
+                        <li>Poprzednie reklamy sa zapisywane w historii</li>
+                        <li>Ustaw date wygasniecia aby widziec przypomnienie</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
                 {/* Radio Tab */}
                 {activeTab === 'radio' && (
                   <div>
