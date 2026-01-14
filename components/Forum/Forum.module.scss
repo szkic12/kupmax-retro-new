@@ -281,3 +281,66 @@
   border: 2px outset #fff;
   height: 16px;
 }
+
+/* Modal styles */
+.threadModal {
+  font-family: 'MS Sans Serif', sans-serif;
+}
+
+.modalPost {
+  background: #f0f0f0;
+  border: 2px solid #808080;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.modalPostHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #c0c0c0;
+}
+
+.modalAvatar {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.modalAuthorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 14px;
+    color: #000080;
+  }
+}
+
+.modalDate {
+  font-size: 11px;
+  color: #666;
+}
+
+.modalPostContent {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #000;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.modalDivider {
+  border: none;
+  border-top: 2px solid #808080;
+  margin: 20px 0;
+}
+
+.modalRepliesTitle {
+  font-size: 16px;
+  color: #000080;
+  margin-bottom: 15px;
+  font-weight: bold;
+}

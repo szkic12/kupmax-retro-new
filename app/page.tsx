@@ -554,17 +554,7 @@ export default function Home() {
           onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
-          <iframe
-            src="/forum"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              background: '#fff',
-              display: 'block'
-            }}
-            title="Forum KupMax"
-          />
+          <Forum />
         </Window>
       )}
 
