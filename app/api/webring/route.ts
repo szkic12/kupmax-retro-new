@@ -167,7 +167,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       site: newSite,
-      message: 'Site added to webring'
+      message: 'Site added to webring',
+      totalSites: webringSites.length,
+      saveResult: saveResult
     });
   } catch (error) {
     console.error('Error adding to webring:', error);
