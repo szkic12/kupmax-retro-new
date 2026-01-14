@@ -546,15 +546,24 @@ export default function Home() {
         <Window
           title="KUPMAX Forum - Microsoft Internet Explorer"
           icon="💬"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
+          width="min(96vw, 800px)"
+          height="min(80vh, 600px)"
           x={4}
           y={260}
           minimized={minimized.forum}
           onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
-          <Forum />
+          <iframe
+            src="/forum"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              background: '#fff'
+            }}
+            title="Forum"
+          />
         </Window>
       )}
 
