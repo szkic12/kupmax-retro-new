@@ -195,7 +195,7 @@ export async function DELETE(req: NextRequest) {
     let webringSites = await getWebringSites();
     const initialLength = webringSites.length;
 
-    webringSites = webringSites.filter((site: any) => site.id !== id);
+    webringSites = webringSites.filter((site: any) => String(site.id) !== String(id));
 
     if (webringSites.length === initialLength) {
       return NextResponse.json(
@@ -205,11 +205,13 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Zapisz do S3
-    await saveWebringSites(webringSites);
+    const saveResult = await saveWebringSites(webringSites);
 
     return NextResponse.json({
       success: true,
-      message: 'Site removed from webring'
+      message: 'Site removed from webring',
+      remainingSites: webringSites.length,
+      saveResult: saveResult
     });
   } catch (error) {
     console.error('Error deleting from webring:', error);
