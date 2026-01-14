@@ -6,6 +6,10 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Wyłącz cache dla tego API
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // GET - pobierz aktualną aktywną reklamę
 export async function GET() {
   try {
@@ -35,10 +39,18 @@ export async function GET() {
           advertiser_name: 'Anna Juszczak',
           is_active: true,
         }
+      }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        }
       });
     }
 
-    return NextResponse.json({ advertisement: data });
+    return NextResponse.json({ advertisement: data }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
+    });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
