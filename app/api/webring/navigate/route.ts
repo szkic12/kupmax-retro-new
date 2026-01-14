@@ -72,16 +72,20 @@ export async function GET(req: NextRequest) {
 
     const targetSite = sites[targetIndex];
 
-    return NextResponse.json({
-      success: true,
-      targetSite,
-      navigation: {
-        currentIndex: targetIndex,
-        totalSites,
-        hasPrev: true,
-        hasNext: true,
+    return NextResponse.json(
+      {
+        success: true,
+        targetSite,
+        navigation: {
+          currentIndex: targetIndex,
+          totalSites,
+          hasPrev: true,
+          hasNext: true,
+        },
+        _debug: { sitesLoaded: sites.length, version: 'v2-s3' },
       },
-    });
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (error) {
     console.error('Webring navigate error:', error);
     return NextResponse.json(
