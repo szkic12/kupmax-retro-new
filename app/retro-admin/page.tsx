@@ -17,7 +17,7 @@ export default function RetroAdmin() {
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
 
   // New webring site form
-  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '' });
+  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '☀️' });
 
   // Simple password check (in production use proper auth)
   const ADMIN_PASSWORD = 'kupmax2024';
@@ -103,7 +103,7 @@ export default function RetroAdmin() {
 
       if (res.ok) {
         setMessage('Strona dodana do webring!');
-        setNewSite({ name: '', url: '', description: '', category: '', icon: '' });
+        setNewSite({ name: '', url: '', description: '', category: '', icon: '☀️' });
         fetchData();
       } else {
         setMessage('Blad dodawania strony');
@@ -132,13 +132,54 @@ export default function RetroAdmin() {
     }
   };
 
+  const handleDeleteGuestbookEntry = async (id: string) => {
+    if (!confirm('Czy na pewno usunac wpis?')) return;
+
+    try {
+      const res = await fetch(`/api/guestbook?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setMessage('Wpis usuniety!');
+        fetchData();
+      } else {
+        setMessage('Blad usuwania wpisu');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleDeleteWebringSite = async (id: string) => {
+    if (!confirm('Czy na pewno usunac strone z webring?')) return;
+
+    try {
+      const res = await fetch(`/api/webring?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setMessage('Strona usunieta z webring!');
+        fetchData();
+      } else {
+        setMessage('Blad usuwania strony');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
   // Retro styles
   const windowStyle: React.CSSProperties = {
     background: '#c0c0c0',
     border: '3px outset #fff',
-    maxWidth: '800px',
-    margin: '20px auto',
+    maxWidth: '900px',
+    margin: '10px auto',
     fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
+    maxHeight: 'calc(100vh - 60px)',
+    display: 'flex',
+    flexDirection: 'column',
   };
 
   const titleBarStyle: React.CSSProperties = {
@@ -153,6 +194,8 @@ export default function RetroAdmin() {
 
   const contentStyle: React.CSSProperties = {
     padding: '15px',
+    overflow: 'auto',
+    flex: 1,
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -281,7 +324,7 @@ export default function RetroAdmin() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '2px', marginBottom: '0' }}>
+          <div style={{ display: 'flex', gap: '2px', marginBottom: '0', flexWrap: 'wrap' }}>
             <button style={tabStyle(activeTab === 'radio')} onClick={() => setActiveTab('radio')}>
               📻 Radio
             </button>
@@ -299,6 +342,8 @@ export default function RetroAdmin() {
             background: '#e0e0e0',
             padding: '15px',
             minHeight: '300px',
+            maxHeight: 'calc(100vh - 250px)',
+            overflow: 'auto',
           }}>
             {message && (
               <div style={{
@@ -329,7 +374,7 @@ export default function RetroAdmin() {
                     <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
                       <legend style={{ fontWeight: 'bold' }}>Dodaj nowa stacje</legend>
                       <form onSubmit={handleAddStation}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                           <div>
                             <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa:</label>
                             <input
@@ -368,7 +413,8 @@ export default function RetroAdmin() {
                     </fieldset>
 
                     {/* Stations list */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', minWidth: '400px' }}>
                       <thead>
                         <tr style={{ background: '#000080', color: '#fff' }}>
                           <th style={{ padding: '8px', textAlign: 'left' }}>ID</th>
@@ -400,6 +446,7 @@ export default function RetroAdmin() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
 
@@ -409,24 +456,44 @@ export default function RetroAdmin() {
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       Wpisy w ksiedze gosci ({guestbookEntries.length})
                     </h3>
-                    <div style={{ maxHeight: '400px', overflow: 'auto' }}>
-                      {guestbookEntries.map((entry, i) => (
-                        <div
-                          key={entry.id}
-                          style={{
-                            background: i % 2 === 0 ? '#fff' : '#f0f0f0',
-                            padding: '10px',
-                            marginBottom: '5px',
-                            border: '1px solid #ccc',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <strong>{entry.name || entry.nickname || 'Anonim'}</strong>
-                            <small>{new Date(entry.timestamp || entry.date).toLocaleString('pl-PL')}</small>
-                          </div>
-                          <p style={{ margin: '5px 0 0 0', color: '#333' }}>{entry.message}</p>
+                    <div style={{ maxHeight: 'calc(100vh - 350px)', overflow: 'auto' }}>
+                      {guestbookEntries.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                          Brak wpisow w ksiedze gosci
                         </div>
-                      ))}
+                      ) : (
+                        guestbookEntries.map((entry, i) => (
+                          <div
+                            key={entry.id}
+                            style={{
+                              background: i % 2 === 0 ? '#fff' : '#f0f0f0',
+                              padding: '10px',
+                              marginBottom: '5px',
+                              border: '1px solid #ccc',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '5px' }}>
+                              <div>
+                                <strong>{entry.name || entry.nickname || 'Anonim'}</strong>
+                                <br />
+                                <small style={{ color: '#666' }}>{new Date(entry.timestamp || entry.date).toLocaleString('pl-PL')}</small>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteGuestbookEntry(entry.id)}
+                                style={{
+                                  ...buttonStyle,
+                                  background: '#ff6666',
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                }}
+                              >
+                                🗑️ Usun
+                              </button>
+                            </div>
+                            <p style={{ margin: '8px 0 0 0', color: '#333', wordBreak: 'break-word' }}>{entry.message}</p>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
@@ -442,7 +509,7 @@ export default function RetroAdmin() {
                     <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
                       <legend style={{ fontWeight: 'bold' }}>Dodaj nowa strone</legend>
                       <form onSubmit={handleAddWebsiteSite}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                           <div>
                             <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa strony *:</label>
                             <input
@@ -490,15 +557,23 @@ export default function RetroAdmin() {
                             </select>
                           </div>
                           <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Ikona (emoji):</label>
-                            <input
-                              type="text"
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Ikona:</label>
+                            <select
                               value={newSite.icon}
                               onChange={(e) => setNewSite({ ...newSite, icon: e.target.value })}
-                              style={inputStyle}
-                              placeholder="np. 🌐 💾 🎮"
-                              maxLength={4}
-                            />
+                              style={{ ...inputStyle, height: '30px' }}
+                            >
+                              <option value="☀️">☀️ Sloneczko</option>
+                              <option value="🌐">🌐 Globus</option>
+                              <option value="💾">💾 Dyskietka</option>
+                              <option value="🎮">🎮 Gry</option>
+                              <option value="🖥️">🖥️ Komputer</option>
+                              <option value="📁">📁 Folder</option>
+                              <option value="⭐">⭐ Gwiazda</option>
+                              <option value="🏠">🏠 Dom</option>
+                              <option value="🔧">🔧 Narzedzie</option>
+                              <option value="📷">📷 Aparat</option>
+                            </select>
                           </div>
                         </div>
                         <button type="submit" style={{ ...buttonStyle, marginTop: '10px' }}>
@@ -508,20 +583,22 @@ export default function RetroAdmin() {
                     </fieldset>
 
                     {/* Sites list */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+                    <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 450px)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', minWidth: '500px' }}>
                       <thead>
                         <tr style={{ background: '#000080', color: '#fff' }}>
                           <th style={{ padding: '8px', textAlign: 'left' }}>Ikona</th>
                           <th style={{ padding: '8px', textAlign: 'left' }}>Nazwa</th>
                           <th style={{ padding: '8px', textAlign: 'left' }}>Kategoria</th>
                           <th style={{ padding: '8px', textAlign: 'left' }}>Status</th>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Akcje</th>
                         </tr>
                       </thead>
                       <tbody>
                         {webringSites.map((site, i) => (
                           <tr key={site.id} style={{ background: i % 2 === 0 ? '#fff' : '#f0f0f0' }}>
                             <td style={{ padding: '8px', borderBottom: '1px solid #ccc', fontSize: '20px' }}>
-                              {site.icon || '🌐'}
+                              {site.icon || '☀️'}
                             </td>
                             <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
                               <a href={site.url} target="_blank" rel="noopener noreferrer" style={{ color: '#000080' }}>
@@ -541,10 +618,24 @@ export default function RetroAdmin() {
                                 {site.approved ? 'Aktywna' : 'Oczekuje'}
                               </span>
                             </td>
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
+                              <button
+                                onClick={() => handleDeleteWebringSite(site.id)}
+                                style={{
+                                  ...buttonStyle,
+                                  background: '#ff6666',
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                }}
+                              >
+                                🗑️ Usun
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                    </div>
 
                     <div style={{ marginTop: '15px' }}>
                       <Link
