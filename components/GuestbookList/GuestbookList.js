@@ -125,7 +125,7 @@ export default function GuestbookList({ maxEntries = 10 }) {
             </div>
             
             <div className={styles.message}>
-              <EmojiParser text={stripHtml(entry.message || '')} emojiSize={20} />
+              <EmojiParser text={stripHtml(entry.message || '')} emojiSize={32} />
             </div>
 
             {entry.email && (

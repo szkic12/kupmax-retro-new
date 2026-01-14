@@ -52,7 +52,7 @@ export function EmojiPicker({ onSelect, size = 32 }: EmojiPickerProps) {
         className={styles.triggerButton}
         title="Wybierz emotkę"
       >
-        <RetroEmoji type="smile" size={24} />
+        <RetroEmoji type="smile" size={32} />
       </button>
 
       {isOpen && (

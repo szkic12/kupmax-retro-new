@@ -227,7 +227,7 @@ export default function GuestbookForm({ productRef = null, onSuccess = null }) {
               disabled={isLoading}
             />
             <div className={styles.emojiPickerWrapper}>
-              <EmojiPicker onSelect={handleEmojiSelect} size={28} />
+              <EmojiPicker onSelect={handleEmojiSelect} size={36} />
             </div>
           </div>
           <div className={styles.charCounter}>

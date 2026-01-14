@@ -12,7 +12,7 @@ interface EmojiParserProps {
  * Komponent parsujący tekst i zamieniający kody emotek na animowane SVG
  * np. "Cześć :) Jak się masz? :D" -> "Cześć [emoji] Jak się masz? [emoji]"
  */
-export function EmojiParser({ text, emojiSize = 20 }: EmojiParserProps) {
+export function EmojiParser({ text, emojiSize = 32 }: EmojiParserProps) {
   const parseText = () => {
     if (!text) return null;
 
