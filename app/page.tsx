@@ -87,6 +87,7 @@ export default function Home() {
   });
 
   const [showStartMenu, setShowStartMenu] = useState(false);
+  const [activeWindow, setActiveWindow] = useState<string | null>('reklama'); // Aktywne okno
 
   // Fetch products when shop opens
   useEffect(() => {
@@ -290,25 +291,36 @@ export default function Home() {
           <span>Start</span>
         </button>
 
-        {/* Taskbar Buttons for Open Windows - click to restore */}
+        {/* Taskbar Buttons for Open Windows - click to switch/restore */}
         <div className="flex gap-1 flex-1 overflow-x-auto">
-          {openWindows.map((win) => (
-            <button
-              key={win.key}
-              className="win95-button px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] max-w-[120px]"
-              style={{
-                borderStyle: 'inset',
-                background: '#dfdfdf'
-              }}
-              onClick={() => {
-                // Restore minimized window
-                setMinimized({ ...minimized, [win.key]: false });
-              }}
-            >
-              <span>{win.icon}</span>
-              <span className="truncate">{win.label}</span>
-            </button>
-          ))}
+          {openWindows.map((win) => {
+            const isActive = activeWindow === win.key && !minimized[win.key as keyof typeof minimized];
+            const isMinimizedWin = minimized[win.key as keyof typeof minimized];
+
+            return (
+              <button
+                key={win.key}
+                className={`px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] max-w-[120px] ${isActive ? 'font-bold' : ''}`}
+                style={{
+                  background: isActive ? '#ffffff' : isMinimizedWin ? '#a0a0a0' : '#dfdfdf',
+                  border: '2px solid',
+                  borderColor: isActive ? '#000 #fff #fff #000' : '#fff #000 #000 #fff',
+                  boxShadow: isActive ? 'inset 1px 1px 2px rgba(0,0,0,0.3)' : 'none'
+                }}
+                onClick={() => {
+                  if (isMinimizedWin) {
+                    // Przywróć zminimalizowane okno
+                    setMinimized({ ...minimized, [win.key]: false });
+                  }
+                  // Ustaw jako aktywne
+                  setActiveWindow(win.key);
+                }}
+              >
+                <span>{win.icon}</span>
+                <span className="truncate">{win.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Clock */}
@@ -379,6 +391,8 @@ export default function Home() {
           minimized={minimized.reklama}
           onMinimize={() => setMinimized({ ...minimized, reklama: true })}
           onClose={() => setWindows({ ...windows, reklama: false })}
+          isActive={activeWindow === 'reklama'}
+          onFocus={() => setActiveWindow('reklama')}
         >
           <div className="w-full h-full">
             <HeroSlider slides={slides} />
@@ -397,6 +411,8 @@ export default function Home() {
           minimized={minimized.news}
           onMinimize={() => setMinimized({ ...minimized, news: true })}
           onClose={() => setWindows({ ...windows, news: false })}
+          isActive={activeWindow === 'news'}
+          onFocus={() => setActiveWindow('news')}
         >
           <div className="p-4">
             <h2 className="text-xl font-bold mb-4">📰 Latest News</h2>
@@ -422,6 +438,8 @@ export default function Home() {
           minimized={minimized.shop}
           onMinimize={() => setMinimized({ ...minimized, shop: true })}
           onClose={() => setWindows({ ...windows, shop: false })}
+          isActive={activeWindow === 'shop'}
+          onFocus={() => setActiveWindow('shop')}
         >
           <div className="p-4 h-full overflow-y-auto bg-white">
             <h2 className="text-xl font-bold mb-4">🛒 KUPMAX Online Shop</h2>
@@ -481,6 +499,8 @@ export default function Home() {
           minimized={minimized.image}
           onMinimize={() => setMinimized({ ...minimized, image: true })}
           onClose={() => setWindows({ ...windows, image: false })}
+          isActive={activeWindow === 'image'}
+          onFocus={() => setActiveWindow('image')}
         >
           <div className="p-4">
             <RollupImage
@@ -503,6 +523,8 @@ export default function Home() {
           minimized={minimized.video}
           onMinimize={() => setMinimized({ ...minimized, video: true })}
           onClose={() => setWindows({ ...windows, video: false })}
+          isActive={activeWindow === 'video'}
+          onFocus={() => setActiveWindow('video')}
         >
           <div className="p-4">
             <RollupVideo src="/videos/reklama.mp4" />
@@ -521,6 +543,8 @@ export default function Home() {
           minimized={minimized.model3d}
           onMinimize={() => setMinimized({ ...minimized, model3d: true })}
           onClose={() => setWindows({ ...windows, model3d: false })}
+          isActive={activeWindow === 'model3d'}
+          onFocus={() => setActiveWindow('model3d')}
         >
           <Rollup3D src="/models/koszulka.glb" />
         </Window>
@@ -537,6 +561,8 @@ export default function Home() {
           minimized={minimized.character}
           onMinimize={() => setMinimized({ ...minimized, character: true })}
           onClose={() => setWindows({ ...windows, character: false })}
+          isActive={activeWindow === 'character'}
+          onFocus={() => setActiveWindow('character')}
         >
           <RollupCharacter src="/models/postac.glb" />
         </Window>
@@ -553,6 +579,9 @@ export default function Home() {
           minimized={minimized.forum}
           onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
+          isActive={activeWindow === 'forum'}
+          onFocus={() => setActiveWindow('forum')}
+          fullPageUrl="/forum"
         >
           <Forum />
         </Window>
@@ -569,6 +598,8 @@ export default function Home() {
           minimized={minimized.webring}
           onMinimize={() => setMinimized({ ...minimized, webring: true })}
           onClose={() => setWindows({ ...windows, webring: false })}
+          isActive={activeWindow === 'webring'}
+          onFocus={() => setActiveWindow('webring')}
         >
           <Webring currentUrl="https://kupmax.pl" />
         </Window>
@@ -585,6 +616,8 @@ export default function Home() {
           minimized={minimized.guestbook}
           onMinimize={() => setMinimized({ ...minimized, guestbook: true })}
           onClose={() => setWindows({ ...windows, guestbook: false })}
+          isActive={activeWindow === 'guestbook'}
+          onFocus={() => setActiveWindow('guestbook')}
         >
           <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
         </Window>
@@ -601,6 +634,9 @@ export default function Home() {
           minimized={minimized.chat}
           onMinimize={() => setMinimized({ ...minimized, chat: true })}
           onClose={() => setWindows({ ...windows, chat: false })}
+          isActive={activeWindow === 'chat'}
+          onFocus={() => setActiveWindow('chat')}
+          fullPageUrl="/chat"
         >
           <Chatroom />
         </Window>
@@ -617,6 +653,9 @@ export default function Home() {
           minimized={minimized.privateChat}
           onMinimize={() => setMinimized({ ...minimized, privateChat: true })}
           onClose={() => setWindows({ ...windows, privateChat: false })}
+          isActive={activeWindow === 'privateChat'}
+          onFocus={() => setActiveWindow('privateChat')}
+          fullPageUrl="/private-chat"
         >
           <PrivateChatroom />
         </Window>
@@ -633,6 +672,8 @@ export default function Home() {
           minimized={minimized.photos}
           onMinimize={() => setMinimized({ ...minimized, photos: true })}
           onClose={() => setWindows({ ...windows, photos: false })}
+          isActive={activeWindow === 'photos'}
+          onFocus={() => setActiveWindow('photos')}
         >
           <PhotoGallery />
         </Window>
@@ -649,6 +690,8 @@ export default function Home() {
           minimized={minimized.downloads}
           onMinimize={() => setMinimized({ ...minimized, downloads: true })}
           onClose={() => setWindows({ ...windows, downloads: false })}
+          isActive={activeWindow === 'downloads'}
+          onFocus={() => setActiveWindow('downloads')}
         >
           <Downloads />
         </Window>
@@ -665,6 +708,8 @@ export default function Home() {
           minimized={minimized.radio}
           onMinimize={() => setMinimized({ ...minimized, radio: true })}
           onClose={() => setWindows({ ...windows, radio: false })}
+          isActive={activeWindow === 'radio'}
+          onFocus={() => setActiveWindow('radio')}
         >
           <ReactRadio />
         </Window>
@@ -681,6 +726,8 @@ export default function Home() {
           minimized={minimized.tetris}
           onMinimize={() => setMinimized({ ...minimized, tetris: true })}
           onClose={() => setWindows({ ...windows, tetris: false })}
+          isActive={activeWindow === 'tetris'}
+          onFocus={() => setActiveWindow('tetris')}
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
         </Window>
@@ -697,6 +744,8 @@ export default function Home() {
           minimized={minimized.bulletin}
           onMinimize={() => setMinimized({ ...minimized, bulletin: true })}
           onClose={() => setWindows({ ...windows, bulletin: false })}
+          isActive={activeWindow === 'bulletin'}
+          onFocus={() => setActiveWindow('bulletin')}
         >
           <LegalNoticeBoard />
         </Window>
