@@ -393,6 +393,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, reklama: false })}
           isActive={activeWindow === 'reklama'}
           onFocus={() => setActiveWindow('reklama')}
+          fullPageUrl="/reklama"
         >
           <div className="w-full h-full">
             <HeroSlider slides={slides} />
@@ -413,6 +414,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, news: false })}
           isActive={activeWindow === 'news'}
           onFocus={() => setActiveWindow('news')}
+          fullPageUrl="/news"
         >
           <div className="p-4">
             <h2 className="text-xl font-bold mb-4">📰 Latest News</h2>
@@ -440,6 +442,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, shop: false })}
           isActive={activeWindow === 'shop'}
           onFocus={() => setActiveWindow('shop')}
+          fullPageUrl="/shop"
         >
           <div className="p-4 h-full overflow-y-auto bg-white">
             <h2 className="text-xl font-bold mb-4">🛒 KUPMAX Online Shop</h2>
@@ -600,6 +603,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, webring: false })}
           isActive={activeWindow === 'webring'}
           onFocus={() => setActiveWindow('webring')}
+          fullPageUrl="/webring"
         >
           <Webring currentUrl="https://kupmax.pl" />
         </Window>
@@ -618,6 +622,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, guestbook: false })}
           isActive={activeWindow === 'guestbook'}
           onFocus={() => setActiveWindow('guestbook')}
+          fullPageUrl="/guestbook"
         >
           <Guestbook title="💬 Retro Guestbook KupMax" maxEntries={15} showForm={true} showList={true} />
         </Window>
@@ -674,6 +679,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, photos: false })}
           isActive={activeWindow === 'photos'}
           onFocus={() => setActiveWindow('photos')}
+          fullPageUrl="/photos"
         >
           <PhotoGallery />
         </Window>
@@ -692,6 +698,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, downloads: false })}
           isActive={activeWindow === 'downloads'}
           onFocus={() => setActiveWindow('downloads')}
+          fullPageUrl="/downloads"
         >
           <Downloads />
         </Window>
@@ -710,6 +717,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, radio: false })}
           isActive={activeWindow === 'radio'}
           onFocus={() => setActiveWindow('radio')}
+          fullPageUrl="/radio"
         >
           <ReactRadio />
         </Window>
@@ -728,6 +736,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, tetris: false })}
           isActive={activeWindow === 'tetris'}
           onFocus={() => setActiveWindow('tetris')}
+          fullPageUrl="/tetris"
         >
           <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
         </Window>
@@ -746,6 +755,7 @@ export default function Home() {
           onClose={() => setWindows({ ...windows, bulletin: false })}
           isActive={activeWindow === 'bulletin'}
           onFocus={() => setActiveWindow('bulletin')}
+          fullPageUrl="/bulletin"
         >
           <LegalNoticeBoard />
         </Window>
