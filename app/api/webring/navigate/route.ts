@@ -1,58 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Webring sites database
-const webringSites = [
-  {
-    id: '1',
-    name: 'KUPMAX Retro',
-    url: 'https://kupmax.pl',
-    description: 'The ultimate retro Windows 95 experience',
-    category: 'Retro',
-    icon: '💾',
-    owner: 'KupMax Team',
-    tags: ['retro', 'windows95', 'nostalgia'],
-  },
-  {
-    id: '2',
-    name: 'Y2K Aesthetic',
-    url: 'https://y2k-aesthetic.com',
-    description: 'Vintage Y2K vibes and millennium nostalgia',
-    category: 'Aesthetic',
-    icon: '✨',
-    owner: 'Y2K Community',
-    tags: ['y2k', 'aesthetic', 'vintage'],
-  },
-  {
-    id: '3',
-    name: 'GeoCities Archive',
-    url: 'https://geocities.restorativland.org',
-    description: 'Preserving the golden age of personal websites',
-    category: 'Archive',
-    icon: '🌐',
-    owner: 'Internet Archive',
-    tags: ['geocities', 'archive', 'history'],
-  },
-  {
-    id: '4',
-    name: 'Windows 95 Tips',
-    url: 'https://win95tips.com',
-    description: 'Tips and tricks for the best OS ever made',
-    category: 'Retro',
-    icon: '🖥️',
-    owner: 'Win95 Fan Club',
-    tags: ['windows95', 'tips', 'retro'],
-  },
-  {
-    id: '5',
-    name: 'Retro Web Museum',
-    url: 'https://theoldnet.com',
-    description: 'Browse the web like its 1999',
-    category: 'Museum',
-    icon: '🏛️',
-    owner: 'Old Net Project',
-    tags: ['museum', 'vintage', 'web1.0'],
-  },
-];
+// Wyłącz cache
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Pobierz strony z głównego API
+async function getWebringSites() {
+  try {
+    // Użyj wewnętrznego URL dla API
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    const response = await fetch(`${baseUrl}/api/webring`, {
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.sites || [];
+    }
+  } catch (error) {
+    console.error('Error fetching webring sites:', error);
+  }
+  return [];
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -60,7 +32,7 @@ export async function GET(req: NextRequest) {
     const currentUrl = searchParams.get('currentUrl') || '';
     const direction = searchParams.get('direction') || 'next';
 
-    const sites = webringSites;
+    const sites = await getWebringSites();
     const totalSites = sites.length;
 
     if (totalSites === 0) {
