@@ -17,7 +17,7 @@ export default function RetroAdmin() {
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
 
   // New webring site form
-  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '☀️' });
+  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '✦' });
 
   // Simple password check (in production use proper auth)
   const ADMIN_PASSWORD = 'kupmax2024';
@@ -103,7 +103,7 @@ export default function RetroAdmin() {
 
       if (res.ok) {
         setMessage('Strona dodana do webring!');
-        setNewSite({ name: '', url: '', description: '', category: '', icon: '☀️' });
+        setNewSite({ name: '', url: '', description: '', category: '', icon: '✦' });
         fetchData();
       } else {
         setMessage('Blad dodawania strony');
@@ -557,16 +557,16 @@ export default function RetroAdmin() {
                               onChange={(e) => setNewSite({ ...newSite, icon: e.target.value })}
                               style={{ ...inputStyle, height: '30px' }}
                             >
-                              <option value="☀️">☀️ Sloneczko</option>
-                              <option value="🌐">🌐 Globus</option>
-                              <option value="💾">💾 Dyskietka</option>
-                              <option value="🎮">🎮 Gry</option>
-                              <option value="🖥️">🖥️ Komputer</option>
-                              <option value="📁">📁 Folder</option>
-                              <option value="⭐">⭐ Gwiazda</option>
-                              <option value="🏠">🏠 Dom</option>
-                              <option value="🔧">🔧 Narzedzie</option>
-                              <option value="📷">📷 Aparat</option>
+                              <option value="✦">✦ Biale sloneczko</option>
+                              <option value="☼">☼ Slonce</option>
+                              <option value="✧">✧ Gwiazdka</option>
+                              <option value="◈">◈ Diament</option>
+                              <option value="○">○ Kolko</option>
+                              <option value="□">□ Kwadrat</option>
+                              <option value="△">△ Trojkat</option>
+                              <option value="♦">♦ Romb</option>
+                              <option value="●">● Kropka</option>
+                              <option value="★">★ Gwiazda</option>
                             </select>
                           </div>
                         </div>
