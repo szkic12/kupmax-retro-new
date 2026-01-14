@@ -200,19 +200,6 @@ export function RetroEmoji({ type, size = 24, className = '' }: RetroEmojiProps)
       style={{ width: size, height: size }}
     >
       <defs>
-        {/* Tęczowy glow - gradient */}
-        <radialGradient id={`rainbowGlow-${type}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="white" stopOpacity="1" />
-          <stop offset="40%" stopColor="white" stopOpacity="0.8" />
-          <stop offset="55%" stopColor="#ff0000" stopOpacity="0.3" />
-          <stop offset="65%" stopColor="#ff7700" stopOpacity="0.25" />
-          <stop offset="72%" stopColor="#ffff00" stopOpacity="0.2" />
-          <stop offset="79%" stopColor="#00ff00" stopOpacity="0.15" />
-          <stop offset="86%" stopColor="#0099ff" stopOpacity="0.1" />
-          <stop offset="93%" stopColor="#9900ff" stopOpacity="0.05" />
-          <stop offset="100%" stopColor="#9900ff" stopOpacity="0" />
-        </radialGradient>
-
         {/* Biały glow dla środka */}
         <filter id={`whiteGlow-${type}`} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="2" result="blur" />
@@ -223,21 +210,32 @@ export function RetroEmoji({ type, size = 24, className = '' }: RetroEmojiProps)
         </filter>
       </defs>
 
-      {/* Tęczowa poświata - zewnętrzna warstwa */}
-      <circle cx="50" cy="50" r="48" fill={`url(#rainbowGlow-${type})`} className={styles.glow} />
+      {/* Tęczowa poświata - warstwy kolorów tęczy od zewnątrz do środka */}
+      {/* Fioletowy - zewnętrzny */}
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#9900ff" strokeWidth="4" opacity="0.6" className={styles.rainbowRing} />
+      {/* Niebieski */}
+      <circle cx="50" cy="50" r="44" fill="none" stroke="#0099ff" strokeWidth="4" opacity="0.65" className={styles.rainbowRing} />
+      {/* Zielony */}
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#00ff00" strokeWidth="3" opacity="0.7" className={styles.rainbowRing} />
+      {/* Żółty */}
+      <circle cx="50" cy="50" r="37" fill="none" stroke="#ffff00" strokeWidth="3" opacity="0.75" className={styles.rainbowRing} />
+      {/* Pomarańczowy */}
+      <circle cx="50" cy="50" r="34" fill="none" stroke="#ff7700" strokeWidth="2" opacity="0.8" className={styles.rainbowRing} />
+      {/* Czerwony */}
+      <circle cx="50" cy="50" r="32" fill="none" stroke="#ff0000" strokeWidth="2" opacity="0.85" className={styles.rainbowRing} />
 
       {/* Biała kula - główne słoneczko */}
       <circle
         cx="50"
         cy="50"
-        r="35"
+        r="28"
         fill="white"
         filter={`url(#whiteGlow-${type})`}
         className={styles.sun}
       />
 
-      {/* Twarz */}
-      <g className={styles.face}>
+      {/* Twarz - przeskalowana do mniejszej kuli */}
+      <g className={styles.face} transform="translate(50, 50) scale(0.7) translate(-50, -50)">
         {getFace()}
       </g>
     </svg>

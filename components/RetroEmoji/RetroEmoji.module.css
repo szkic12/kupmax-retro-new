@@ -4,18 +4,27 @@
   vertical-align: middle;
 }
 
-/* Tęczowa poświata - pulsowanie */
-.glow {
-  animation: glowPulse 2s ease-in-out infinite;
+/* Tęczowe pierścienie - pulsowanie */
+.rainbowRing {
+  animation: rainbowPulse 2s ease-in-out infinite;
+  transform-origin: center;
 }
 
-@keyframes glowPulse {
+.rainbowRing:nth-child(1) { animation-delay: 0s; }
+.rainbowRing:nth-child(2) { animation-delay: 0.1s; }
+.rainbowRing:nth-child(3) { animation-delay: 0.2s; }
+.rainbowRing:nth-child(4) { animation-delay: 0.3s; }
+.rainbowRing:nth-child(5) { animation-delay: 0.4s; }
+.rainbowRing:nth-child(6) { animation-delay: 0.5s; }
+
+@keyframes rainbowPulse {
   0%, 100% {
-    opacity: 1;
-    transform-origin: center;
+    opacity: 0.6;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.8;
+    opacity: 1;
+    transform: scale(1.02);
   }
 }
 
