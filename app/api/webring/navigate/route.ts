@@ -1,29 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import s3Service from '../../../../lib/aws-s3.js';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Pobierz strony z głównego API
+// Domyślne strony (fallback)
+const DEFAULT_SITES = [
+  { id: '1', name: 'KUPMAX Retro', url: 'https://kupmax.pl', description: 'Retro', category: 'Retro', icon: '💾', owner: 'KupMax', tags: [], approved: true },
+];
+
+// Pobierz strony z S3
 async function getWebringSites() {
-  try {
-    // Użyj wewnętrznego URL dla API
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
-
-    const response = await fetch(`${baseUrl}/api/webring`, {
-      cache: 'no-store',
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data.sites || [];
-    }
-  } catch (error) {
-    console.error('Error fetching webring sites:', error);
-  }
-  return [];
+  const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
+  const allSites = result.data || DEFAULT_SITES;
+  // Filtruj tylko zatwierdzone
+  return allSites.filter((site: any) => site.approved);
 }
 
 export async function GET(req: NextRequest) {
