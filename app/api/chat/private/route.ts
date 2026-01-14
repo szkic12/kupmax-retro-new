@@ -454,23 +454,101 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE - usuń wiadomość (tylko admin)
+// DELETE - usuń wiadomość (własną) lub cały pokój
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const messageId = searchParams.get('messageId');
     const roomId = searchParams.get('roomId');
+    const userId = searchParams.get('userId');
+    const deleteRoom = searchParams.get('deleteRoom'); // Parametr do kasowania pokoju
 
-    if (!messageId || !roomId) {
+    if (!roomId) {
       return NextResponse.json(
-        { success: false, error: 'Message ID and Room ID required' },
+        { success: false, error: 'Room ID required' },
         { status: 400 }
       );
     }
 
     let chatData = await getPrivateChatData();
 
-    const roomIndex = chatData.rooms.findIndex(r => r.id === roomId);
+    const roomIndex = chatData.rooms.findIndex(r => r.id === roomId.toUpperCase());
+    if (roomIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Room not found' },
+        { status: 404 }
+      );
+    }
+
+    // Kasowanie całego pokoju
+    if (deleteRoom === 'true') {
+      // Usuń pokój z listy
+      chatData.rooms.splice(roomIndex, 1);
+      await savePrivateChatData(chatData);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Pokój został usunięty'
+      });
+    }
+
+    // Kasowanie pojedynczej wiadomości
+    if (!messageId) {
+      return NextResponse.json(
+        { success: false, error: 'Message ID required' },
+        { status: 400 }
+      );
+    }
+
+    const room = chatData.rooms[roomIndex];
+
+    // Znajdź wiadomość
+    const messageIndex = room.messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Message not found' },
+        { status: 404 }
+      );
+    }
+
+    const message = room.messages[messageIndex];
+
+    // Sprawdź czy użytkownik może usunąć (własna wiadomość)
+    if (userId && message.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Możesz usunąć tylko własne wiadomości' },
+        { status: 403 }
+      );
+    }
+
+    room.messages.splice(messageIndex, 1);
+    await savePrivateChatData(chatData);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting message/room:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - edytuj wiadomość (własną)
+export async function PUT(req: NextRequest) {
+  try {
+    const { messageId, userId, roomId, newMessage } = await req.json();
+
+    if (!messageId || !userId || !roomId || !newMessage) {
+      return NextResponse.json(
+        { success: false, error: 'Message ID, User ID, Room ID and new message required' },
+        { status: 400 }
+      );
+    }
+
+    let chatData = await getPrivateChatData();
+
+    const roomIndex = chatData.rooms.findIndex(r => r.id === roomId.toUpperCase());
     if (roomIndex === -1) {
       return NextResponse.json(
         { success: false, error: 'Room not found' },
@@ -480,7 +558,7 @@ export async function DELETE(req: NextRequest) {
 
     const room = chatData.rooms[roomIndex];
 
-    // Znajdź i usuń wiadomość
+    // Znajdź wiadomość
     const messageIndex = room.messages.findIndex(m => m.id === messageId);
     if (messageIndex === -1) {
       return NextResponse.json(
@@ -489,12 +567,36 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    room.messages.splice(messageIndex, 1);
+    const message = room.messages[messageIndex];
+
+    // Sprawdź czy użytkownik może edytować (tylko własne wiadomości)
+    if (message.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Możesz edytować tylko własne wiadomości' },
+        { status: 403 }
+      );
+    }
+
+    // Nie można edytować wiadomości systemowych
+    if (message.type === 'system') {
+      return NextResponse.json(
+        { success: false, error: 'Nie można edytować wiadomości systemowych' },
+        { status: 403 }
+      );
+    }
+
+    // Zaktualizuj wiadomość
+    room.messages[messageIndex].message = newMessage.substring(0, 280);
+    room.messages[messageIndex].timestamp = new Date().toISOString() + ' (edytowano)';
+
     await savePrivateChatData(chatData);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: room.messages[messageIndex]
+    });
   } catch (error) {
-    console.error('Error deleting message:', error);
+    console.error('Error editing message:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

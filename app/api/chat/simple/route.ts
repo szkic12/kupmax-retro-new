@@ -294,11 +294,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE - usuń wiadomość (tylko admin)
+// DELETE - usuń wiadomość (własną lub admin może każdą)
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const messageId = searchParams.get('messageId');
+    const userId = searchParams.get('userId'); // ID użytkownika który chce usunąć
 
     if (!messageId) {
       return NextResponse.json(
@@ -309,12 +310,23 @@ export async function DELETE(req: NextRequest) {
 
     let chatData = await getChatData();
 
-    // Znajdź i usuń wiadomość
+    // Znajdź wiadomość
     const messageIndex = chatData.messages.findIndex(m => m.id === messageId);
     if (messageIndex === -1) {
       return NextResponse.json(
         { success: false, error: 'Message not found' },
         { status: 404 }
+      );
+    }
+
+    const message = chatData.messages[messageIndex];
+
+    // Sprawdź czy użytkownik może usunąć (własna wiadomość lub admin)
+    // Admin nie musi podawać userId
+    if (userId && message.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Możesz usunąć tylko własne wiadomości' },
+        { status: 403 }
       );
     }
 
@@ -324,6 +336,66 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting message:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - edytuj wiadomość (własną)
+export async function PUT(req: NextRequest) {
+  try {
+    const { messageId, userId, newMessage } = await req.json();
+
+    if (!messageId || !userId || !newMessage) {
+      return NextResponse.json(
+        { success: false, error: 'Message ID, User ID and new message required' },
+        { status: 400 }
+      );
+    }
+
+    let chatData = await getChatData();
+
+    // Znajdź wiadomość
+    const messageIndex = chatData.messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Message not found' },
+        { status: 404 }
+      );
+    }
+
+    const message = chatData.messages[messageIndex];
+
+    // Sprawdź czy użytkownik może edytować (tylko własne wiadomości)
+    if (message.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Możesz edytować tylko własne wiadomości' },
+        { status: 403 }
+      );
+    }
+
+    // Nie można edytować wiadomości systemowych
+    if (message.type === 'system') {
+      return NextResponse.json(
+        { success: false, error: 'Nie można edytować wiadomości systemowych' },
+        { status: 403 }
+      );
+    }
+
+    // Zaktualizuj wiadomość
+    chatData.messages[messageIndex].message = newMessage.substring(0, 280);
+    chatData.messages[messageIndex].timestamp = new Date().toISOString() + ' (edytowano)';
+
+    await saveChatData(chatData);
+
+    return NextResponse.json({
+      success: true,
+      message: chatData.messages[messageIndex]
+    });
+  } catch (error) {
+    console.error('Error editing message:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

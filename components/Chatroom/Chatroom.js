@@ -25,6 +25,9 @@ export default function Chatroom() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [banningUserId, setBanningUserId] = useState(null);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editText, setEditText] = useState('');
   const messageInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -104,34 +107,99 @@ export default function Chatroom() {
   };
 
   /**
-   * Obsługa usuwania wiadomości (tylko admin)
+   * Obsługa usuwania wiadomości (własnej lub admin każdej)
    */
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = async (messageId, messageUserId) => {
     if (!confirm('Czy na pewno chcesz usunąć tę wiadomość?')) {
       return;
     }
 
     setDeletingMessageId(messageId);
+    setSelectedMessageId(null);
 
     try {
-      const response = await fetch(`/api/chat/simple?messageId=${messageId}`, {
+      // Przekaż userId dla własnych wiadomości
+      const url = isAdmin
+        ? `/api/chat/simple?messageId=${messageId}`
+        : `/api/chat/simple?messageId=${messageId}&userId=${currentUser?.id}`;
+
+      const response = await fetch(url, {
         method: 'DELETE',
-        credentials: 'same-origin' // Wysyła JWT cookie
+        credentials: 'same-origin'
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        alert('Wiadomość usunięta!');
-        // Odśwież czat - messages automatycznie zaktualizuje się przez polling
-      } else {
+      if (!data.success) {
         alert(`Błąd: ${data.error}`);
       }
+      // Wiadomość automatycznie zniknie przez polling
     } catch (err) {
       alert('Błąd podczas usuwania wiadomości');
       console.error('Delete error:', err);
     } finally {
       setDeletingMessageId(null);
+    }
+  };
+
+  /**
+   * Obsługa rozpoczęcia edycji wiadomości
+   */
+  const handleStartEdit = (message) => {
+    setEditingMessageId(message.id);
+    setEditText(message.message);
+    setSelectedMessageId(null);
+  };
+
+  /**
+   * Obsługa zapisywania edytowanej wiadomości
+   */
+  const handleSaveEdit = async () => {
+    if (!editText.trim() || !editingMessageId) return;
+
+    try {
+      const response = await fetch('/api/chat/simple', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messageId: editingMessageId,
+          userId: currentUser?.id,
+          newMessage: editText.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert(`Błąd: ${data.error}`);
+      }
+      // Wiadomość automatycznie zaktualizuje się przez polling
+    } catch (err) {
+      alert('Błąd podczas edycji wiadomości');
+      console.error('Edit error:', err);
+    } finally {
+      setEditingMessageId(null);
+      setEditText('');
+    }
+  };
+
+  /**
+   * Obsługa anulowania edycji
+   */
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditText('');
+  };
+
+  /**
+   * Obsługa kliknięcia na wiadomość
+   */
+  const handleMessageClick = (message) => {
+    // Tylko własne wiadomości można edytować/usuwać (nie systemowe)
+    if (message.userId === currentUser?.id && message.type !== 'system') {
+      setSelectedMessageId(selectedMessageId === message.id ? null : message.id);
     }
   };
 
@@ -181,6 +249,8 @@ export default function Chatroom() {
     const isOwnMessage = message.userId === currentUser?.id;
     const isSystemMessage = message.type === 'system';
     const isActionMessage = message.type === 'action';
+    const isSelected = selectedMessageId === message.id;
+    const isEditing = editingMessageId === message.id;
 
     return (
       <div
@@ -190,7 +260,8 @@ export default function Chatroom() {
           isSystemMessage ? styles.systemMessage :
           isActionMessage ? styles.actionMessage :
           styles.otherMessage
-        }`}
+        } ${isSelected ? styles.selectedMessage : ''} ${isOwnMessage && !isSystemMessage ? styles.clickableMessage : ''}`}
+        onClick={() => !isEditing && handleMessageClick(message)}
       >
         <div className={styles.messageHeader}>
           {!isSystemMessage && !isActionMessage && (
@@ -203,18 +274,63 @@ export default function Chatroom() {
             )}
           </span>
         </div>
-        <div className={styles.messageContent}>
-          <EmojiParser text={message.message} emojiSize={24} />
-        </div>
 
-        {/* Przycisk usuwania dla admina (tylko dla wiadomości użytkowników, nie systemowych) */}
-        {isAdmin && !isSystemMessage && (
-          <div className={styles.adminActions}>
+        {/* Tryb edycji */}
+        {isEditing ? (
+          <div className={styles.editContainer}>
+            <input
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className={styles.editInput}
+              maxLength={280}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEdit();
+                if (e.key === 'Escape') handleCancelEdit();
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className={styles.editButtons}>
+              <button onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }} className={styles.saveButton}>✓</button>
+              <button onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }} className={styles.cancelButton}>✕</button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.messageContent}>
+            <EmojiParser text={message.message} emojiSize={24} />
+          </div>
+        )}
+
+        {/* Przyciski akcji dla własnych wiadomości (po kliknięciu) */}
+        {isSelected && isOwnMessage && !isSystemMessage && !isEditing && (
+          <div className={styles.messageActions}>
             <button
-              onClick={() => handleDeleteMessage(message.id)}
+              onClick={(e) => { e.stopPropagation(); handleStartEdit(message); }}
+              className={styles.editButton}
+              title="Edytuj wiadomość"
+            >
+              ✏️ Edytuj
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeleteMessage(message.id, message.userId); }}
               className={styles.deleteButton}
               disabled={deletingMessageId === message.id}
               title="Usuń wiadomość"
+            >
+              {deletingMessageId === message.id ? '⏳' : '🗑️'} Usuń
+            </button>
+          </div>
+        )}
+
+        {/* Przycisk usuwania dla admina (inne wiadomości) */}
+        {isAdmin && !isOwnMessage && !isSystemMessage && (
+          <div className={styles.adminActions}>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeleteMessage(message.id, message.userId); }}
+              className={styles.deleteButton}
+              disabled={deletingMessageId === message.id}
+              title="Usuń wiadomość (Admin)"
             >
               {deletingMessageId === message.id ? '⏳' : '🗑️'}
             </button>

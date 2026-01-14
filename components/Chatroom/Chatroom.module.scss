@@ -531,6 +531,105 @@ $win95-title: #000080;
   }
 }
 
+// Klikalność wiadomości
+.clickableMessage {
+  cursor: pointer;
+  transition: all 0.1s;
+
+  &:hover {
+    background: lighten($win95-gray, 5%);
+  }
+}
+
+.selectedMessage {
+  background: lighten($win95-title, 60%) !important;
+  border: 2px solid $win95-title !important;
+}
+
+// Przyciski akcji użytkownika
+.messageActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid $win95-gray;
+}
+
+.editButton {
+  background: $win95-gray;
+  @include win95-bevel();
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  color: $win95-title;
+  font-weight: bold;
+  border: none;
+
+  &:hover {
+    background: darken($win95-gray, 5%);
+  }
+
+  &:active {
+    @include win95-bevel($pressed: true);
+  }
+}
+
+// Tryb edycji
+.editContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.editInput {
+  width: 100%;
+  padding: 4px 6px;
+  background: $win95-light;
+  border: 1px solid $win95-dark;
+  @include win95-bevel(true);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: $win95-dark;
+
+  &:focus {
+    outline: none;
+    background: lighten($win95-light, 5%);
+  }
+}
+
+.editButtons {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.saveButton, .cancelButton {
+  background: $win95-gray;
+  @include win95-bevel();
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+
+  &:hover {
+    background: darken($win95-gray, 5%);
+  }
+
+  &:active {
+    @include win95-bevel($pressed: true);
+  }
+}
+
+.saveButton {
+  color: #008800;
+}
+
+.cancelButton {
+  color: #cc0000;
+}
+
 // Admin controls
 .adminActions {
   display: flex;
