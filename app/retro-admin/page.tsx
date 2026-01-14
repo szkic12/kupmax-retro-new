@@ -11,6 +11,7 @@ export default function RetroAdmin() {
   const [stations, setStations] = useState<any[]>([]);
   const [guestbookEntries, setGuestbookEntries] = useState<any[]>([]);
   const [webringSites, setWebringSites] = useState<any[]>([]);
+  const [forumThreads, setForumThreads] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -55,6 +56,10 @@ export default function RetroAdmin() {
         const res = await fetch('/api/webring');
         const data = await res.json();
         setWebringSites(data.sites || []);
+      } else if (activeTab === 'forum') {
+        const res = await fetch('/api/forum/threads');
+        const data = await res.json();
+        setForumThreads(data.threads || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -165,6 +170,25 @@ export default function RetroAdmin() {
         fetchData();
       } else {
         setMessage('Blad usuwania strony');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleDeleteThread = async (threadId: string) => {
+    if (!confirm('Czy na pewno chcesz usunac ten watek?')) return;
+
+    try {
+      const res = await fetch(`/api/forum/threads?threadId=${threadId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setMessage('Watek usuniety!');
+        fetchData();
+      } else {
+        setMessage('Blad usuwania watku');
       }
     } catch (error) {
       setMessage('Blad sieci');
@@ -330,6 +354,9 @@ export default function RetroAdmin() {
             </button>
             <button style={tabStyle(activeTab === 'webring')} onClick={() => setActiveTab('webring')}>
               🔗 Webring
+            </button>
+            <button style={tabStyle(activeTab === 'forum')} onClick={() => setActiveTab('forum')}>
+              💬 Forum
             </button>
           </div>
 
@@ -649,6 +676,80 @@ export default function RetroAdmin() {
                       >
                         Zobacz katalog webring
                       </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Forum Section */}
+                {activeTab === 'forum' && (
+                  <div>
+                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
+                      Zarzadzanie Forum ({forumThreads.length} watkow)
+                    </h3>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <Link
+                        href="/forum"
+                        target="_blank"
+                        style={{
+                          ...buttonStyle,
+                          display: 'inline-block',
+                          textDecoration: 'none',
+                          color: '#000',
+                          marginRight: '10px',
+                        }}
+                      >
+                        Zobacz forum
+                      </Link>
+                    </div>
+
+                    {/* Threads list */}
+                    <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', fontSize: '12px' }}>
+                      <thead style={{ background: '#e0e0e0', position: 'sticky', top: 0 }}>
+                        <tr>
+                          <th style={{ ...cellStyle, textAlign: 'left', width: '40%' }}>Tytul</th>
+                          <th style={{ ...cellStyle, textAlign: 'left', width: '15%' }}>Autor</th>
+                          <th style={{ ...cellStyle, textAlign: 'left', width: '15%' }}>Kategoria</th>
+                          <th style={{ ...cellStyle, textAlign: 'center', width: '10%' }}>Odpowiedzi</th>
+                          <th style={{ ...cellStyle, textAlign: 'center', width: '10%' }}>Wyswietlenia</th>
+                          <th style={{ ...cellStyle, textAlign: 'center', width: '10%' }}>Akcje</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {forumThreads.map((thread) => (
+                          <tr key={thread.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                            <td style={cellStyle}>
+                              <div>
+                                <strong>{thread.title}</strong>
+                                <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
+                                  <EmojiParser text={thread.message.substring(0, 80) + '...'} emojiSize={16} />
+                                </div>
+                              </div>
+                            </td>
+                            <td style={cellStyle}>
+                              {thread.author.avatar} {thread.author.nickname}
+                            </td>
+                            <td style={cellStyle}>{thread.categoryId}</td>
+                            <td style={{ ...cellStyle, textAlign: 'center' }}>{thread.replyCount || 0}</td>
+                            <td style={{ ...cellStyle, textAlign: 'center' }}>{thread.views || 0}</td>
+                            <td style={{ ...cellStyle, textAlign: 'center' }}>
+                              <button
+                                onClick={() => handleDeleteThread(thread.id)}
+                                style={{
+                                  ...buttonStyle,
+                                  background: '#ff6666',
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                }}
+                              >
+                                🗑️ Usun
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                     </div>
                   </div>
                 )}
