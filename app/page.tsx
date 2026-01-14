@@ -560,9 +560,10 @@ export default function Home() {
               width: '100%',
               height: '100%',
               border: 'none',
-              background: '#fff'
+              background: '#fff',
+              display: 'block'
             }}
-            title="Forum"
+            title="Forum KupMax"
           />
         </Window>
       )}
