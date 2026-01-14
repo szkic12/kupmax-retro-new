@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import s3Service from '../../../lib/aws-s3.js';
 
-// v3 - improved error handling and logging
+// Wyłącz cache dla tego route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// v4 - disabled caching
 
 // Domyślne strony webring (używane gdy S3 jest puste)
 const DEFAULT_SITES = [
@@ -96,7 +100,10 @@ export async function GET(req: NextRequest) {
       .sort((a: any, b: any) => a.addedAt - b.addedAt);
 
     if (!currentUrl) {
-      return NextResponse.json({ sites: approvedSites });
+      return NextResponse.json(
+        { sites: approvedSites },
+        { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+      );
     }
 
     // Find current site index
@@ -109,13 +116,16 @@ export async function GET(req: NextRequest) {
     const nextIndex = currentIndex < total - 1 ? currentIndex + 1 : 0;
     const randomIndex = Math.floor(Math.random() * total);
 
-    return NextResponse.json({
-      current: approvedSites[currentIndex],
-      prev: approvedSites[prevIndex],
-      next: approvedSites[nextIndex],
-      random: approvedSites[randomIndex],
-      total,
-    });
+    return NextResponse.json(
+      {
+        current: approvedSites[currentIndex],
+        prev: approvedSites[prevIndex],
+        next: approvedSites[nextIndex],
+        random: approvedSites[randomIndex],
+        total,
+      },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (error) {
     console.error('Error fetching webring:', error);
     return NextResponse.json(
