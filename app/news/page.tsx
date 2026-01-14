@@ -157,9 +157,14 @@ export default function NewsPage() {
           >
             🔴 PILNE
           </span>
-          <marquee className="text-white font-bold" scrollamount="5">
-            ★★★ KUPMAX przebija kolejne rekordy popularności! ★★★ Nowa aktualizacja już dostępna! ★★★ Dołącz do tysięcy zadowolonych użytkowników! ★★★
-          </marquee>
+          <div className="overflow-hidden whitespace-nowrap flex-1">
+            <span
+              className="inline-block text-white font-bold"
+              style={{ animation: 'marquee 15s linear infinite' }}
+            >
+              ★★★ KUPMAX przebija kolejne rekordy popularności! ★★★ Nowa aktualizacja już dostępna! ★★★ Dołącz do tysięcy zadowolonych użytkowników! ★★★
+            </span>
+          </div>
         </div>
       </div>
 
@@ -462,6 +467,13 @@ export default function NewsPage() {
           </p>
         </div>
       </footer>
+
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}</style>
     </div>
   );
 }

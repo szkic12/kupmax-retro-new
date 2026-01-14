@@ -83,9 +83,14 @@ export default function GuestbookPage() {
           borderBottom: '3px ridge #ffcc00',
         }}
       >
-        <marquee scrollamount="4" className="text-yellow-300 font-bold">
-          ⭐ Welcome to my Guestbook! ⭐ Please leave a message! ⭐ I love reading your comments! ⭐ Thank you for visiting! ⭐ Don't forget to bookmark this page! ⭐
-        </marquee>
+        <div className="overflow-hidden whitespace-nowrap">
+          <span
+            className="inline-block text-yellow-300 font-bold"
+            style={{ animation: 'marquee 20s linear infinite' }}
+          >
+            ⭐ Welcome to my Guestbook! ⭐ Please leave a message! ⭐ I love reading your comments! ⭐ Thank you for visiting! ⭐ Don&apos;t forget to bookmark this page! ⭐
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
@@ -414,6 +419,13 @@ export default function GuestbookPage() {
           Guestbook powered by KUPMAX © 1999-2026
         </p>
       </footer>
+
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}</style>
     </div>
   );
 }

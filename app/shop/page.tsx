@@ -45,15 +45,20 @@ export default function ShopPage() {
     <div className="min-h-screen" style={{ background: '#f0f0f0' }}>
       {/* Top banner - Allegro style */}
       <div
-        className="py-1 text-center text-sm"
+        className="py-1 text-center text-sm overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #ffcc00 0%, #ff9900 100%)',
           borderBottom: '3px solid #cc6600',
         }}
       >
-        <marquee scrollamount="3">
-          🔥 MEGA WYPRZEDAŻ! 🔥 Darmowa dostawa od 100 zł! 🚚 Zwrot do 14 dni! ✅ Bezpieczne płatności! 💳 Tysiące zadowolonych klientów! ⭐⭐⭐⭐⭐
-        </marquee>
+        <div className="overflow-hidden whitespace-nowrap">
+          <span
+            className="inline-block"
+            style={{ animation: 'marquee 15s linear infinite' }}
+          >
+            🔥 MEGA WYPRZEDAŻ! 🔥 Darmowa dostawa od 100 zł! 🚚 Zwrot do 14 dni! ✅ Bezpieczne płatności! 💳 Tysiące zadowolonych klientów! ⭐⭐⭐⭐⭐
+          </span>
+        </div>
       </div>
 
       {/* Header */}
@@ -509,6 +514,10 @@ export default function ShopPage() {
           0% { width: 0%; }
           50% { width: 100%; }
           100% { width: 0%; }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
         }
       `}</style>
     </div>
