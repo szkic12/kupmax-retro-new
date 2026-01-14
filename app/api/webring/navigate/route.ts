@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     // Find current site index (default to -1 if not found)
     let currentIndex = sites.findIndex(
-      (site) => site.url === currentUrl || currentUrl.includes(site.url.replace('https://', ''))
+      (site: any) => site.url === currentUrl || currentUrl.includes(site.url.replace('https://', ''))
     );
 
     // If current URL not found, start from beginning
