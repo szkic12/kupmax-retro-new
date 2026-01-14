@@ -12,10 +12,18 @@ const DEFAULT_SITES = [
 
 // Pobierz strony z S3
 async function getWebringSites() {
-  const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
-  const allSites = result.data || DEFAULT_SITES;
-  // Filtruj tylko zatwierdzone
-  return allSites.filter((site: any) => site.approved);
+  console.log('📖 Navigate: Loading webring from S3...');
+  try {
+    const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
+    console.log('📖 Navigate: S3 result success:', result.success, 'count:', result.data?.length);
+    const allSites = result.data || DEFAULT_SITES;
+    const approved = allSites.filter((site: any) => site.approved);
+    console.log('📖 Navigate: Approved sites:', approved.length);
+    return approved;
+  } catch (error) {
+    console.error('📖 Navigate: S3 error:', error);
+    return DEFAULT_SITES;
+  }
 }
 
 export async function GET(req: NextRequest) {
