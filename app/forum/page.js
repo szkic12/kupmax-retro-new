@@ -20,6 +20,9 @@ export default function ForumPage() {
     fetchCategories();
     fetchThreads();
 
+    // Ustaw overflow na body aby umożliwić scrollowanie na stronie forum
+    document.body.style.overflow = 'auto';
+
     // Sprawdź czy admin jest zalogowany (sprawdź cookie przez API)
     fetch('/api/forum/verify-session', {
       method: 'GET',
@@ -34,6 +37,11 @@ export default function ForumPage() {
       .catch(err => {
         console.error('Error verifying session:', err);
       });
+
+    // Cleanup: Przywróć overflow: hidden gdy użytkownik opuszcza stronę
+    return () => {
+      document.body.style.overflow = 'hidden';
+    };
   }, [activeCategory, sortBy]);
 
   const fetchCategories = async () => {
