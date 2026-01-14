@@ -17,6 +17,7 @@ const Guestbook = dynamic(() => import('@/components/Guestbook/Guestbook'), { ss
 const PhotoGallery = dynamic(() => import('@/components/PhotoGallery/PhotoGallery'), { ssr: false });
 const Downloads = dynamic(() => import('@/components/Downloads/Downloads'), { ssr: false });
 const Webring = dynamic(() => import('@/components/Webring/Webring'), { ssr: false });
+const Forum = dynamic(() => import('@/components/Forum/Forum'), { ssr: false });
 const Clippy = dynamic(() => import('@/components/Clippy'), { ssr: false });
 const ClippyChat = dynamic(() => import('@/components/ClippyChat'), { ssr: false });
 const LegalNoticeBoard = dynamic(() => import('@/components/LegalNoticeBoard'), { ssr: false });
@@ -553,23 +554,7 @@ export default function Home() {
           onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
         >
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">💬 Community Forum</h2>
-            <div className="space-y-2">
-              <div className="border-2 border-gray-400 p-2 bg-white hover:bg-blue-100 cursor-pointer">
-                <span className="font-bold">» General Discussion</span>
-                <span className="text-xs text-gray-500 ml-2">(123 posts)</span>
-              </div>
-              <div className="border-2 border-gray-400 p-2 bg-white hover:bg-blue-100 cursor-pointer">
-                <span className="font-bold">» Technical Support</span>
-                <span className="text-xs text-gray-500 ml-2">(45 posts)</span>
-              </div>
-              <div className="border-2 border-gray-400 p-2 bg-white hover:bg-blue-100 cursor-pointer">
-                <span className="font-bold">» Off-Topic</span>
-                <span className="text-xs text-gray-500 ml-2">(789 posts)</span>
-              </div>
-            </div>
-          </div>
+          <Forum />
         </Window>
       )}
 
