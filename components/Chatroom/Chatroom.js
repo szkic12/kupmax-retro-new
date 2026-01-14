@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import useSimpleChat from '../../hooks/useSimpleChat';
 import styles from './Chatroom.module.scss';
+import { EmojiParser } from '../RetroEmoji';
 
 /**
  * Komponent Chatroom w stylu retro Windows 95
@@ -203,7 +204,7 @@ export default function Chatroom() {
           </span>
         </div>
         <div className={styles.messageContent}>
-          {message.message}
+          <EmojiParser text={message.message} emojiSize={24} />
         </div>
 
         {/* Przycisk usuwania dla admina (tylko dla wiadomości użytkowników, nie systemowych) */}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import usePrivateChat from '../../hooks/usePrivateChat';
 import styles from './PrivateChatroom.module.scss';
+import { EmojiParser } from '../RetroEmoji';
 
 /**
  * Komponent prywatnych pokoi czatu - jak na starym Onet.pl
@@ -242,7 +243,7 @@ export default function PrivateChatroom() {
           </span>
         </div>
         <div className={styles.messageContent}>
-          {message.message}
+          <EmojiParser text={message.message} emojiSize={24} />
         </div>
 
         {/* Przycisk usuwania dla admina */}
