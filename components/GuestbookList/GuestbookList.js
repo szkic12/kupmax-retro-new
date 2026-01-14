@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useGuestbookEntries } from '../../hooks/useGuestbook';
 import styles from './GuestbookList.module.scss';
+import { EmojiParser } from '../RetroEmoji';
 
 /**
  * Komponent do wyświetlania listy wpisów z gośćca
@@ -124,7 +125,7 @@ export default function GuestbookList({ maxEntries = 10 }) {
             </div>
             
             <div className={styles.message}>
-              {stripHtml(entry.message || '')}
+              <EmojiParser text={stripHtml(entry.message || '')} emojiSize={20} />
             </div>
 
             {entry.email && (

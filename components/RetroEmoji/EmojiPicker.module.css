@@ -1,0 +1,82 @@
+.pickerContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.triggerButton {
+  background: linear-gradient(180deg, #e0e0e0 0%, #c0c0c0 100%);
+  border: 2px outset #fff;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 36px;
+}
+
+.triggerButton:hover {
+  background: linear-gradient(180deg, #f0f0f0 0%, #d0d0d0 100%);
+}
+
+.triggerButton:active {
+  border-style: inset;
+}
+
+.pickerDropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 5px;
+  background: #c0c0c0;
+  border: 2px outset #fff;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 200px;
+}
+
+.pickerHeader {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: white;
+  padding: 4px 8px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  padding: 8px;
+  background: #e0e0e0;
+  border: 2px inset #808080;
+  margin: 4px;
+}
+
+.emojiButton {
+  background: #f0f0f0;
+  border: 1px solid #808080;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+
+.emojiButton:hover {
+  background: #ffffff;
+  border-color: #000080;
+}
+
+.emojiButton:active {
+  background: #d0d0d0;
+}
+
+.pickerFooter {
+  padding: 4px 8px;
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  border-top: 1px solid #808080;
+}

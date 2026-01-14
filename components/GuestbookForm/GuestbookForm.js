@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useGuestbook } from '../../hooks/useGuestbook';
 import styles from './GuestbookForm.module.scss';
+import { EmojiPicker } from '../RetroEmoji';
 
 /**
  * Komponent formularza do dodawania wpisów do gośćca
@@ -21,6 +22,9 @@ export default function GuestbookForm({ productRef = null, onSuccess = null }) {
 
   // Hook do obsługi gośćca
   const { addGuestbookPost, isLoading, error } = useGuestbook();
+
+  // Ref do textarea dla wstawiania emotek
+  const messageRef = useRef(null);
 
   /**
    * Walidacja formularza
@@ -71,6 +75,30 @@ export default function GuestbookForm({ productRef = null, onSuccess = null }) {
         ...prev,
         [name]: ''
       }));
+    }
+  };
+
+  /**
+   * Wstawia emotkę do pola wiadomości
+   */
+  const handleEmojiSelect = (emojiCode) => {
+    const textarea = messageRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = formData.message;
+      const newText = text.substring(0, start) + emojiCode + text.substring(end);
+
+      setFormData(prev => ({ ...prev, message: newText }));
+
+      // Ustaw kursor za wstawioną emotką
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emojiCode.length;
+        textarea.focus();
+      }, 0);
+    } else {
+      // Fallback - dodaj na końcu
+      setFormData(prev => ({ ...prev, message: prev.message + emojiCode }));
     }
   };
 
@@ -185,19 +213,25 @@ export default function GuestbookForm({ productRef = null, onSuccess = null }) {
           <label htmlFor="message" className={styles.label}>
             Wiadomość *
           </label>
-          <textarea
-            id="message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            className={`${styles.textarea} ${errors.message ? styles.inputError : ''}`}
-            placeholder="Podziel się swoimi przemyśleniami..."
-            rows="4"
-            maxLength="280"
-            disabled={isLoading}
-          />
+          <div className={styles.messageWrapper}>
+            <textarea
+              ref={messageRef}
+              id="message"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              className={`${styles.textarea} ${errors.message ? styles.inputError : ''}`}
+              placeholder="Podziel się swoimi przemyśleniami... Użyj :) :D ;) itp."
+              rows="4"
+              maxLength="280"
+              disabled={isLoading}
+            />
+            <div className={styles.emojiPickerWrapper}>
+              <EmojiPicker onSelect={handleEmojiSelect} size={28} />
+            </div>
+          </div>
           <div className={styles.charCounter}>
-            {formData.message.length}/280
+            {formData.message.length}/280 | Emotki: :) :D ;) :( :P {"<3"} 8) {">:("} :O :/
           </div>
           {errors.message && (
             <span className={styles.errorText}>{errors.message}</span>

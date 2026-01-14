@@ -69,6 +69,20 @@
   line-height: 1.5;
 }
 
+.messageWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emojiPickerWrapper {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
 .inputError {
   border-color: #e74c3c !important;
   

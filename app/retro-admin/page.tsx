@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { RetroEmoji, EmojiPicker, EmojiParser, EmojiType, emojiToCode } from '../../components/RetroEmoji';
 
 export default function RetroAdmin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,7 +18,7 @@ export default function RetroAdmin() {
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
 
   // New webring site form
-  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: '✦' });
+  const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: ':)' });
 
   // Simple password check (in production use proper auth)
   const ADMIN_PASSWORD = 'kupmax2024';
@@ -103,7 +104,7 @@ export default function RetroAdmin() {
 
       if (res.ok) {
         setMessage('Strona dodana do webring!');
-        setNewSite({ name: '', url: '', description: '', category: '', icon: '✦' });
+        setNewSite({ name: '', url: '', description: '', category: '', icon: ':)' });
         fetchData();
       } else {
         setMessage('Blad dodawania strony');
@@ -551,23 +552,27 @@ export default function RetroAdmin() {
                             </select>
                           </div>
                           <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Ikona:</label>
-                            <select
-                              value={newSite.icon}
-                              onChange={(e) => setNewSite({ ...newSite, icon: e.target.value })}
-                              style={{ ...inputStyle, height: '30px' }}
-                            >
-                              <option value="✦">✦ Biale sloneczko</option>
-                              <option value="☼">☼ Slonce</option>
-                              <option value="✧">✧ Gwiazdka</option>
-                              <option value="◈">◈ Diament</option>
-                              <option value="○">○ Kolko</option>
-                              <option value="□">□ Kwadrat</option>
-                              <option value="△">△ Trojkat</option>
-                              <option value="♦">♦ Romb</option>
-                              <option value="●">● Kropka</option>
-                              <option value="★">★ Gwiazda</option>
-                            </select>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Emotka:</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '8px', background: '#fff', border: '2px inset #808080' }}>
+                              {(['smile', 'laugh', 'sad', 'wink', 'tongue', 'love', 'cool', 'angry', 'surprise', 'think'] as EmojiType[]).map((type) => (
+                                <button
+                                  key={type}
+                                  type="button"
+                                  onClick={() => setNewSite({ ...newSite, icon: emojiToCode[type] })}
+                                  style={{
+                                    background: newSite.icon === emojiToCode[type] ? '#000080' : '#f0f0f0',
+                                    border: '1px solid #808080',
+                                    padding: '4px',
+                                    cursor: 'pointer',
+                                    borderRadius: '2px',
+                                  }}
+                                  title={emojiToCode[type]}
+                                >
+                                  <RetroEmoji type={type} size={28} />
+                                </button>
+                              ))}
+                            </div>
+                            <small style={{ color: '#666', fontSize: '10px' }}>Wybrana: {newSite.icon}</small>
                           </div>
                         </div>
                         <button type="submit" style={{ ...buttonStyle, marginTop: '10px' }}>
@@ -591,8 +596,8 @@ export default function RetroAdmin() {
                       <tbody>
                         {webringSites.map((site, i) => (
                           <tr key={site.id} style={{ background: i % 2 === 0 ? '#fff' : '#f0f0f0' }}>
-                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc', fontSize: '20px' }}>
-                              {site.icon || '☀️'}
+                            <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
+                              <EmojiParser text={site.icon || ':)'} emojiSize={32} />
                             </td>
                             <td style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
                               <a href={site.url} target="_blank" rel="noopener noreferrer" style={{ color: '#000080' }}>
