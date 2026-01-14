@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import useSimpleChat from '../../hooks/useSimpleChat';
 import styles from './Chatroom.module.scss';
 import { EmojiParser } from '../RetroEmoji';
+import WindowControls from '../WindowControls';
 
 /**
  * Komponent Chatroom w stylu retro Windows 95
@@ -28,9 +29,12 @@ export default function Chatroom() {
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [isMinimized, setIsMinimized] = useState(false);
   const messageInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const loginWindowRef = useRef(null);
+  const chatWindowRef = useRef(null);
 
   // Sprawdź czy zalogowany jako admin (ma JWT cookie)
   useEffect(() => {
@@ -344,21 +348,18 @@ export default function Chatroom() {
   if (showLogin) {
     return (
       <div className={styles.chatroom}>
-        <div className={styles.loginWindow}>
+        <div className={styles.loginWindow} ref={loginWindowRef}>
           <div className={styles.windowHeader}>
             <span>💬 Retro Chatroom - Logowanie</span>
-            <div className={styles.windowControls}>
-              <span
-                title="Otwórz w nowej karcie"
-                onClick={() => window.open('/chat', '_blank')}
-                className={styles.newTabButton}
-              >↗</span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+            <WindowControls
+              newTabUrl="/chat"
+              windowRef={loginWindowRef}
+              onMinimize={() => setIsMinimized(!isMinimized)}
+              canClose={false}
+            />
           </div>
-          
+
+          {!isMinimized && (
           <div className={styles.loginContent}>
             <div className={styles.loginIcon}>💬</div>
             <h3>Witaj w Retro Chatroom!</h3>
@@ -397,6 +398,7 @@ export default function Chatroom() {
               </ul>
             </div>
           </div>
+          )}
         </div>
       </div>
     );
@@ -405,23 +407,20 @@ export default function Chatroom() {
   // Główne okno czatu
   return (
     <div className={styles.chatroom}>
-      <div className={styles.chatWindow}>
+      <div className={styles.chatWindow} ref={chatWindowRef}>
         {/* Nagłówek okna */}
         <div className={styles.windowHeader}>
           <span>💬 Retro Chatroom ({usersCount} online)</span>
-          <div className={styles.windowControls}>
-            <span
-              title="Otwórz w nowej karcie"
-              onClick={() => window.open('/chat', '_blank')}
-              className={styles.newTabButton}
-            >↗</span>
-            <span title="Minimalizuj"></span>
-            <span title="Maksymalizuj"></span>
-            <span title="Zamknij" onClick={handleLeaveChat}></span>
-          </div>
+          <WindowControls
+            newTabUrl="/chat"
+            windowRef={chatWindowRef}
+            onMinimize={() => setIsMinimized(!isMinimized)}
+            onClose={handleLeaveChat}
+          />
         </div>
 
         {/* Główna zawartość */}
+        {!isMinimized && (
         <div className={styles.chatContent}>
           {/* Panel użytkowników */}
           <div className={styles.usersPanel}>
@@ -498,8 +497,10 @@ export default function Chatroom() {
             </form>
           </div>
         </div>
+        )}
 
         {/* Status bar */}
+        {!isMinimized && (
         <div className={styles.statusBar}>
           <span className={styles.connectionStatus}>
             {isConnected ? '🟢 Połączono' : '🔴 Rozłączono'}
@@ -507,7 +508,7 @@ export default function Chatroom() {
           <span className={styles.userInfo}>
             Zalogowany jako: <strong>{currentUser?.nickname}</strong>
           </span>
-          <button 
+          <button
             onClick={handleLeaveChat}
             className={styles.leaveButton}
             title="Opuść czat"
@@ -515,6 +516,7 @@ export default function Chatroom() {
             🚪 Wyjdź
           </button>
         </div>
+        )}
       </div>
     </div>
   );

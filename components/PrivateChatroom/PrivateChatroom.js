@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import usePrivateChat from '../../hooks/usePrivateChat';
 import styles from './PrivateChatroom.module.scss';
 import { EmojiParser } from '../RetroEmoji';
+import WindowControls from '../WindowControls';
 
 /**
  * Komponent prywatnych pokoi czatu - jak na starym Onet.pl
@@ -35,10 +36,15 @@ export default function PrivateChatroom() {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editText, setEditText] = useState('');
   const [isDeletingRoom, setIsDeletingRoom] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messageInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const selectWindowRef = useRef(null);
+  const createWindowRef = useRef(null);
+  const joinWindowRef = useRef(null);
+  const chatWindowRef = useRef(null);
 
   // Sprawdź czy zalogowany jako admin
   useEffect(() => {
@@ -422,21 +428,18 @@ export default function PrivateChatroom() {
   if (mode === 'select') {
     return (
       <div className={styles.privateChatroom}>
-        <div className={styles.selectWindow}>
+        <div className={styles.selectWindow} ref={selectWindowRef}>
           <div className={styles.windowHeader}>
             <span>🔒 Prywatne Pokoje Czatu</span>
-            <div className={styles.windowControls}>
-              <span
-                title="Otwórz w nowej karcie"
-                onClick={() => window.open('/private-chat', '_blank')}
-                className={styles.newTabButton}
-              >↗</span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+            <WindowControls
+              newTabUrl="/private-chat"
+              windowRef={selectWindowRef}
+              onMinimize={() => setIsMinimized(!isMinimized)}
+              canClose={false}
+            />
           </div>
 
+          {!isMinimized && (
           <div className={styles.selectContent}>
             <div className={styles.selectIcon}>🔒</div>
             <h3>Witaj w Prywatnych Pokojach!</h3>
@@ -468,6 +471,7 @@ export default function PrivateChatroom() {
               </ul>
             </div>
           </div>
+          )}
         </div>
       </div>
     );
@@ -477,21 +481,18 @@ export default function PrivateChatroom() {
   if (mode === 'create') {
     return (
       <div className={styles.privateChatroom}>
-        <div className={styles.createWindow}>
+        <div className={styles.createWindow} ref={createWindowRef}>
           <div className={styles.windowHeader}>
             <span>🏠 Tworzenie Prywatnego Pokoju</span>
-            <div className={styles.windowControls}>
-              <span
-                title="Otwórz w nowej karcie"
-                onClick={() => window.open('/private-chat', '_blank')}
-                className={styles.newTabButton}
-              >↗</span>
-              <span title="Cofnij" onClick={() => setMode('select')}></span>
-              <span></span>
-              <span></span>
-            </div>
+            <WindowControls
+              newTabUrl="/private-chat"
+              windowRef={createWindowRef}
+              onMinimize={() => setIsMinimized(!isMinimized)}
+              onClose={() => setMode('select')}
+            />
           </div>
 
+          {!isMinimized && (
           <div className={styles.createContent}>
             <div className={styles.createIcon}>🏠</div>
             <h3>Stwórz prywatny pokój</h3>
@@ -534,6 +535,7 @@ export default function PrivateChatroom() {
               </button>
             </form>
           </div>
+          )}
         </div>
       </div>
     );
@@ -543,21 +545,18 @@ export default function PrivateChatroom() {
   if (mode === 'join') {
     return (
       <div className={styles.privateChatroom}>
-        <div className={styles.joinWindow}>
+        <div className={styles.joinWindow} ref={joinWindowRef}>
           <div className={styles.windowHeader}>
             <span>🔑 Dołączanie do Pokoju</span>
-            <div className={styles.windowControls}>
-              <span
-                title="Otwórz w nowej karcie"
-                onClick={() => window.open('/private-chat', '_blank')}
-                className={styles.newTabButton}
-              >↗</span>
-              <span title="Cofnij" onClick={() => setMode('select')}></span>
-              <span></span>
-              <span></span>
-            </div>
+            <WindowControls
+              newTabUrl="/private-chat"
+              windowRef={joinWindowRef}
+              onMinimize={() => setIsMinimized(!isMinimized)}
+              onClose={() => setMode('select')}
+            />
           </div>
 
+          {!isMinimized && (
           <div className={styles.joinContent}>
             <div className={styles.joinIcon}>🔑</div>
             <h3>Dołącz do prywatnego pokoju</h3>
@@ -612,6 +611,7 @@ export default function PrivateChatroom() {
               </button>
             </form>
           </div>
+          )}
         </div>
       </div>
     );
@@ -620,23 +620,20 @@ export default function PrivateChatroom() {
   // Główne okno czatu
   return (
     <div className={styles.privateChatroom}>
-      <div className={styles.chatWindow}>
+      <div className={styles.chatWindow} ref={chatWindowRef}>
         {/* Nagłówek okna */}
         <div className={styles.windowHeader}>
           <span>🔒 Prywatny Pokój: {currentRoom} ({usersCount} online)</span>
-          <div className={styles.windowControls}>
-            <span
-              title="Otwórz w nowej karcie"
-              onClick={() => window.open('/private-chat', '_blank')}
-              className={styles.newTabButton}
-            >↗</span>
-            <span title="Minimalizuj"></span>
-            <span title="Maksymalizuj"></span>
-            <span title="Zamknij" onClick={handleLeaveRoom}></span>
-          </div>
+          <WindowControls
+            newTabUrl="/private-chat"
+            windowRef={chatWindowRef}
+            onMinimize={() => setIsMinimized(!isMinimized)}
+            onClose={handleLeaveRoom}
+          />
         </div>
 
         {/* Główna zawartość */}
+        {!isMinimized && (
         <div className={styles.chatContent}>
           {/* Panel użytkowników */}
           <div className={styles.usersPanel}>
@@ -713,8 +710,10 @@ export default function PrivateChatroom() {
             </form>
           </div>
         </div>
+        )}
 
         {/* Status bar */}
+        {!isMinimized && (
         <div className={styles.statusBar}>
           <span className={styles.connectionStatus}>
             {isConnected ? '🟢 Połączono' : '🔴 Rozłączono'}
@@ -743,6 +742,7 @@ export default function PrivateChatroom() {
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,120 @@
+// Kolory Windows 95
+$win95-gray: #c0c0c0;
+$win95-light: #ffffff;
+$win95-dark: #000000;
+
+.windowControls {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.controlButton {
+  width: 22px;
+  height: 22px;
+  background: $win95-gray;
+  border: none;
+  border-top: 2px solid $win95-light;
+  border-left: 2px solid $win95-light;
+  border-bottom: 2px solid $win95-dark;
+  border-right: 2px solid $win95-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Segoe UI', 'MS Sans Serif', sans-serif;
+
+  &:active {
+    border-top: 2px solid $win95-dark;
+    border-left: 2px solid $win95-dark;
+    border-bottom: 2px solid $win95-light;
+    border-right: 2px solid $win95-light;
+  }
+
+  .icon {
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    color: $win95-dark;
+  }
+}
+
+// Przycisk nowej karty - zielony
+.newTabButton {
+  background: #22c55e;
+
+  .icon {
+    color: $win95-light;
+    font-size: 12px;
+  }
+
+  &:hover {
+    background: #16a34a;
+  }
+}
+
+// Przycisk minimalizacji - szary z podkreśleniem
+.minimizeButton {
+  .icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  &:hover {
+    background: darken($win95-gray, 10%);
+  }
+}
+
+// Przycisk maksymalizacji - szary z kwadratem
+.maximizeButton {
+  .icon {
+    font-size: 12px;
+  }
+
+  &:hover {
+    background: darken($win95-gray, 10%);
+  }
+}
+
+// Przycisk zamknięcia - czerwony z X
+.closeButton {
+  background: #dc2626;
+
+  .icon {
+    color: $win95-light;
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: #b91c1c;
+  }
+}
+
+// Responsywność
+@media (max-width: 480px) {
+  .controlButton {
+    width: 28px;
+    height: 28px;
+
+    .icon {
+      font-size: 16px;
+    }
+  }
+
+  .newTabButton .icon {
+    font-size: 14px;
+  }
+
+  .minimizeButton .icon {
+    font-size: 18px;
+  }
+
+  .maximizeButton .icon {
+    font-size: 14px;
+  }
+
+  .closeButton .icon {
+    font-size: 18px;
+  }
+}
