@@ -177,9 +177,6 @@ export default function RetroAdmin() {
     maxWidth: '900px',
     margin: '10px auto',
     fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
-    maxHeight: 'calc(100vh - 60px)',
-    display: 'flex',
-    flexDirection: 'column',
   };
 
   const titleBarStyle: React.CSSProperties = {
@@ -194,8 +191,6 @@ export default function RetroAdmin() {
 
   const contentStyle: React.CSSProperties = {
     padding: '15px',
-    overflow: 'auto',
-    flex: 1,
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -292,8 +287,9 @@ export default function RetroAdmin() {
     <div style={{
       minHeight: '100vh',
       background: '#008080',
-      padding: '20px',
+      padding: '10px',
       fontFamily: '"MS Sans Serif", Tahoma, sans-serif',
+      overflowY: 'auto',
     }}>
       <div style={windowStyle}>
         <div style={titleBarStyle}>
@@ -342,8 +338,6 @@ export default function RetroAdmin() {
             background: '#e0e0e0',
             padding: '15px',
             minHeight: '300px',
-            maxHeight: 'calc(100vh - 250px)',
-            overflow: 'auto',
           }}>
             {message && (
               <div style={{
@@ -456,7 +450,7 @@ export default function RetroAdmin() {
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       Wpisy w ksiedze gosci ({guestbookEntries.length})
                     </h3>
-                    <div style={{ maxHeight: 'calc(100vh - 350px)', overflow: 'auto' }}>
+                    <div>
                       {guestbookEntries.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
                           Brak wpisow w ksiedze gosci
@@ -583,7 +577,7 @@ export default function RetroAdmin() {
                     </fieldset>
 
                     {/* Sites list */}
-                    <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 450px)' }}>
+                    <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', minWidth: '500px' }}>
                       <thead>
                         <tr style={{ background: '#000080', color: '#fff' }}>
