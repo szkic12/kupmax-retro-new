@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import s3Service from '../../../lib/aws-s3.js';
 
+// Wyłącz cache dla tego route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Domyślne wpisy (używane gdy S3 jest puste)
 const DEFAULT_ENTRIES = [
   {
@@ -50,7 +54,10 @@ export async function GET(req: NextRequest) {
       .sort((a: any, b: any) => b.timestamp - a.timestamp)
       .slice(0, limit);
 
-    return NextResponse.json({ success: true, entries });
+    return NextResponse.json(
+      { success: true, entries },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (error) {
     console.error('Error fetching guestbook:', error);
     return NextResponse.json(
@@ -132,7 +139,7 @@ export async function DELETE(req: NextRequest) {
     let guestbookEntries = await getGuestbookEntries();
     const initialLength = guestbookEntries.length;
 
-    guestbookEntries = guestbookEntries.filter((entry: any) => entry.id !== id);
+    guestbookEntries = guestbookEntries.filter((entry: any) => String(entry.id) !== String(id));
 
     if (guestbookEntries.length === initialLength) {
       return NextResponse.json(
