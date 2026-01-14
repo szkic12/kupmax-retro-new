@@ -248,6 +248,11 @@ export default function RetroAdmin() {
     zIndex: isActive ? 1 : 0,
   });
 
+  const cellStyle: React.CSSProperties = {
+    border: '1px solid #e0e0e0',
+    padding: '8px',
+  };
+
   if (!isLoggedIn) {
     return (
       <div style={{
