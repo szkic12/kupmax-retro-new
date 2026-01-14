@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import s3Service from '../../../lib/aws-s3.js';
 
+// v3 - improved error handling and logging
+
 // Domyślne strony webring (używane gdy S3 jest puste)
 const DEFAULT_SITES = [
   {
@@ -67,13 +69,18 @@ const DEFAULT_SITES = [
 
 // Pobierz strony z S3
 async function getWebringSites() {
+  console.log('📖 Loading webring sites from S3...');
   const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
+  console.log('📖 Loaded sites count:', result.data?.length || 0, 'success:', result.success);
   return result.data || DEFAULT_SITES;
 }
 
 // Zapisz strony do S3
 async function saveWebringSites(sites: any[]) {
-  return await s3Service.saveJsonData('webring', sites);
+  console.log('💾 Saving webring sites to S3, count:', sites.length);
+  const result = await s3Service.saveJsonData('webring', sites);
+  console.log('💾 Save result:', result);
+  return result;
 }
 
 export async function GET(req: NextRequest) {
