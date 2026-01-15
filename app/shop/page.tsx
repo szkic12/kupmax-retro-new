@@ -39,6 +39,28 @@ export default function ShopPage() {
     setTimeout(() => setShowCartPopup(false), 2000);
   };
 
+  // Retro ikona na podstawie nazwy produktu
+  const getProductIcon = (name: string): string => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('laptop') || nameLower.includes('notebook')) return '💻';
+    if (nameLower.includes('klawiatura') || nameLower.includes('keyboard')) return '⌨️';
+    if (nameLower.includes('myszka') || nameLower.includes('mouse')) return '🖱️';
+    if (nameLower.includes('monitor') || nameLower.includes('ekran')) return '🖥️';
+    if (nameLower.includes('telefon') || nameLower.includes('phone')) return '📱';
+    if (nameLower.includes('słuchawki') || nameLower.includes('headphone')) return '🎧';
+    if (nameLower.includes('kamera') || nameLower.includes('camera')) return '📷';
+    if (nameLower.includes('drukarka') || nameLower.includes('printer')) return '🖨️';
+    if (nameLower.includes('ram') || nameLower.includes('pamięć')) return '🧠';
+    if (nameLower.includes('dysk') || nameLower.includes('ssd') || nameLower.includes('hdd')) return '💾';
+    if (nameLower.includes('kabel') || nameLower.includes('cable')) return '🔌';
+    if (nameLower.includes('ładowarka') || nameLower.includes('charger')) return '🔋';
+    if (nameLower.includes('zawias') || nameLower.includes('hinge')) return '🔧';
+    if (nameLower.includes('rezystor') || nameLower.includes('kondensator') || nameLower.includes('elektronik')) return '⚡';
+    if (nameLower.includes('procesor') || nameLower.includes('cpu')) return '🔲';
+    if (nameLower.includes('gpu') || nameLower.includes('grafik')) return '🎮';
+    return '📦';
+  };
+
   const categories = ['all', 'Electronics', 'Clothing', 'Books', 'Games', 'Other'];
 
   return (
@@ -344,14 +366,17 @@ export default function ShopPage() {
                       className="aspect-square flex items-center justify-center"
                       style={{ background: '#f5f5f5', borderBottom: '2px solid #003366' }}
                     >
-                      {product.images && product.images[0] ? (
+                      {product.images && product.images[0] && !product.images[0].includes('127.0.0.1') ? (
                         <img
                           src={product.images[0]}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-6xl">📦</span>
+                        <div className="text-center">
+                          <span className="text-6xl">{getProductIcon(product.name)}</span>
+                          <p className="text-xs text-gray-500 mt-2">Brak zdjęcia</p>
+                        </div>
                       )}
                     </div>
 

@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('Product')
       .select('*', { count: 'exact' })
+      .eq('moderationStatus', 'APPROVED')
       .order('createdAt', { ascending: false });
 
     // Filter by category if provided
