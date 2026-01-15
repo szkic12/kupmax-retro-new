@@ -292,6 +292,13 @@ export default function Home() {
       action: () => setShowClippyChat(true),
     },
     {
+      id: 'mentor',
+      icon: '🎓',
+      label: 'Mentor.exe',
+      type: 'link',
+      action: () => window.open('/mentor', '_self'),
+    },
+    {
       id: 'bulletin',
       icon: '📜',
       label: 'Regulamin.exe',
