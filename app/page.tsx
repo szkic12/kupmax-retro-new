@@ -37,6 +37,8 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState<string>('--:--');
   const [advertisement, setAdvertisement] = useState<any>(null);
   const [loadingAd, setLoadingAd] = useState(true);
+  const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [loadingNews, setLoadingNews] = useState(true);
 
   // Update clock only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -64,6 +66,24 @@ export default function Home() {
       }
     };
     fetchAdvertisement();
+  }, []);
+
+  // Fetch latest news from API
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await fetch('/api/news?limit=3');
+        const data = await res.json();
+        if (data.news) {
+          setLatestNews(data.news);
+        }
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setLoadingNews(false);
+      }
+    };
+    fetchNews();
   }, []);
 
   // Helper: ensure link has https://
@@ -490,11 +510,35 @@ export default function Home() {
           <div className="p-4">
             <h2 className="text-xl font-bold mb-4">📰 Latest News</h2>
             <div className="space-y-4">
-              <div className="border-2 border-gray-400 p-3 bg-white">
-                <h3 className="font-bold">Welcome to KUPMAX!</h3>
-                <p className="text-sm mt-2">News will be loaded from Supabase database.</p>
-                <p className="text-xs text-gray-600 mt-1">Posted: 2026-01-11</p>
-              </div>
+              {loadingNews ? (
+                <div className="text-center py-4">
+                  <span className="animate-pulse">⏳ Ładowanie...</span>
+                </div>
+              ) : latestNews.length > 0 ? (
+                latestNews.map((news) => (
+                  <div key={news.id} className="border-2 border-gray-400 p-3 bg-white">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-bold">{news.title}</h3>
+                      <span className="text-xs px-2 py-1 rounded" style={{
+                        background: news.category === 'Niesamowite Historie' ? '#000080' :
+                                   news.category === 'Nowoczesne Technologie' ? '#008000' : '#800000',
+                        color: '#fff'
+                      }}>
+                        {news.category?.split(' ')[0]}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-2">{news.excerpt || news.content?.substring(0, 100)}...</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      ✍️ {news.author} | {new Date(news.created_at).toLocaleDateString('pl-PL')}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="border-2 border-gray-400 p-3 bg-white">
+                  <h3 className="font-bold">Brak newsów</h3>
+                  <p className="text-sm mt-2">Dodaj pierwszy news w panelu admina!</p>
+                </div>
+              )}
             </div>
           </div>
         </Window>
