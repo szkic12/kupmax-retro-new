@@ -197,13 +197,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'ID reklamy jest wymagane' }, { status: 400 });
     }
 
-    // Najpierw dezaktywuj wszystkie reklamy
-    await supabase
+    // Krok 1: Dezaktywuj WSZYSTKIE reklamy które są aktywne
+    const { error: deactivateError } = await supabase
       .from('advertisements')
       .update({ is_active: false })
-      .neq('id', 'placeholder'); // Update all
+      .eq('is_active', true);
 
-    // Aktywuj wybraną reklamę
+    if (deactivateError) {
+      console.error('Error deactivating advertisements:', deactivateError);
+    }
+
+    // Krok 2: Aktywuj tylko wybraną reklamę
     const { data, error } = await supabase
       .from('advertisements')
       .update({ is_active: true, start_date: new Date().toISOString() })
