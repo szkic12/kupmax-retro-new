@@ -15,6 +15,7 @@ export default function RetroAdmin() {
   const [currentAd, setCurrentAd] = useState<any>(null);
   const [allAds, setAllAds] = useState<any[]>([]);
   const [adHistory, setAdHistory] = useState<any[]>([]);
+  const [newsList, setNewsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -36,6 +37,18 @@ export default function RetroAdmin() {
 
   // New webring site form
   const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: ':)' });
+
+  // News form
+  const [newNews, setNewNews] = useState({
+    title: '',
+    content: '',
+    excerpt: '',
+    image_url: '',
+    author: 'Admin',
+    category: 'Niesamowite Historie',
+  });
+
+  const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
   // Simple password check (in production use proper auth)
   const ADMIN_PASSWORD = 'kupmax2024';
@@ -86,6 +99,10 @@ export default function RetroAdmin() {
         const res = await fetch('/api/forum/threads');
         const data = await res.json();
         setForumThreads(data.threads || []);
+      } else if (activeTab === 'news') {
+        const res = await fetch('/api/news?all=true');
+        const data = await res.json();
+        setNewsList(data.news || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -382,6 +399,81 @@ export default function RetroAdmin() {
     }
   };
 
+  // News handlers
+  const handleAddNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNews.title || !newNews.content) {
+      setMessage('Tytul i tresc sa wymagane!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNews),
+      });
+
+      if (res.ok) {
+        setMessage('News dodany!');
+        setNewNews({
+          title: '',
+          content: '',
+          excerpt: '',
+          image_url: '',
+          author: 'Admin',
+          category: 'Niesamowite Historie',
+        });
+        fetchData();
+      } else {
+        setMessage('Blad dodawania newsa');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleToggleNewsPublished = async (newsItem: any) => {
+    try {
+      const res = await fetch('/api/news', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newsItem.id,
+          is_published: !newsItem.is_published,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage(newsItem.is_published ? 'News ukryty!' : 'News opublikowany!');
+        fetchData();
+      } else {
+        setMessage('Blad aktualizacji');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleDeleteNews = async (id: string) => {
+    if (!confirm('Czy na pewno usunac ten news?')) return;
+
+    try {
+      const res = await fetch(`/api/news?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setMessage('News usuniety!');
+        fetchData();
+      } else {
+        setMessage('Blad usuwania newsa');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
   // Retro styles
   const windowStyle: React.CSSProperties = {
     background: '#c0c0c0',
@@ -552,6 +644,9 @@ export default function RetroAdmin() {
             </button>
             <button style={tabStyle(activeTab === 'forum')} onClick={() => setActiveTab('forum')}>
               💬 Forum
+            </button>
+            <button style={tabStyle(activeTab === 'news')} onClick={() => setActiveTab('news')}>
+              📰 News
             </button>
           </div>
 
@@ -1329,6 +1424,198 @@ export default function RetroAdmin() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* News Section - BossXD style categories */}
+                {activeTab === 'news' && (
+                  <div>
+                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
+                      📰 Zarzadzanie News ({newsList.length} artykulow)
+                    </h3>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <Link
+                        href="/news"
+                        target="_blank"
+                        style={{
+                          ...buttonStyle,
+                          display: 'inline-block',
+                          textDecoration: 'none',
+                          color: '#000',
+                          marginRight: '10px',
+                        }}
+                      >
+                        Zobacz strone News
+                      </Link>
+                    </div>
+
+                    {/* Add new news form */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
+                      <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowy artykul</legend>
+                      <form onSubmit={handleAddNews}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytul *:</label>
+                            <input
+                              type="text"
+                              value={newNews.title}
+                              onChange={(e) => setNewNews({ ...newNews, title: e.target.value })}
+                              style={inputStyle}
+                              placeholder="Tytul artykulu"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kategoria:</label>
+                            <select
+                              value={newNews.category}
+                              onChange={(e) => setNewNews({ ...newNews, category: e.target.value })}
+                              style={{ ...inputStyle, height: '30px' }}
+                            >
+                              {NEWS_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Autor:</label>
+                            <input
+                              type="text"
+                              value={newNews.author}
+                              onChange={(e) => setNewNews({ ...newNews, author: e.target.value })}
+                              style={inputStyle}
+                              placeholder="Admin"
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Obrazek URL:</label>
+                            <input
+                              type="text"
+                              value={newNews.image_url}
+                              onChange={(e) => setNewNews({ ...newNews, image_url: e.target.value })}
+                              style={inputStyle}
+                              placeholder="https://..."
+                            />
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tresc artykulu *:</label>
+                          <textarea
+                            value={newNews.content}
+                            onChange={(e) => setNewNews({ ...newNews, content: e.target.value })}
+                            style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
+                            placeholder="Pelna tresc artykulu..."
+                          />
+                        </div>
+                        <div style={{ marginTop: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Zajawka (opcjonalnie):</label>
+                          <input
+                            type="text"
+                            value={newNews.excerpt}
+                            onChange={(e) => setNewNews({ ...newNews, excerpt: e.target.value })}
+                            style={inputStyle}
+                            placeholder="Krotki opis - jesli puste, wygeneruje z tresci"
+                          />
+                        </div>
+                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px', background: '#90EE90' }}>
+                          📰 Opublikuj artykul
+                        </button>
+                      </form>
+                    </fieldset>
+
+                    {/* News list */}
+                    <div style={{ overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', fontSize: '12px' }}>
+                        <thead style={{ background: '#e0e0e0', position: 'sticky', top: 0 }}>
+                          <tr>
+                            <th style={{ ...cellStyle, textAlign: 'left', width: '35%' }}>Tytul</th>
+                            <th style={{ ...cellStyle, textAlign: 'left', width: '20%' }}>Kategoria</th>
+                            <th style={{ ...cellStyle, textAlign: 'left', width: '10%' }}>Autor</th>
+                            <th style={{ ...cellStyle, textAlign: 'center', width: '10%' }}>Status</th>
+                            <th style={{ ...cellStyle, textAlign: 'center', width: '10%' }}>Wyswietlenia</th>
+                            <th style={{ ...cellStyle, textAlign: 'center', width: '15%' }}>Akcje</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {newsList.map((newsItem) => (
+                            <tr key={newsItem.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                              <td style={cellStyle}>
+                                <div>
+                                  <strong>{newsItem.title}</strong>
+                                  <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
+                                    {new Date(newsItem.created_at).toLocaleDateString('pl-PL')}
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={cellStyle}>
+                                <span style={{
+                                  background: newsItem.category === 'Niesamowite Historie' ? '#000080' :
+                                             newsItem.category === 'Nowoczesne Technologie' ? '#008000' : '#800000',
+                                  color: '#fff',
+                                  padding: '2px 6px',
+                                  fontSize: '10px',
+                                }}>
+                                  {newsItem.category}
+                                </span>
+                              </td>
+                              <td style={cellStyle}>{newsItem.author}</td>
+                              <td style={{ ...cellStyle, textAlign: 'center' }}>
+                                <span style={{
+                                  background: newsItem.is_published ? '#00aa00' : '#999',
+                                  color: '#fff',
+                                  padding: '2px 6px',
+                                  fontSize: '10px',
+                                }}>
+                                  {newsItem.is_published ? '✓ Aktywny' : 'Ukryty'}
+                                </span>
+                              </td>
+                              <td style={{ ...cellStyle, textAlign: 'center' }}>{newsItem.views || 0}</td>
+                              <td style={{ ...cellStyle, textAlign: 'center' }}>
+                                <button
+                                  onClick={() => handleToggleNewsPublished(newsItem)}
+                                  style={{
+                                    ...buttonStyle,
+                                    background: newsItem.is_published ? '#ffaa00' : '#4CAF50',
+                                    padding: '4px 8px',
+                                    fontSize: '10px',
+                                    marginRight: '4px',
+                                  }}
+                                >
+                                  {newsItem.is_published ? '👁️ Ukryj' : '✓ Publikuj'}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteNews(newsItem.id)}
+                                  style={{
+                                    ...buttonStyle,
+                                    background: '#ff6666',
+                                    padding: '4px 8px',
+                                    fontSize: '10px',
+                                  }}
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Info about categories */}
+                    <div style={{
+                      marginTop: '15px',
+                      padding: '10px',
+                      background: '#e0e0ff',
+                      border: '1px solid #000080',
+                      fontSize: '12px'
+                    }}>
+                      <strong>ℹ️ Kategorie w stylu BossXD:</strong>
+                      <ul style={{ margin: '5px 0 0 15px', padding: 0 }}>
+                        <li><span style={{ color: '#000080' }}>📚 Niesamowite Historie</span> - niezwykle przypadki i fenomenalne wydarzenia</li>
+                        <li><span style={{ color: '#008000' }}>💻 Nowoczesne Technologie</span> - najnowsze trendy i innowacje</li>
+                        <li><span style={{ color: '#800000' }}>📖 Eksperckie Poradniki</span> - praktyczne wskazowki i tutoriale</li>
+                      </ul>
                     </div>
                   </div>
                 )}

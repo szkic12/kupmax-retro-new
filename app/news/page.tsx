@@ -3,13 +3,36 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+interface NewsItem {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  image_url: string | null;
+  author: string;
+  category: 'Niesamowite Historie' | 'Nowoczesne Technologie' | 'Eksperckie Poradniki';
+  views: number;
+  created_at: string;
+}
+
+// Kategorie w stylu BossXD
+const CATEGORIES = [
+  { name: 'Niesamowite Historie', icon: '📚', color: '#000080' },
+  { name: 'Nowoczesne Technologie', icon: '💻', color: '#008000' },
+  { name: 'Eksperckie Poradniki', icon: '📖', color: '#800000' },
+] as const;
+
 /**
- * /news - Onet/Wirtualna Polska z 1998
- * Ramki (frames-like), migające "NEW!", kolorowe tabelki, weather widget
+ * /news - Portal informacyjny
+ * Połączenie stylu Onet/WP z 1998 z kategoriami BossXD
  */
 export default function NewsPage() {
   const [currentDate, setCurrentDate] = useState('');
   const [weather, setWeather] = useState({ temp: 15, condition: '☀️ Słonecznie' });
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [expandedNews, setExpandedNews] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentDate(new Date().toLocaleDateString('pl-PL', {
@@ -18,45 +41,70 @@ export default function NewsPage() {
       month: 'long',
       day: 'numeric',
     }));
+    fetchNews();
   }, []);
 
-  const mainNews = [
-    {
-      id: 1,
-      title: 'KUPMAX otwiera nową erę handlu internetowego!',
-      excerpt: 'Nasza platforma przekroczyła 10 000 użytkowników. Dziękujemy za zaufanie!',
-      category: 'BIZNES',
-      date: '14.01.2026',
-      isHot: true,
-      image: '📈',
-    },
-    {
-      id: 2,
-      title: 'Nowa aktualizacja systemu retro już dostępna',
-      excerpt: 'Windows 95 style powraca w wielkim stylu. Zobacz co nowego!',
-      category: 'TECHNOLOGIE',
-      date: '13.01.2026',
-      isHot: true,
-      image: '💻',
-    },
-    {
-      id: 3,
-      title: 'Forum KUPMAX - dołącz do dyskusji',
-      excerpt: 'Tysiące tematów, setki aktywnych użytkowników. Nie czekaj!',
-      category: 'SPOŁECZNOŚĆ',
-      date: '12.01.2026',
-      isHot: false,
-      image: '💬',
-    },
-  ];
+  const fetchNews = async () => {
+    try {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      setNews(data.news || []);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const sideNews = [
-    { title: 'Promocje w sklepie KUPMAX', category: 'HANDEL' },
-    { title: 'Nowe funkcje czatu dostępne', category: 'UPDATE' },
-    { title: 'Webring powiększa się', category: 'WEB' },
-    { title: 'Gra Block Blitz bije rekordy', category: 'ROZRYWKA' },
-    { title: 'Radio KUPMAX nadaje 24/7', category: 'MUZYKA' },
-  ];
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Convert API news to display format
+  const getMainNews = () => {
+    if (news.length === 0) {
+      // Fallback data
+      return [
+        { id: '1', title: 'KUPMAX otwiera nową erę handlu internetowego!', excerpt: 'Nasza platforma przekroczyła 10 000 użytkowników. Dziękujemy za zaufanie!', category: 'Niesamowite Historie' as const, created_at: new Date().toISOString(), image_url: null, author: 'Admin', content: '', views: 0 },
+        { id: '2', title: 'Nowa aktualizacja systemu retro już dostępna', excerpt: 'Windows 95 style powraca w wielkim stylu. Zobacz co nowego!', category: 'Nowoczesne Technologie' as const, created_at: new Date().toISOString(), image_url: null, author: 'Admin', content: '', views: 0 },
+        { id: '3', title: 'Forum KUPMAX - dołącz do dyskusji', excerpt: 'Tysiące tematów, setki aktywnych użytkowników. Nie czekaj!', category: 'Eksperckie Poradniki' as const, created_at: new Date().toISOString(), image_url: null, author: 'Admin', content: '', views: 0 },
+      ];
+    }
+    return news.slice(0, 4);
+  };
+
+  const getSideNews = () => {
+    if (news.length <= 4) {
+      return [
+        { title: 'Promocje w sklepie KUPMAX', category: 'HANDEL' },
+        { title: 'Nowe funkcje czatu dostępne', category: 'UPDATE' },
+        { title: 'Webring powiększa się', category: 'WEB' },
+        { title: 'Gra Block Blitz bije rekordy', category: 'ROZRYWKA' },
+        { title: 'Radio KUPMAX nadaje 24/7', category: 'MUZYKA' },
+      ];
+    }
+    return news.slice(4).map(n => ({ title: n.title, category: n.category.toUpperCase().split(' ')[0] }));
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const cat = CATEGORIES.find(c => c.name === category);
+    return cat?.icon || '📰';
+  };
+
+  const getNewsByCategory = (categoryName: string) => {
+    return news.filter(n => n.category === categoryName);
+  };
+
+  const filteredNews = selectedCategory
+    ? news.filter(n => n.category === selectedCategory)
+    : news;
+
+  const mainNews = getMainNews();
+  const sideNews = getSideNews();
 
   return (
     <div className="min-h-screen" style={{ background: '#c0c0c0' }}>
@@ -120,20 +168,32 @@ export default function NewsPage() {
             </div>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation - BossXD style categories */}
           <nav className="mt-4">
             <div className="flex flex-wrap gap-1">
-              {['GŁÓWNA', 'POLSKA', 'ŚWIAT', 'BIZNES', 'SPORT', 'ROZRYWKA', 'TECHNOLOGIE', 'POGODA'].map((item, i) => (
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="px-4 py-1 font-bold text-sm transition-colors"
+                style={{
+                  background: !selectedCategory ? '#000080' : '#e0e0e0',
+                  color: !selectedCategory ? '#ffffff' : '#000080',
+                  border: '2px solid #000080',
+                }}
+              >
+                📋 WSZYSTKIE
+              </button>
+              {CATEGORIES.map((cat) => (
                 <button
-                  key={item}
+                  key={cat.name}
+                  onClick={() => setSelectedCategory(cat.name)}
                   className="px-4 py-1 font-bold text-sm transition-colors"
                   style={{
-                    background: i === 0 ? '#000080' : '#e0e0e0',
-                    color: i === 0 ? '#ffffff' : '#000080',
-                    border: '2px solid #000080',
+                    background: selectedCategory === cat.name ? cat.color : '#e0e0e0',
+                    color: selectedCategory === cat.name ? '#ffffff' : '#000080',
+                    border: `2px solid ${cat.color}`,
                   }}
                 >
-                  {item}
+                  {cat.icon} {cat.name.toUpperCase()}
                 </button>
               ))}
             </div>
@@ -230,53 +290,72 @@ export default function NewsPage() {
                 </span>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 p-4">
-                {mainNews.map((news) => (
-                  <article
-                    key={news.id}
-                    className="relative rounded overflow-hidden cursor-pointer transition-transform hover:-translate-y-1"
-                    style={{
-                      background: '#f5f5f5',
-                      border: '2px solid #ccc',
-                    }}
-                  >
-                    {news.isHot && (
-                      <div
-                        className="absolute top-2 right-2 px-2 py-1 text-xs font-bold text-white rounded animate-pulse"
-                        style={{ background: '#ff0000' }}
-                      >
-                        🔥 NEW!
-                      </div>
-                    )}
-
-                    <div
-                      className="h-32 flex items-center justify-center text-6xl"
-                      style={{ background: 'linear-gradient(180deg, #e0e0e0 0%, #c0c0c0 100%)' }}
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="text-4xl mb-4 animate-pulse">⏳</div>
+                  <p>Ładowanie wiadomości...</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4 p-4">
+                  {(selectedCategory ? filteredNews : mainNews).slice(0, 4).map((item, i) => (
+                    <article
+                      key={item.id}
+                      onClick={() => setExpandedNews(expandedNews === item.id ? null : item.id)}
+                      className="relative rounded overflow-hidden cursor-pointer transition-transform hover:-translate-y-1"
+                      style={{
+                        background: '#f5f5f5',
+                        border: '2px solid #ccc',
+                      }}
                     >
-                      {news.image}
-                    </div>
-
-                    <div className="p-3">
-                      <div className="flex justify-between items-center mb-2">
-                        <span
-                          className="text-xs font-bold px-2 py-1 rounded"
-                          style={{ background: '#000080', color: '#ffffff' }}
+                      {i < 2 && (
+                        <div
+                          className="absolute top-2 right-2 px-2 py-1 text-xs font-bold text-white rounded animate-pulse"
+                          style={{ background: '#ff0000' }}
                         >
-                          {news.category}
-                        </span>
-                        <span className="text-xs text-gray-500">{news.date}</span>
-                      </div>
-                      <h3
-                        className="font-bold mb-2 hover:text-blue-600"
-                        style={{ color: '#000080' }}
+                          🔥 NEW!
+                        </div>
+                      )}
+
+                      <div
+                        className="h-32 flex items-center justify-center text-6xl"
+                        style={{ background: `linear-gradient(180deg, ${CATEGORIES.find(c => c.name === item.category)?.color || '#000080'}33 0%, #c0c0c0 100%)` }}
                       >
-                        {news.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">{news.excerpt}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          getCategoryIcon(item.category)
+                        )}
+                      </div>
+
+                      <div className="p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span
+                            className="text-xs font-bold px-2 py-1 rounded"
+                            style={{ background: CATEGORIES.find(c => c.name === item.category)?.color || '#000080', color: '#ffffff' }}
+                          >
+                            {item.category}
+                          </span>
+                          <span className="text-xs text-gray-500">{formatDate(item.created_at)}</span>
+                        </div>
+                        <h3
+                          className="font-bold mb-2 hover:text-blue-600"
+                          style={{ color: '#000080' }}
+                        >
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {expandedNews === item.id ? item.content : item.excerpt}
+                        </p>
+                        {expandedNews === item.id && (
+                          <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+                            ✍️ {item.author} | 👁️ {item.views} odsłon
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* News list */}
