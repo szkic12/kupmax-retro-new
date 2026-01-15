@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-// Knowledge base for common programming questions
-const knowledgeBase: Record<string, string> = {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Fallback knowledge base if database is empty
+const fallbackKnowledge: Record<string, string> = {
   'react hooks': `**React Hooks** to funkcje pozwalające używać stanu i innych funkcji React w komponentach funkcyjnych.
 
 **Podstawowe Hooks:**
@@ -12,16 +18,7 @@ const knowledgeBase: Record<string, string> = {
 - \`useContext\` - dostęp do kontekstu
 - \`useRef\` - referencje do elementów DOM
 - \`useMemo\` - memoizacja wartości
-- \`useCallback\` - memoizacja funkcji
-
-**Przykład useState:**
-\`\`\`jsx
-const [count, setCount] = useState(0);
-\`\`\`
-
-**Zasady Hooks:**
-1. Wywołuj tylko na najwyższym poziomie
-2. Wywołuj tylko w komponentach React lub własnych Hooks`,
+- \`useCallback\` - memoizacja funkcji`,
 
   'useeffect': `**useEffect** - Hook do obsługi efektów ubocznych.
 
@@ -35,41 +32,18 @@ useEffect(() => {
 }, [dependencies]);
 \`\`\`
 
-**Przypadki użycia:**
-- Pobieranie danych (fetch)
-- Subskrypcje (WebSocket, events)
-- Manipulacja DOM
-- Timery
-
 **Dependency array:**
-- \`[]\` - tylko przy montowaniu (componentDidMount)
-- \`[value]\` - gdy value się zmieni
-- brak - przy każdym renderze (rzadko potrzebne)`,
+- \`[]\` - tylko przy montowaniu
+- \`[value]\` - gdy value się zmieni`,
 
   'next.js app router': `**Next.js App Router** (od wersji 13+) to nowy system routingu.
 
 **Kluczowe różnice od Pages Router:**
 1. Folder \`app/\` zamiast \`pages/\`
 2. React Server Components domyślnie
-3. Nowe specjalne pliki:
-   - \`page.tsx\` - strona
-   - \`layout.tsx\` - layout
-   - \`loading.tsx\` - loading UI
-   - \`error.tsx\` - error boundary
+3. Nowe specjalne pliki: page.tsx, layout.tsx, loading.tsx, error.tsx
 
-**Pobieranie danych:**
-\`\`\`tsx
-// Bezpośrednio w komponencie!
-async function Page() {
-  const data = await fetch('...');
-  return <div>{data}</div>;
-}
-\`\`\`
-
-**Nie potrzebujesz już:**
-- getServerSideProps
-- getStaticProps
-- getStaticPaths`,
+**Pobieranie danych - bezpośrednio w komponencie!**`,
 
   'typescript': `**TypeScript** - JavaScript z typami.
 
@@ -78,161 +52,85 @@ async function Page() {
 let name: string = "Jan";
 let age: number = 25;
 let isActive: boolean = true;
-let items: string[] = ["a", "b"];
-\`\`\`
-
-**Interface vs Type:**
-\`\`\`ts
-// Interface - dla obiektów
-interface User {
-  name: string;
-  age: number;
-}
-
-// Type - bardziej elastyczny
-type ID = string | number;
-\`\`\`
-
-**Generics:**
-\`\`\`ts
-function identity<T>(arg: T): T {
-  return arg;
-}
 \`\`\``,
 
   'async await': `**async/await** - nowoczesna obsługa asynchroniczności.
 
-**Składnia:**
 \`\`\`js
 async function fetchData() {
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error:', error);
-  }
+  const response = await fetch(url);
+  const data = await response.json();
+  return data;
 }
-\`\`\`
-
-**Porównanie z Promise:**
-\`\`\`js
-// Promise chain (stary sposób)
-fetch(url)
-  .then(res => res.json())
-  .then(data => console.log(data))
-  .catch(err => console.error(err));
-
-// async/await (nowoczesny)
-const data = await fetch(url).then(r => r.json());
-\`\`\`
-
-**Równoległe wywołania:**
-\`\`\`js
-const [users, posts] = await Promise.all([
-  fetchUsers(),
-  fetchPosts()
-]);
 \`\`\``,
 
   'supabase': `**Supabase** - open-source alternatywa dla Firebase.
 
-**Funkcje:**
-- PostgreSQL database
-- Authentication
-- Realtime subscriptions
-- Storage
-- Edge Functions
-
-**Przykład użycia:**
-\`\`\`ts
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(url, key);
-
-// Pobieranie danych
-const { data, error } = await supabase
-  .from('users')
-  .select('*')
-  .eq('active', true);
-
-// Insert
-await supabase.from('users').insert({ name: 'Jan' });
-\`\`\``,
-
-  'tailwind css': `**Tailwind CSS** - utility-first CSS framework.
-
-**Popularne klasy:**
-\`\`\`html
-<!-- Flexbox -->
-<div class="flex items-center justify-between">
-
-<!-- Spacing -->
-<div class="p-4 m-2 space-y-4">
-
-<!-- Colors -->
-<div class="bg-blue-500 text-white">
-
-<!-- Responsive -->
-<div class="text-sm md:text-base lg:text-lg">
-
-<!-- Hover/Focus -->
-<button class="hover:bg-blue-600 focus:ring-2">
-\`\`\`
-
-**Konfiguracja (tailwind.config.js):**
-\`\`\`js
-module.exports = {
-  content: ['./app/**/*.tsx'],
-  theme: {
-    extend: {
-      colors: {
-        primary: '#000080'
-      }
-    }
-  }
-}
-\`\`\``,
+**Funkcje:** PostgreSQL, Authentication, Realtime, Storage, Edge Functions`,
 
   'git': `**Git** - system kontroli wersji.
 
 **Podstawowe komendy:**
 \`\`\`bash
-# Inicjalizacja
 git init
-
-# Status
-git status
-
-# Dodanie plików
 git add .
-
-# Commit
-git commit -m "Opis zmian"
-
-# Push
+git commit -m "message"
 git push origin main
-
-# Pull
-git pull origin main
-
-# Branch
-git checkout -b feature/new-feature
-git merge feature/new-feature
-\`\`\`
-
-**Dobre praktyki:**
-- Commituj często, małe zmiany
-- Pisz czytelne opisy commitów
-- Używaj branchy dla nowych funkcji
-- Regularnie pull'uj zmiany`
+\`\`\``
 };
 
-// Find best matching answer from knowledge base
-function findAnswer(question: string): string | null {
+// Fetch knowledge from database
+async function getKnowledge(query: string): Promise<string | null> {
+  try {
+    // Search in database
+    const { data, error } = await supabase
+      .from('mentor_knowledge')
+      .select('content, title, priority')
+      .eq('is_active', true)
+      .ilike('topic', `%${query.toLowerCase()}%`)
+      .order('priority', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.log('Database not available, using fallback knowledge');
+      return findFallbackAnswer(query);
+    }
+
+    if (data && data.length > 0) {
+      return data[0].content;
+    }
+
+    // Try partial match in database
+    const words = query.toLowerCase().split(/\s+/);
+    for (const word of words) {
+      if (word.length < 3) continue;
+
+      const { data: partialData } = await supabase
+        .from('mentor_knowledge')
+        .select('content, title, priority')
+        .eq('is_active', true)
+        .ilike('topic', `%${word}%`)
+        .order('priority', { ascending: false })
+        .limit(1);
+
+      if (partialData && partialData.length > 0) {
+        return partialData[0].content;
+      }
+    }
+
+    // Fallback to hardcoded knowledge
+    return findFallbackAnswer(query);
+  } catch (e) {
+    console.log('Error fetching knowledge, using fallback');
+    return findFallbackAnswer(query);
+  }
+}
+
+// Find answer in fallback knowledge base
+function findFallbackAnswer(question: string): string | null {
   const questionLower = question.toLowerCase();
 
-  for (const [key, answer] of Object.entries(knowledgeBase)) {
+  for (const [key, answer] of Object.entries(fallbackKnowledge)) {
     if (questionLower.includes(key)) {
       return answer;
     }
@@ -240,7 +138,7 @@ function findAnswer(question: string): string | null {
 
   // Check for partial matches
   const keywords = questionLower.split(/\s+/);
-  for (const [key, answer] of Object.entries(knowledgeBase)) {
+  for (const [key, answer] of Object.entries(fallbackKnowledge)) {
     const keyWords = key.split(/\s+/);
     const matches = keyWords.filter(kw => keywords.some(qw => qw.includes(kw) || kw.includes(qw)));
     if (matches.length > 0) {
@@ -252,17 +150,11 @@ function findAnswer(question: string): string | null {
 }
 
 // Generate contextual response
-function generateResponse(question: string): string {
-  // Check knowledge base first
-  const kbAnswer = findAnswer(question);
-  if (kbAnswer) {
-    return kbAnswer;
-  }
-
+async function generateResponse(question: string): Promise<string> {
   const questionLower = question.toLowerCase();
 
   // Greeting
-  if (questionLower.match(/^(cze[sś][cć]|hej|siema|dzie[nń]\s*dobry|witaj)/)) {
+  if (questionLower.match(/^(cze[sś][cć]|hej|siema|dzie[nń]\s*dobry|witaj|hello|hi)/)) {
     return `**Witaj w KUPMAX Mentor!**
 
 Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
@@ -271,7 +163,6 @@ Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
 - React, Next.js, TypeScript
 - Supabase, bazy danych
 - Git i kontrola wersji
-- Tailwind CSS i stylowanie
 - I wiele więcej!
 
 **Jak mogę Ci dzisiaj pomóc?**
@@ -280,7 +171,7 @@ Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
   }
 
   // Help/capabilities
-  if (questionLower.match(/co\s+(umiesz|potrafisz|możesz)|pomoc|help/)) {
+  if (questionLower.match(/co\s+(umiesz|potrafisz|możesz)|pomoc|help|czym/)) {
     return `**Mogę Ci pomóc z:**
 
 **Programowanie:**
@@ -304,10 +195,7 @@ Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
 - Wykrywanie przestarzałych wzorców
 - Aktualizacja kodu do najnowszych standardów
 
-**Zadaj mi pytanie!** Na przykład:
-- "Jak działa useEffect?"
-- "Wyjaśnij App Router w Next.js"
-- "Jak używać async/await?"`;
+**Zadaj mi pytanie!**`;
   }
 
   // Error help
@@ -329,6 +217,12 @@ Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
 **Wklej kod w zakładce "Walidator Kodu" - automatycznie znajdę problemy!**`;
   }
 
+  // Check knowledge base (database or fallback)
+  const kbAnswer = await getKnowledge(question);
+  if (kbAnswer) {
+    return kbAnswer;
+  }
+
   // Default response for unknown questions
   return `**Nie mam gotowej odpowiedzi na to pytanie.**
 
@@ -346,10 +240,23 @@ Mogę jednak pomóc Ci z:
 *Wskazówka: Jeśli masz kod z kursu który nie działa, wklej go w zakładce "Walidator Kodu"!*`;
 }
 
+// Save chat message to database (optional)
+async function saveChatMessage(sessionId: string, role: string, content: string) {
+  try {
+    await supabase.from('mentor_chat_history').insert({
+      session_id: sessionId,
+      role,
+      content: content.substring(0, 2000) // Limit content length
+    });
+  } catch (e) {
+    // Silently fail - tracking is optional
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, history } = body;
+    const { message, sessionId } = body;
 
     if (!message) {
       return NextResponse.json(
@@ -358,11 +265,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate session ID if not provided
+    const chatSessionId = sessionId || `session_${Date.now()}`;
+
+    // Save user message (optional)
+    await saveChatMessage(chatSessionId, 'user', message);
+
     // Generate response
-    const response = generateResponse(message);
+    const response = await generateResponse(message);
+
+    // Save assistant response (optional)
+    await saveChatMessage(chatSessionId, 'assistant', response);
 
     return NextResponse.json({
       response,
+      sessionId: chatSessionId,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
