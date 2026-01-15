@@ -6,34 +6,42 @@ import Link from 'next/link';
 /**
  * /reklama - Flash Intro Style
  * Pełnoekranowa prezentacja jak stare Flash intro "ENTER SITE"
+ * Dane pobierane z API /api/advertisement
  */
 export default function ReklamaPage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [visitCount, setVisitCount] = useState(13847);
+  const [advertisement, setAdvertisement] = useState<any>(null);
+  const [loadingAd, setLoadingAd] = useState(true);
 
-  const slides = [
-    {
-      title: 'Koniec odkładania. Czas tworzenia.',
-      subtitle: 'Anna Juszczak Fotografia',
-      imageUrl: '/images/slider-1.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-    {
-      title: 'Przestań marzyć. Zacznij działać.',
-      subtitle: 'Profesjonalne sesje zdjęciowe',
-      imageUrl: '/images/slider-2.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-    {
-      title: 'Każdy wielki projekt zaczyna się od pierwszego kroku.',
-      subtitle: 'Uwiecznij swoje chwile',
-      imageUrl: '/images/slider-3.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-  ];
+  // Fetch advertisement from API
+  useEffect(() => {
+    const fetchAdvertisement = async () => {
+      try {
+        const res = await fetch('/api/advertisement');
+        const data = await res.json();
+        if (data.advertisement) {
+          setAdvertisement(data.advertisement);
+        }
+      } catch (error) {
+        console.error('Error fetching advertisement:', error);
+      } finally {
+        setLoadingAd(false);
+      }
+    };
+    fetchAdvertisement();
+  }, []);
+
+  // Helper: ensure link has https://
+  const ensureHttps = (url: string | null | undefined): string => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
+  };
 
   // Symulacja ładowania Flash
   useEffect(() => {
@@ -54,17 +62,15 @@ export default function ReklamaPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-slide
-  useEffect(() => {
-    if (!showContent) return;
-    const interval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [showContent, slides.length]);
+  // Get display data from advertisement or fallback
+  const adTitle = advertisement?.title || 'Reklama';
+  const adDescription = advertisement?.description || '';
+  const adAdvertiser = advertisement?.advertiser_name || 'Reklamodawca';
+  const adImageUrl = advertisement?.image_url || '/images/slider-1.jpg';
+  const adLinkUrl = ensureHttps(advertisement?.link_url);
 
   // Loading screen - Flash style
-  if (isLoading) {
+  if (isLoading || loadingAd) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
         {/* Animated stars background */}
@@ -100,9 +106,9 @@ export default function ReklamaPage() {
               animation: 'rainbow 3s linear infinite',
             }}
           >
-            ANNA JUSZCZAK
+            {adAdvertiser.toUpperCase()}
           </h1>
-          <p className="text-cyan-400 text-xl mb-8 tracking-[0.5em]">F O T O G R A F I A</p>
+          <p className="text-cyan-400 text-xl mb-8 tracking-[0.5em]">R E K L A M A</p>
 
           {/* Loading bar */}
           <div className="w-80 mx-auto">
@@ -173,7 +179,7 @@ export default function ReklamaPage() {
           style={{ animation: 'marquee 20s linear infinite' }}
         >
           <span className="text-yellow-300 text-lg font-bold tracking-wider">
-            ★★★ ANNA JUSZCZAK FOTOGRAFIA ★★★ PROFESJONALNE SESJE ZDJĘCIOWE ★★★ ŚLUBY ★ PORTRETY ★ EVENTY ★★★ ZAPRASZAMY! ★★★
+            ★★★ {adAdvertiser.toUpperCase()} ★★★ {adTitle} ★★★ {adDescription || 'ZAPRASZAMY!'} ★★★
           </span>
         </div>
       </div>
@@ -181,7 +187,7 @@ export default function ReklamaPage() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-4">
 
-        {/* Slide container */}
+        {/* Single image container */}
         <div className="relative w-full max-w-4xl mx-auto">
           {/* Decorative frame */}
           <div
@@ -196,70 +202,35 @@ export default function ReklamaPage() {
 
           {/* Image container */}
           <div className="relative bg-black rounded-lg overflow-hidden border-4 border-white shadow-2xl">
-            {slides.map((slide, index) => (
-              <div
-                key={index}
-                className={`transition-all duration-1000 ${
-                  index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-0'
-                }`}
+            <a href={adLinkUrl} target="_blank" rel="noopener noreferrer">
+              <img
+                src={adImageUrl}
+                alt={adTitle}
+                className="w-full h-[50vh] object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </a>
+
+            {/* Caption */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
+              <h2
+                className="text-3xl md:text-4xl font-bold text-white mb-2"
+                style={{ textShadow: '2px 2px 4px #ff00ff, -2px -2px 4px #00ffff' }}
               >
-                <a href={slide.linkTo} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={slide.imageUrl}
-                    alt={slide.title}
-                    className="w-full h-[50vh] object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </a>
-
-                {/* Slide caption */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
-                  <h2
-                    className="text-3xl md:text-4xl font-bold text-white mb-2"
-                    style={{ textShadow: '2px 2px 4px #ff00ff, -2px -2px 4px #00ffff' }}
-                  >
-                    {slide.title}
-                  </h2>
-                  <p className="text-xl text-cyan-300">{slide.subtitle}</p>
-                </div>
-              </div>
-            ))}
-
-            {/* Navigation dots */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-4 h-4 rounded-full border-2 border-white transition-all ${
-                    index === currentSlide
-                      ? 'bg-cyan-400 shadow-[0_0_10px_#00ffff]'
-                      : 'bg-transparent hover:bg-white/50'
-                  }`}
-                />
-              ))}
+                {adTitle}
+              </h2>
+              {adDescription && (
+                <p className="text-xl text-cyan-300">{adDescription}</p>
+              )}
+              <p className="text-white/70 text-sm mt-2">
+                Reklamodawca: {adAdvertiser}
+              </p>
             </div>
           </div>
-
-          {/* Arrow navigation */}
-          <button
-            onClick={() => setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-6xl text-cyan-400 hover:text-pink-400 transition-colors hover:scale-125"
-            style={{ textShadow: '0 0 20px currentColor' }}
-          >
-            ◀
-          </button>
-          <button
-            onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-6xl text-cyan-400 hover:text-pink-400 transition-colors hover:scale-125"
-            style={{ textShadow: '0 0 20px currentColor' }}
-          >
-            ▶
-          </button>
         </div>
 
         {/* CTA Button */}
         <a
-          href="https://www.facebook.com/annajuszczakfotografia/"
+          href={adLinkUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-8 px-8 py-4 text-xl font-bold rounded-lg relative overflow-hidden group"
@@ -269,7 +240,7 @@ export default function ReklamaPage() {
           }}
         >
           <span className="relative z-10 text-white tracking-wider">
-            ✨ ODWIEDŹ PROFIL ✨
+            ✨ ODWIEDŹ STRONĘ ✨
           </span>
           <div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -301,7 +272,7 @@ export default function ReklamaPage() {
 
             {/* Awards */}
             <div className="text-yellow-300">
-              🏆 Best Photography Site 1999 🏆
+              🏆 Featured Advertisement 🏆
             </div>
 
             {/* Guestbook link */}
@@ -339,7 +310,7 @@ export default function ReklamaPage() {
 
           {/* Copyright */}
           <p className="text-center text-gray-500 text-sm mt-4">
-            © 1999-2026 Anna Juszczak Fotografia | Powered by KUPMAX Retro
+            © 1999-2026 {adAdvertiser} | Powered by KUPMAX Retro
           </p>
         </div>
       </div>

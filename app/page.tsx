@@ -66,6 +66,15 @@ export default function Home() {
     fetchAdvertisement();
   }, []);
 
+  // Helper: ensure link has https://
+  const ensureHttps = (url: string | null | undefined): string => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
+  };
+
   const [windows, setWindows] = useState({
     reklama: true, // Auto-open on startup - Reklama fotografki
     news: false,
@@ -425,7 +434,7 @@ export default function Home() {
               </div>
             ) : advertisement ? (
               <a
-                href={advertisement.link_url || '#'}
+                href={ensureHttps(advertisement.link_url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full h-full relative group cursor-pointer"
