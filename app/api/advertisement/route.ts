@@ -10,9 +10,32 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// GET - pobierz aktualną aktywną reklamę
-export async function GET() {
+// GET - pobierz reklamę (aktywną lub wszystkie)
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const all = searchParams.get('all') === 'true';
+
+    // Jeśli all=true, zwróć wszystkie reklamy (dla admina)
+    if (all) {
+      const { data, error } = await supabase
+        .from('advertisements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all advertisements:', error);
+        return NextResponse.json({ error: 'Failed to fetch advertisements' }, { status: 500 });
+      }
+
+      return NextResponse.json({ advertisements: data || [] }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        }
+      });
+    }
+
+    // Domyślnie: pobierz tylko aktywną reklamę
     const { data, error } = await supabase
       .from('advertisements')
       .select('*')
@@ -158,6 +181,42 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ advertisement: data, message: 'Reklama zaktualizowana!' });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// PATCH - aktywuj wybraną reklamę (dezaktywuj pozostałe)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID reklamy jest wymagane' }, { status: 400 });
+    }
+
+    // Najpierw dezaktywuj wszystkie reklamy
+    await supabase
+      .from('advertisements')
+      .update({ is_active: false })
+      .neq('id', 'placeholder'); // Update all
+
+    // Aktywuj wybraną reklamę
+    const { data, error } = await supabase
+      .from('advertisements')
+      .update({ is_active: true, start_date: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error activating advertisement:', error);
+      return NextResponse.json({ error: 'Failed to activate advertisement' }, { status: 500 });
+    }
+
+    return NextResponse.json({ advertisement: data, message: 'Reklama aktywowana!' });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

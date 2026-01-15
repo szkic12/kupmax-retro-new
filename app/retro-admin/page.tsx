@@ -13,6 +13,7 @@ export default function RetroAdmin() {
   const [webringSites, setWebringSites] = useState<any[]>([]);
   const [forumThreads, setForumThreads] = useState<any[]>([]);
   const [currentAd, setCurrentAd] = useState<any>(null);
+  const [allAds, setAllAds] = useState<any[]>([]);
   const [adHistory, setAdHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -60,9 +61,15 @@ export default function RetroAdmin() {
     setLoading(true);
     try {
       if (activeTab === 'advertisement') {
+        // Pobierz aktywną reklamę
         const res = await fetch('/api/advertisement');
         const data = await res.json();
         setCurrentAd(data.advertisement || null);
+
+        // Pobierz wszystkie reklamy
+        const resAll = await fetch('/api/advertisement?all=true');
+        const dataAll = await resAll.json();
+        setAllAds(dataAll.advertisements || []);
       } else if (activeTab === 'radio') {
         const res = await fetch('/api/radio/stations');
         const data = await res.json();
@@ -158,6 +165,25 @@ export default function RetroAdmin() {
         fetchData();
       } else {
         setMessage('Blad usuwania reklamy');
+      }
+    } catch (error) {
+      setMessage('Blad sieci');
+    }
+  };
+
+  const handleActivateAdvertisement = async (id: string) => {
+    try {
+      const res = await fetch('/api/advertisement', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (res.ok) {
+        setMessage('Reklama aktywowana!');
+        fetchData();
+      } else {
+        setMessage('Blad aktywacji reklamy');
       }
     } catch (error) {
       setMessage('Blad sieci');
@@ -818,6 +844,107 @@ export default function RetroAdmin() {
                       </form>
                     </fieldset>
 
+                    {/* All advertisements list */}
+                    {allAds.length > 1 && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '10px', marginTop: '15px' }}>
+                        <legend style={{ fontWeight: 'bold' }}>📋 Wszystkie reklamy ({allAds.length})</legend>
+                        <p style={{ fontSize: '11px', color: '#666', marginBottom: '10px' }}>
+                          Kliknij "Aktywuj" aby przełączyć na wybraną reklamę
+                        </p>
+                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                          {allAds.map((ad) => (
+                            <div
+                              key={ad.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '8px',
+                                marginBottom: '5px',
+                                background: ad.is_active ? '#ccffcc' : '#f5f5f5',
+                                border: ad.is_active ? '2px solid #00aa00' : '1px solid #ccc',
+                              }}
+                            >
+                              {/* Thumbnail */}
+                              <div style={{
+                                width: '60px',
+                                height: '40px',
+                                background: '#e0e0e0',
+                                border: '1px solid #999',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                              }}>
+                                {ad.image_url ? (
+                                  <img
+                                    src={ad.image_url}
+                                    alt={ad.title}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                    📷
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Info */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontWeight: 'bold', fontSize: '12px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {ad.title}
+                                </p>
+                                <p style={{ fontSize: '10px', color: '#666', margin: 0 }}>
+                                  {ad.advertiser_name}
+                                </p>
+                              </div>
+
+                              {/* Status */}
+                              <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                                {ad.is_active ? (
+                                  <span style={{
+                                    background: '#00aa00',
+                                    color: '#fff',
+                                    padding: '2px 8px',
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                  }}>
+                                    ✓ AKTYWNA
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleActivateAdvertisement(ad.id)}
+                                    style={{
+                                      ...buttonStyle,
+                                      background: '#4CAF50',
+                                      color: '#fff',
+                                      padding: '4px 10px',
+                                      fontSize: '11px',
+                                    }}
+                                  >
+                                    ▶ Aktywuj
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Delete */}
+                              {!ad.is_active && (
+                                <button
+                                  onClick={() => handleDeleteAdvertisement(ad.id)}
+                                  style={{
+                                    ...buttonStyle,
+                                    background: '#ff6666',
+                                    padding: '4px 8px',
+                                    fontSize: '10px',
+                                  }}
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </fieldset>
+                    )}
+
                     {/* Info box */}
                     <div style={{
                       marginTop: '15px',
@@ -830,8 +957,8 @@ export default function RetroAdmin() {
                       <ul style={{ margin: '5px 0 0 15px', padding: 0 }}>
                         <li>Tylko jedna reklama moze byc aktywna naraz</li>
                         <li>Dodanie nowej reklamy automatycznie zastapi aktualna</li>
-                        <li>Poprzednie reklamy sa zapisywane w historii</li>
-                        <li>Ustaw date wygasniecia aby widziec przypomnienie</li>
+                        <li>Poprzednie reklamy sa zapisywane na liscie</li>
+                        <li>Kliknij "Aktywuj" aby przywrocic stara reklame</li>
                       </ul>
                     </div>
                   </div>
