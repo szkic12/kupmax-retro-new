@@ -97,6 +97,9 @@ export default function MentorIDEPage() {
   const [aiInput, setAiInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  // Mobile tab state
+  const [mobileTab, setMobileTab] = useState<'files' | 'editor' | 'preview' | 'ai'>('editor');
+
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -497,15 +500,43 @@ export default function MentorIDEPage() {
         </button>
       </div>
 
-      {/* Main Content - 3 Panels */}
+      {/* Mobile Tabs - only visible on small screens */}
+      <div className="md:hidden flex" style={{ background: '#000080' }}>
+        <button
+          onClick={() => setMobileTab('files')}
+          className={`flex-1 py-2 text-xs font-bold ${mobileTab === 'files' ? 'bg-white text-black' : 'text-white'}`}
+        >
+          📂 Pliki
+        </button>
+        <button
+          onClick={() => setMobileTab('editor')}
+          className={`flex-1 py-2 text-xs font-bold ${mobileTab === 'editor' ? 'bg-white text-black' : 'text-white'}`}
+        >
+          📝 Kod
+        </button>
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 py-2 text-xs font-bold ${mobileTab === 'preview' ? 'bg-white text-black' : 'text-white'}`}
+        >
+          👁️ Podgląd
+        </button>
+        <button
+          onClick={() => setMobileTab('ai')}
+          className={`flex-1 py-2 text-xs font-bold ${mobileTab === 'ai' ? 'bg-white text-black' : 'text-white'}`}
+        >
+          🤖 AI
+        </button>
+      </div>
+
+      {/* Main Content - 3 Panels on desktop, tabs on mobile */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - File Tree */}
         <div
-          className="w-56 flex flex-col"
+          className={`${mobileTab === 'files' ? 'flex' : 'hidden'} md:flex w-full md:w-56 flex-col`}
           style={{ background: '#fff', borderRight: '2px solid #808080' }}
         >
           <div
-            className="px-2 py-1 font-bold text-sm"
+            className="px-2 py-1 font-bold text-sm hidden md:block"
             style={{ background: '#000080', color: '#fff' }}
           >
             📂 Pliki projektu
@@ -523,17 +554,26 @@ export default function MentorIDEPage() {
         </div>
 
         {/* Center Panel - Code Editor */}
-        <div className="flex-1 flex flex-col" style={{ background: '#1e1e1e' }}>
+        <div
+          className={`${mobileTab === 'editor' ? 'flex' : 'hidden'} md:flex flex-1 flex-col`}
+          style={{ background: '#1e1e1e' }}
+        >
           <div
-            className="px-2 py-1 font-bold text-sm flex items-center gap-2"
+            className="px-2 py-1 font-bold text-sm flex items-center gap-2 hidden md:flex"
             style={{ background: '#2d2d2d', color: '#fff' }}
           >
             <span>📝</span>
             <span>{selectedFile ? selectedFile.name : 'Edytor kodu'}</span>
             {selectedFile && (
-              <span className="text-xs text-gray-400 ml-2">{selectedFile.path}</span>
+              <span className="text-xs text-gray-400 ml-2 truncate">{selectedFile.path}</span>
             )}
           </div>
+          {/* Mobile file indicator */}
+          {selectedFile && (
+            <div className="md:hidden px-2 py-1 text-xs text-white bg-gray-800 truncate">
+              {selectedFile.name}
+            </div>
+          )}
           <div className="flex-1">
             <MonacoEditor
               height="100%"
@@ -552,9 +592,9 @@ export default function MentorIDEPage() {
           </div>
         </div>
 
-        {/* Right Panel - Preview & AI */}
+        {/* Right Panel - Preview & AI (split on desktop, separate tabs on mobile) */}
         <div
-          className="w-80 flex flex-col"
+          className={`hidden md:flex w-80 flex-col`}
           style={{ background: '#c0c0c0', borderLeft: '2px solid #808080' }}
         >
           {/* Preview */}
@@ -624,6 +664,66 @@ export default function MentorIDEPage() {
                 ➤
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Preview Panel */}
+        <div
+          className={`${mobileTab === 'preview' ? 'flex' : 'hidden'} md:hidden flex-1 flex-col bg-white`}
+        >
+          <iframe
+            srcDoc={generatePreview()}
+            className="w-full h-full border-0"
+            sandbox="allow-scripts"
+            title="Preview"
+          />
+        </div>
+
+        {/* Mobile AI Panel */}
+        <div
+          className={`${mobileTab === 'ai' ? 'flex' : 'hidden'} md:hidden flex-1 flex-col`}
+          style={{ background: '#c0c0c0' }}
+        >
+          <div className="flex-1 overflow-y-auto p-2 bg-white">
+            {aiMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`mb-2 p-2 rounded text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-blue-100 ml-4'
+                    : 'bg-gray-100 mr-4'
+                }`}
+              >
+                <div className="font-bold text-xs mb-1">
+                  {msg.role === 'user' ? '👤 Ty' : '🤖 Mentor'}
+                </div>
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              </div>
+            ))}
+            {isAiLoading && (
+              <div className="text-center text-gray-500 animate-pulse">
+                Mentor myśli...
+              </div>
+            )}
+          </div>
+          <div className="p-2 border-t flex gap-1 bg-gray-200">
+            <input
+              type="text"
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAiSend()}
+              placeholder="Zapytaj o kod..."
+              className="flex-1 px-2 py-1 text-sm border-2"
+              style={{ borderColor: '#808080 #fff #fff #808080' }}
+            />
+            <button
+              onClick={handleAiSend}
+              disabled={isAiLoading}
+              className="px-2 py-1 text-sm font-bold"
+              style={{ background: '#000080', color: '#fff', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
+            >
+              ➤
+            </button>
           </div>
         </div>
       </div>
