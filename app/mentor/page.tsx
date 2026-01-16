@@ -91,7 +91,7 @@ export default function MentorIDEPage() {
   const [editorContent, setEditorContent] = useState<string>('// Wgraj projekt lub wybierz plik z drzewa 📁');
 
   // AI Chat state
-  const [aiMessages, setAiMessages] = useState<Array<{role: string; content: string}>>([
+  const [aiMessages, setAiMessages] = useState<Array<{role: string; content: string; source?: string}>>([
     { role: 'assistant', content: '👋 Cześć! Jestem Mentor AI.\n\nWgraj projekt (ZIP lub folder), a pomogę Ci:\n• Znaleźć błędy\n• Zrozumieć kod\n• Ulepszyć projekt\n\nKliknij "📁 Wgraj projekt" żeby zacząć!' }
   ]);
   const [aiInput, setAiInput] = useState('');
@@ -396,30 +396,33 @@ export default function MentorIDEPage() {
     setIsAiLoading(true);
 
     try {
-      // Build context from current files
-      const context = selectedFile
-        ? `Aktualny plik: ${selectedFile.name}\n\`\`\`${selectedFile.language}\n${selectedFile.content.slice(0, 2000)}\n\`\`\``
-        : 'Brak wybranego pliku.';
+      // Build file context if file is selected
+      const fileContext = selectedFile ? {
+        name: selectedFile.name,
+        content: selectedFile.content,
+        language: selectedFile.language || 'plaintext'
+      } : undefined;
 
       const response = await fetch('/api/mentor/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          context,
-          files: files.map(f => f.name).slice(0, 20),
+          fileContext,
         }),
       });
 
       const data = await response.json();
       setAiMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.response || 'Przepraszam, nie mogłem odpowiedzieć.'
+        content: data.response || 'Przepraszam, nie mogłem odpowiedzieć.',
+        source: data.source
       }]);
     } catch (error) {
       setAiMessages(prev => [...prev, {
         role: 'assistant',
-        content: '❌ Błąd połączenia. Spróbuj ponownie.'
+        content: '❌ Błąd połączenia. Spróbuj ponownie.',
+        source: 'error'
       }]);
     } finally {
       setIsAiLoading(false);
@@ -633,8 +636,17 @@ export default function MentorIDEPage() {
                       : 'bg-gray-100 mr-4'
                   }`}
                 >
-                  <div className="font-bold text-xs mb-1">
+                  <div className="font-bold text-xs mb-1 flex items-center gap-2">
                     {msg.role === 'user' ? '👤 Ty' : '🤖 Mentor'}
+                    {msg.role === 'assistant' && msg.source && (
+                      <span className={`px-1 rounded text-[10px] ${
+                        msg.source === 'ai' ? 'bg-green-200 text-green-800' :
+                        msg.source === 'offline' ? 'bg-yellow-200 text-yellow-800' :
+                        'bg-red-200 text-red-800'
+                      }`}>
+                        {msg.source === 'ai' ? '🤖 AI' : msg.source === 'offline' ? '📴 Offline' : '⚠️'}
+                      </span>
+                    )}
                   </div>
                   <div className="whitespace-pre-wrap">{msg.content}</div>
                 </div>
@@ -694,8 +706,17 @@ export default function MentorIDEPage() {
                     : 'bg-gray-100 mr-4'
                 }`}
               >
-                <div className="font-bold text-xs mb-1">
+                <div className="font-bold text-xs mb-1 flex items-center gap-2">
                   {msg.role === 'user' ? '👤 Ty' : '🤖 Mentor'}
+                  {msg.role === 'assistant' && msg.source && (
+                    <span className={`px-1 rounded text-[10px] ${
+                      msg.source === 'ai' ? 'bg-green-200 text-green-800' :
+                      msg.source === 'offline' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-red-200 text-red-800'
+                    }`}>
+                      {msg.source === 'ai' ? '🤖 AI' : msg.source === 'offline' ? '📴 Offline' : '⚠️'}
+                    </span>
+                  )}
                 </div>
                 <div className="whitespace-pre-wrap">{msg.content}</div>
               </div>

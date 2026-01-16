@@ -1,349 +1,106 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// System prompt for Mentor - coding assistant
+const mentorSystemPrompt = `Jesteś Mentor - ekspert programowania w KUPMAX IDE. Pomagasz użytkownikom uczyć się kodowania.
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+Twoja specjalizacja:
+- JavaScript, TypeScript, React, Next.js
+- HTML, CSS, Tailwind
+- Node.js, Supabase, PostgreSQL
+- Git, deployment, best practices
 
-// Fallback knowledge base if database is empty
-const fallbackKnowledge: Record<string, string> = {
-  'react hooks': `**React Hooks** to funkcje pozwalające używać stanu i innych funkcji React w komponentach funkcyjnych.
+Styl odpowiedzi:
+- Odpowiadaj po polsku
+- Bądź konkretny i pomocny
+- Używaj przykładów kodu gdy to pomoże
+- Formatuj kod w blokach markdown
+- Wskazuj błędy i sugeruj poprawki
+- Jeśli kod jest przestarzały, pokaż nowoczesną alternatywę
 
-**Podstawowe Hooks:**
-- \`useState\` - zarządzanie stanem lokalnym
-- \`useEffect\` - efekty uboczne (fetch, subskrypcje)
-- \`useContext\` - dostęp do kontekstu
-- \`useRef\` - referencje do elementów DOM
-- \`useMemo\` - memoizacja wartości
-- \`useCallback\` - memoizacja funkcji`,
+Jeśli użytkownik wgra kod:
+- Przeanalizuj go pod kątem błędów
+- Zasugeruj ulepszenia
+- Wyjaśnij co kod robi jeśli pytają`;
 
-  'useeffect': `**useEffect** - Hook do obsługi efektów ubocznych.
+// Fallback responses when API unavailable
+const fallbackResponses: Record<string, string> = {
+  'greeting': `👋 **Cześć! Jestem Mentor.**
 
-**Składnia:**
-\`\`\`jsx
-useEffect(() => {
-  // Kod efektu
-  return () => {
-    // Cleanup (opcjonalne)
-  };
-}, [dependencies]);
-\`\`\`
+Mogę pomóc Ci z:
+• React, Next.js, TypeScript
+• HTML, CSS, JavaScript
+• Supabase, bazy danych
+• Git i deployment
 
-**Dependency array:**
-- \`[]\` - tylko przy montowaniu
-- \`[value]\` - gdy value się zmieni`,
+Wgraj projekt i zapytaj o kod!
 
-  'next.js app router': `**Next.js App Router** (od wersji 13+) to nowy system routingu.
+*Uwaga: AI offline - podstawowe odpowiedzi*`,
 
-**Kluczowe różnice od Pages Router:**
-1. Folder \`app/\` zamiast \`pages/\`
-2. React Server Components domyślnie
-3. Nowe specjalne pliki: page.tsx, layout.tsx, loading.tsx, error.tsx
+  'help': `**Mentor może pomóc z:**
 
-**Pobieranie danych - bezpośrednio w komponencie!**`,
+📘 **Frontend:** React, Next.js, Vue, HTML/CSS
+📗 **Backend:** Node.js, Supabase, PostgreSQL
+📙 **Narzędzia:** Git, VS Code, deployment
 
-  'typescript': `**TypeScript** - JavaScript z typami.
+Wgraj kod przez ZIP lub folder, a pomogę Ci go zrozumieć i ulepszyć!
 
-**Podstawowe typy:**
-\`\`\`ts
-let name: string = "Jan";
-let age: number = 25;
-let isActive: boolean = true;
-\`\`\``,
+*Uwaga: AI offline - pełna pomoc po aktywacji API*`,
 
-  'async await': `**async/await** - nowoczesna obsługa asynchroniczności.
+  'error': `**Pomoc z błędami:**
 
-\`\`\`js
-async function fetchData() {
-  const response = await fetch(url);
-  const data = await response.json();
-  return data;
-}
-\`\`\``,
+1. Wgraj plik z błędem
+2. Opisz co próbujesz osiągnąć
+3. Wklej pełny tekst błędu
 
-  'supabase': `**Supabase** - open-source alternatywa dla Firebase.
+Popularne błędy:
+• \`Cannot read property\` - sprawdź czy zmienna istnieje
+• \`Module not found\` - sprawdź importy
+• \`TypeError\` - niezgodność typów
 
-**Funkcje:** PostgreSQL, Authentication, Realtime, Storage, Edge Functions`,
+*AI offline - podstawowa diagnostyka*`,
 
-  'git': `**Git** - system kontroli wersji.
+  'default': `Rozumiem pytanie, ale potrzebuję aktywnego AI żeby w pełni pomóc.
 
-**Podstawowe komendy:**
-\`\`\`bash
-git init
-git add .
-git commit -m "message"
-git push origin main
-\`\`\``
+**Tymczasowo mogę:**
+• Pokazać podstawowe przykłady kodu
+• Wyjaśnić popularne koncepty
+• Pomóc z nawigacją po IDE
+
+Wgraj kod a przeanalizuję go gdy API będzie aktywne!`
 };
 
-// Fetch knowledge from database
-async function getKnowledge(query: string): Promise<string | null> {
-  try {
-    // Search in database
-    const { data, error } = await supabase
-      .from('mentor_knowledge')
-      .select('content, title, priority')
-      .eq('is_active', true)
-      .ilike('topic', `%${query.toLowerCase()}%`)
-      .order('priority', { ascending: false })
-      .limit(1);
+// Get fallback response based on message content
+function getFallbackResponse(message: string): string {
+  const msgLower = message.toLowerCase();
 
-    if (error) {
-      console.log('Database not available, using fallback knowledge');
-      return findFallbackAnswer(query);
-    }
-
-    if (data && data.length > 0) {
-      return data[0].content;
-    }
-
-    // Try partial match in database
-    const words = query.toLowerCase().split(/\s+/);
-    for (const word of words) {
-      if (word.length < 3) continue;
-
-      const { data: partialData } = await supabase
-        .from('mentor_knowledge')
-        .select('content, title, priority')
-        .eq('is_active', true)
-        .ilike('topic', `%${word}%`)
-        .order('priority', { ascending: false })
-        .limit(1);
-
-      if (partialData && partialData.length > 0) {
-        return partialData[0].content;
-      }
-    }
-
-    // Fallback to hardcoded knowledge
-    return findFallbackAnswer(query);
-  } catch (e) {
-    console.log('Error fetching knowledge, using fallback');
-    return findFallbackAnswer(query);
+  if (msgLower.match(/^(cze[sś][cć]|hej|siema|witaj|hello|hi)\b/)) {
+    return fallbackResponses.greeting;
   }
+  if (msgLower.match(/pomoc|help|co umiesz|możesz/)) {
+    return fallbackResponses.help;
+  }
+  if (msgLower.match(/błąd|error|nie działa|problem/)) {
+    return fallbackResponses.error;
+  }
+
+  return fallbackResponses.default;
 }
 
-// Find answer in fallback knowledge base
-function findFallbackAnswer(question: string): string | null {
-  const questionLower = question.toLowerCase();
+// Build context from file if provided
+function buildFileContext(fileContext?: { name: string; content: string; language: string }): string {
+  if (!fileContext || !fileContext.content) return '';
 
-  for (const [key, answer] of Object.entries(fallbackKnowledge)) {
-    if (questionLower.includes(key)) {
-      return answer;
-    }
-  }
-
-  // Check for partial matches
-  const keywords = questionLower.split(/\s+/);
-  for (const [key, answer] of Object.entries(fallbackKnowledge)) {
-    const keyWords = key.split(/\s+/);
-    const matches = keyWords.filter(kw => keywords.some(qw => qw.includes(kw) || kw.includes(qw)));
-    if (matches.length > 0) {
-      return answer;
-    }
-  }
-
-  return null;
-}
-
-// Generate contextual response
-async function generateResponse(question: string): Promise<string> {
-  const questionLower = question.toLowerCase();
-
-  // Greeting
-  if (questionLower.match(/^(cze[sś][cć]|hej|siema|dzie[nń]\s*dobry|witaj|hello|hi)/)) {
-    return `**Witaj w KUPMAX Mentor!**
-
-Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
-
-- Wyjaśnieniem konceptów programistycznych
-- React, Next.js, TypeScript
-- Supabase, bazy danych
-- Git i kontrola wersji
-- I wiele więcej!
-
-**Jak mogę Ci dzisiaj pomóc?**
-
-*Wskazówka: Użyj zakładki "Walidator Kodu" aby sprawdzić czy kod z kursu jest aktualny!*`;
-  }
-
-  // Help/capabilities
-  if (questionLower.match(/co\s+(umiesz|potrafisz|możesz)|pomoc|help|czym/)) {
-    return `**Mogę Ci pomóc z:**
-
-**Programowanie:**
-- React & React Hooks
-- Next.js (App Router)
-- TypeScript
-- JavaScript ES6+
-
-**Backend & Bazy danych:**
-- Supabase
-- PostgreSQL
-- REST API
-
-**Narzędzia:**
-- Git & GitHub
-- Tailwind CSS
-- VS Code
-
-**Specjalne funkcje:**
-- Walidacja kodu z kursów (zakładka "Walidator Kodu")
-- Wykrywanie przestarzałych wzorców
-- Aktualizacja kodu do najnowszych standardów
-
-**Zadaj mi pytanie!**`;
-  }
-
-  // Error help
-  if (questionLower.includes('błąd') || questionLower.includes('error') || questionLower.includes('nie działa')) {
-    return `**Pomoc z błędami**
-
-Żebym mógł Ci pomóc z błędem, potrzebuję:
-
-1. **Pełny tekst błędu** - skopiuj całą wiadomość
-2. **Kod który powoduje błąd** - użyj zakładki "Walidator Kodu"
-3. **Co próbujesz osiągnąć** - opisz cel
-
-**Popularne błędy:**
-- \`Cannot read property of undefined\` - sprawdź czy zmienna istnieje
-- \`Module not found\` - sprawdź import i czy pakiet jest zainstalowany
-- \`Hydration failed\` - różnica między serwerem a klientem w Next.js
-- \`TypeError\` - niezgodność typów w TypeScript
-
-**Wklej kod w zakładce "Walidator Kodu" - automatycznie znajdę problemy!**`;
-  }
-
-  // Check knowledge base (database or fallback)
-  const kbAnswer = await getKnowledge(question);
-  if (kbAnswer) {
-    return kbAnswer;
-  }
-
-  // Default response for unknown questions
-  return `**Nie mam gotowej odpowiedzi na to pytanie.**
-
-Mogę jednak pomóc Ci z:
-- React Hooks (useState, useEffect, etc.)
-- Next.js App Router
-- TypeScript basics
-- async/await
-- Supabase
-- Tailwind CSS
-- Git
-
-**Spróbuj zapytać inaczej lub bardziej szczegółowo.**
-
-*Wskazówka: Jeśli masz kod z kursu który nie działa, wklej go w zakładce "Walidator Kodu"!*`;
-}
-
-// Save chat message to database (optional)
-async function saveChatMessage(sessionId: string, role: string, content: string) {
-  try {
-    await supabase.from('mentor_chat_history').insert({
-      session_id: sessionId,
-      role,
-      content: content.substring(0, 2000) // Limit content length
-    });
-  } catch (e) {
-    // Silently fail - tracking is optional
-  }
-}
-
-// Analyze code and provide suggestions
-function analyzeCode(code: string, language: string): string {
-  const suggestions: string[] = [];
-
-  // Common issues detection
-  if (language === 'javascript' || language === 'typescript' || language === 'tsx' || language === 'jsx') {
-    if (code.includes('var ')) {
-      suggestions.push('- Zamień `var` na `const` lub `let` (ES6+)');
-    }
-    if (code.includes('function(') && !code.includes('function (')) {
-      suggestions.push('- Rozważ użycie arrow functions `() => {}`');
-    }
-    if (code.includes('.then(') && code.includes('.catch(')) {
-      suggestions.push('- Rozważ użycie `async/await` zamiast `.then()`');
-    }
-    if (code.includes('componentDidMount') || code.includes('componentWillUnmount')) {
-      suggestions.push('- To kod React Class Component - rozważ przepisanie na funkcyjny komponent z `useEffect`');
-    }
-    if (code.includes('getInitialProps')) {
-      suggestions.push('- `getInitialProps` jest przestarzałe w Next.js App Router - użyj `getServerSideProps` lub fetch w komponencie');
-    }
-    if (code.includes('pages/') && code.includes('export default')) {
-      suggestions.push('- To wygląda na Pages Router - nowy standard to App Router (`app/` folder)');
-    }
-  }
-
-  if (language === 'html') {
-    if (!code.includes('<!DOCTYPE')) {
-      suggestions.push('- Dodaj `<!DOCTYPE html>` na początku dokumentu');
-    }
-    if (!code.includes('<meta charset')) {
-      suggestions.push('- Dodaj `<meta charset="UTF-8">` w sekcji head');
-    }
-    if (!code.includes('viewport')) {
-      suggestions.push('- Dodaj `<meta name="viewport">` dla responsywności');
-    }
-  }
-
-  if (language === 'css') {
-    if (code.includes('float:') && !code.includes('flex') && !code.includes('grid')) {
-      suggestions.push('- Zamiast `float` użyj Flexbox lub CSS Grid');
-    }
-    if (code.includes('-webkit-') || code.includes('-moz-')) {
-      suggestions.push('- Vendor prefixy mogą być już niepotrzebne - sprawdź caniuse.com');
-    }
-  }
-
-  return suggestions.length > 0
-    ? `**Sugestie dla Twojego kodu:**\n\n${suggestions.join('\n')}`
-    : '';
-}
-
-// Generate response with file context
-async function generateResponseWithContext(
-  question: string,
-  fileContext?: { name: string; content: string; language: string }
-): Promise<string> {
-  const questionLower = question.toLowerCase();
-
-  // If file context is provided, analyze it
-  if (fileContext && fileContext.content) {
-    const analysis = analyzeCode(fileContext.content, fileContext.language);
-
-    // Questions about the current file
-    if (questionLower.includes('ten plik') || questionLower.includes('this file') ||
-        questionLower.includes('kod') || questionLower.includes('sprawdź')) {
-
-      const fileInfo = `**Analiza pliku: ${fileContext.name}**\n\nJęzyk: ${fileContext.language}\nRozmiar: ${fileContext.content.length} znaków\n\n`;
-
-      if (analysis) {
-        return fileInfo + analysis;
-      }
-
-      return fileInfo + '**Kod wygląda dobrze!** Nie znalazłem oczywistych problemów.\n\n*Zadaj pytanie o konkretną część kodu jeśli potrzebujesz pomocy.*';
-    }
-
-    // Add context to general questions
-    if (analysis) {
-      const baseResponse = await generateResponse(question);
-      return baseResponse + '\n\n---\n\n' + analysis;
-    }
-  }
-
-  // Fall back to regular response
-  return generateResponse(question);
+  const truncatedContent = fileContext.content.slice(0, 3000);
+  return `\n\n---\nAktualnie otwarty plik: ${fileContext.name} (${fileContext.language})\n\`\`\`${fileContext.language}\n${truncatedContent}\n\`\`\``;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, sessionId, fileContext } = body;
+    const { message, fileContext } = body;
 
     if (!message) {
       return NextResponse.json(
@@ -352,28 +109,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate session ID if not provided
-    const chatSessionId = sessionId || `session_${Date.now()}`;
+    // Try Claude API first
+    const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    // Save user message (optional)
-    await saveChatMessage(chatSessionId, 'user', message);
+    if (apiKey && apiKey.length > 10) {
+      try {
+        const anthropic = new Anthropic({ apiKey });
 
-    // Generate response with file context if provided
-    const response = await generateResponseWithContext(message, fileContext);
+        // Build user message with file context
+        const userMessage = message + buildFileContext(fileContext);
 
-    // Save assistant response (optional)
-    await saveChatMessage(chatSessionId, 'assistant', response);
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          system: mentorSystemPrompt,
+          messages: [{ role: 'user', content: userMessage }],
+        });
+
+        const assistantMessage = response.content[0];
+        const messageText = assistantMessage.type === 'text' ? assistantMessage.text : '';
+
+        return NextResponse.json({
+          response: messageText,
+          source: 'ai'
+        });
+      } catch (apiError: any) {
+        console.log('Mentor Claude API unavailable:', apiError?.message);
+        // Fall through to offline mode
+      }
+    }
+
+    // Fallback to offline responses
+    const fallbackResponse = getFallbackResponse(message);
 
     return NextResponse.json({
-      response,
-      sessionId: chatSessionId,
-      timestamp: new Date().toISOString()
+      response: fallbackResponse,
+      source: 'offline'
     });
+
   } catch (error) {
-    console.error('Error in chat:', error);
-    return NextResponse.json(
-      { error: 'Błąd podczas generowania odpowiedzi' },
-      { status: 500 }
-    );
+    console.error('Mentor chat error:', error);
+    return NextResponse.json({
+      response: '❌ Wystąpił błąd. Spróbuj ponownie.',
+      source: 'error'
+    });
   }
 }
