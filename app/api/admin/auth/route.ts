@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'KUPMAX Admin <noreply@kupmax.pl>',
+              from: 'KUPMAX Admin <onboarding@resend.dev>',
               to: ADMIN_EMAIL,
               subject: '🔐 Kod logowania KUPMAX Admin',
               html: `
