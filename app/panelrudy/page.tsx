@@ -6,7 +6,7 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 import { RetroEmoji, EmojiPicker, EmojiParser, EmojiType, emojiToCode } from '../../components/RetroEmoji';
 
 // Dozwolone emaile adminów
-const ADMIN_EMAILS = ['kontakt@kupmax.pl'];
+const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
 export default function SecureAdminPanel() {
   const { data: session, status } = useSession();
