@@ -1,1001 +1,642 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
-interface ValidationResult {
-  status: 'outdated' | 'current' | 'warning';
-  issues: Array<{
-    type: string;
-    description: string;
-    oldCode: string;
-    newCode: string;
-    explanation: string;
-  }>;
-  updatedCode: string;
-  summary: string;
-  learningPoints: string[];
-}
+// Dynamic import Monaco Editor (client-side only)
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
+// File type for our virtual file system
+interface VirtualFile {
+  name: string;
+  path: string;
   content: string;
-  timestamp: Date;
+  type: 'file' | 'folder';
+  children?: VirtualFile[];
+  language?: string;
 }
 
-export default function MentorPage() {
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('javascript');
-  const [framework, setFramework] = useState('react');
-  const [courseSource, setCourseSource] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<ValidationResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'chat' | 'input' | 'result' | 'learn'>('chat');
-  const [fileName, setFileName] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+// Detect language from file extension
+function getLanguage(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const langMap: Record<string, string> = {
+    'js': 'javascript',
+    'jsx': 'javascript',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'html': 'html',
+    'htm': 'html',
+    'css': 'css',
+    'scss': 'scss',
+    'sass': 'scss',
+    'json': 'json',
+    'md': 'markdown',
+    'py': 'python',
+    'php': 'php',
+    'java': 'java',
+    'cs': 'csharp',
+    'cpp': 'cpp',
+    'c': 'c',
+    'rb': 'ruby',
+    'go': 'go',
+    'rs': 'rust',
+    'sql': 'sql',
+    'xml': 'xml',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'sh': 'shell',
+    'bash': 'shell',
+    'vue': 'html',
+  };
+  return langMap[ext || ''] || 'plaintext';
+}
 
-  // Handle file upload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+// Get file icon based on type/extension
+function getFileIcon(filename: string, isFolder: boolean): string {
+  if (isFolder) return '📁';
+
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const iconMap: Record<string, string> = {
+    'js': '📜',
+    'jsx': '⚛️',
+    'ts': '📘',
+    'tsx': '⚛️',
+    'html': '🌐',
+    'htm': '🌐',
+    'css': '🎨',
+    'scss': '🎨',
+    'json': '📋',
+    'md': '📝',
+    'py': '🐍',
+    'php': '🐘',
+    'java': '☕',
+    'png': '🖼️',
+    'jpg': '🖼️',
+    'gif': '🖼️',
+    'svg': '🎭',
+    'zip': '📦',
+    'pdf': '📕',
+  };
+  return iconMap[ext || ''] || '📄';
+}
+
+export default function MentorIDEPage() {
+  // File system state
+  const [files, setFiles] = useState<VirtualFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<VirtualFile | null>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  // Editor state
+  const [editorContent, setEditorContent] = useState<string>('// Wgraj projekt lub wybierz plik z drzewa 📁');
+
+  // AI Chat state
+  const [aiMessages, setAiMessages] = useState<Array<{role: string; content: string}>>([
+    { role: 'assistant', content: '👋 Cześć! Jestem Mentor AI.\n\nWgraj projekt (ZIP lub folder), a pomogę Ci:\n• Znaleźć błędy\n• Zrozumieć kod\n• Ulepszyć projekt\n\nKliknij "📁 Wgraj projekt" żeby zacząć!' }
+  ]);
+  const [aiInput, setAiInput] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // Toggle folder expansion
+  const toggleFolder = (path: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  };
+
+  // Handle file selection
+  const handleFileSelect = (file: VirtualFile) => {
+    if (file.type === 'folder') {
+      toggleFolder(file.path);
+    } else {
+      setSelectedFile(file);
+      setEditorContent(file.content);
+    }
+  };
+
+  // Update file content when editing
+  const handleEditorChange = (value: string | undefined) => {
+    if (value === undefined) return;
+    setEditorContent(value);
+
+    if (selectedFile) {
+      // Update file in tree
+      setFiles(prev => updateFileInTree(prev, selectedFile.path, value));
+      setSelectedFile({ ...selectedFile, content: value });
+    }
+  };
+
+  // Helper to update file in tree
+  const updateFileInTree = (tree: VirtualFile[], path: string, content: string): VirtualFile[] => {
+    return tree.map(file => {
+      if (file.path === path) {
+        return { ...file, content };
+      }
+      if (file.children) {
+        return { ...file, children: updateFileInTree(file.children, path, content) };
+      }
+      return file;
+    });
+  };
+
+  // Handle ZIP upload
+  const handleZipUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check file extension for language detection
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const languageMap: Record<string, { lang: string; fw: string }> = {
-      'js': { lang: 'javascript', fw: 'none' },
-      'jsx': { lang: 'javascript', fw: 'react' },
-      'ts': { lang: 'typescript', fw: 'none' },
-      'tsx': { lang: 'typescript', fw: 'react' },
-      'py': { lang: 'python', fw: 'none' },
-      'php': { lang: 'php', fw: 'none' },
-      'java': { lang: 'java', fw: 'none' },
-      'cs': { lang: 'csharp', fw: 'none' },
-      'vue': { lang: 'javascript', fw: 'vue' },
-    };
-
-    if (ext && languageMap[ext]) {
-      setLanguage(languageMap[ext].lang);
-      setFramework(languageMap[ext].fw);
-    }
-
-    setFileName(file.name);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setCode(content);
-    };
-    reader.readAsText(file);
-  };
-
-  // Chat state
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: `**Witaj w KUPMAX Mentor!**
-
-Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
-
-- Wyjaśnieniem konceptów programistycznych
-- React, Next.js, TypeScript
-- Supabase, bazy danych
-- Git i kontrola wersji
-- I wiele więcej!
-
-**Zadaj mi pytanie lub użyj zakładki "Walidator Kodu" aby sprawdzić kod z kursu!**`,
-      timestamp: new Date()
-    }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to bottom of chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
-
-  const handleSendMessage = async () => {
-    if (!chatInput.trim() || isSending) return;
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: chatInput,
-      timestamp: new Date()
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    setChatInput('');
-    setIsSending(true);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
 
     try {
+      const contents = await zip.loadAsync(file);
+      const newFiles: VirtualFile[] = [];
+      const fileMap: Map<string, VirtualFile> = new Map();
+
+      // Process all files
+      for (const [relativePath, zipEntry] of Object.entries(contents.files)) {
+        if (zipEntry.dir) continue;
+
+        // Skip node_modules and hidden files
+        if (relativePath.includes('node_modules/') || relativePath.startsWith('.')) continue;
+
+        const content = await zipEntry.async('text');
+        const parts = relativePath.split('/');
+        const fileName = parts[parts.length - 1];
+
+        const virtualFile: VirtualFile = {
+          name: fileName,
+          path: relativePath,
+          content,
+          type: 'file',
+          language: getLanguage(fileName),
+        };
+
+        fileMap.set(relativePath, virtualFile);
+      }
+
+      // Build tree structure
+      const rootFiles = buildFileTree(fileMap);
+      setFiles(rootFiles);
+
+      // Expand first level
+      rootFiles.forEach(f => {
+        if (f.type === 'folder') {
+          setExpandedFolders(prev => new Set(prev).add(f.path));
+        }
+      });
+
+      // AI message
+      setAiMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `📦 Wgrałem projekt z ZIP!\n\n**Pliki:** ${fileMap.size}\n\nKliknij na plik w drzewie żeby go edytować, lub zapytaj mnie o pomoc!`
+      }]);
+
+    } catch (error) {
+      console.error('Error loading ZIP:', error);
+      setAiMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '❌ Nie udało się otworzyć ZIP. Sprawdź czy plik nie jest uszkodzony.'
+      }]);
+    }
+  };
+
+  // Handle folder upload
+  const handleFolderUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = event.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    const fileMap: Map<string, VirtualFile> = new Map();
+
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const relativePath = file.webkitRelativePath || file.name;
+
+      // Skip node_modules and hidden
+      if (relativePath.includes('node_modules/') || relativePath.includes('/.')) continue;
+
+      // Only text files
+      if (file.size > 500000) continue; // Skip files > 500KB
+
+      try {
+        const content = await file.text();
+        const fileName = file.name;
+
+        const virtualFile: VirtualFile = {
+          name: fileName,
+          path: relativePath,
+          content,
+          type: 'file',
+          language: getLanguage(fileName),
+        };
+
+        fileMap.set(relativePath, virtualFile);
+      } catch {
+        // Skip binary files
+      }
+    }
+
+    const rootFiles = buildFileTree(fileMap);
+    setFiles(rootFiles);
+
+    // Expand first level
+    rootFiles.forEach(f => {
+      if (f.type === 'folder') {
+        setExpandedFolders(prev => new Set(prev).add(f.path));
+      }
+    });
+
+    setAiMessages(prev => [...prev, {
+      role: 'assistant',
+      content: `📂 Wgrałem folder!\n\n**Pliki:** ${fileMap.size}\n\nWybierz plik z drzewa lub zapytaj mnie o cokolwiek!`
+    }]);
+  };
+
+  // Build tree from flat file map
+  const buildFileTree = (fileMap: Map<string, VirtualFile>): VirtualFile[] => {
+    const root: VirtualFile[] = [];
+    const folders: Map<string, VirtualFile> = new Map();
+
+    // Sort paths
+    const sortedPaths = Array.from(fileMap.keys()).sort();
+
+    for (const path of sortedPaths) {
+      const file = fileMap.get(path)!;
+      const parts = path.split('/');
+
+      if (parts.length === 1) {
+        // Root level file
+        root.push(file);
+      } else {
+        // Nested file - create folder structure
+        let currentPath = '';
+        let currentArray = root;
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          const folderName = parts[i];
+          currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+
+          let folder = folders.get(currentPath);
+          if (!folder) {
+            folder = {
+              name: folderName,
+              path: currentPath,
+              content: '',
+              type: 'folder',
+              children: [],
+            };
+            folders.set(currentPath, folder);
+            currentArray.push(folder);
+          }
+          currentArray = folder.children!;
+        }
+
+        currentArray.push(file);
+      }
+    }
+
+    return root;
+  };
+
+  // Render file tree recursively
+  const renderFileTree = (items: VirtualFile[], level: number = 0): React.ReactNode => {
+    return items.map(item => (
+      <div key={item.path}>
+        <div
+          className={`flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-blue-100 ${
+            selectedFile?.path === item.path ? 'bg-blue-200' : ''
+          }`}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          onClick={() => handleFileSelect(item)}
+        >
+          {item.type === 'folder' && (
+            <span className="text-xs">{expandedFolders.has(item.path) ? '▼' : '▶'}</span>
+          )}
+          <span>{getFileIcon(item.name, item.type === 'folder')}</span>
+          <span className="text-sm truncate">{item.name}</span>
+        </div>
+        {item.type === 'folder' && item.children && expandedFolders.has(item.path) && (
+          renderFileTree(item.children, level + 1)
+        )}
+      </div>
+    ));
+  };
+
+  // Generate preview HTML
+  const generatePreview = (): string => {
+    // Find index.html or similar
+    const findFile = (items: VirtualFile[], name: string): VirtualFile | null => {
+      for (const item of items) {
+        if (item.type === 'file' && item.name.toLowerCase() === name) {
+          return item;
+        }
+        if (item.children) {
+          const found = findFile(item.children, name);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const htmlFile = findFile(files, 'index.html') || findFile(files, 'index.htm');
+    const cssFile = findFile(files, 'style.css') || findFile(files, 'styles.css');
+    const jsFile = findFile(files, 'script.js') || findFile(files, 'app.js') || findFile(files, 'main.js');
+
+    if (!htmlFile && selectedFile?.language === 'html') {
+      // Use current file as HTML
+      return selectedFile.content;
+    }
+
+    if (!htmlFile) {
+      return `<!DOCTYPE html>
+<html>
+<head><title>Preview</title></head>
+<body style="font-family: sans-serif; padding: 20px; background: #1e1e1e; color: #fff;">
+  <h2>👁️ Podgląd</h2>
+  <p>Wgraj projekt z plikiem index.html żeby zobaczyć podgląd.</p>
+  <p>Lub wybierz plik HTML z drzewa.</p>
+</body>
+</html>`;
+    }
+
+    let html = htmlFile.content;
+
+    // Inject CSS
+    if (cssFile && !html.includes(cssFile.name)) {
+      html = html.replace('</head>', `<style>${cssFile.content}</style></head>`);
+    }
+
+    // Inject JS
+    if (jsFile && !html.includes(jsFile.name)) {
+      html = html.replace('</body>', `<script>${jsFile.content}</script></body>`);
+    }
+
+    return html;
+  };
+
+  // Send message to AI
+  const handleAiSend = async () => {
+    if (!aiInput.trim() || isAiLoading) return;
+
+    const userMessage = aiInput;
+    setAiInput('');
+    setAiMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsAiLoading(true);
+
+    try {
+      // Build context from current files
+      const context = selectedFile
+        ? `Aktualny plik: ${selectedFile.name}\n\`\`\`${selectedFile.language}\n${selectedFile.content.slice(0, 2000)}\n\`\`\``
+        : 'Brak wybranego pliku.';
+
       const response = await fetch('/api/mentor/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: chatInput,
-          history: chatMessages
-        })
+          message: userMessage,
+          context,
+          files: files.map(f => f.name).slice(0, 20),
+        }),
       });
 
       const data = await response.json();
-
-      const assistantMessage: ChatMessage = {
+      setAiMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.response || 'Przepraszam, nie mogłem wygenerować odpowiedzi.',
-        timestamp: new Date()
-      };
-
-      setChatMessages(prev => [...prev, assistantMessage]);
+        content: data.response || 'Przepraszam, nie mogłem odpowiedzieć.'
+      }]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      setChatMessages(prev => [...prev, {
+      setAiMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Przepraszam, wystąpił błąd. Spróbuj ponownie.',
-        timestamp: new Date()
+        content: '❌ Błąd połączenia. Spróbuj ponownie.'
       }]);
     } finally {
-      setIsSending(false);
+      setIsAiLoading(false);
     }
-  };
-
-  const handleAnalyze = async () => {
-    if (!code.trim()) return;
-
-    setIsAnalyzing(true);
-    setActiveTab('result');
-
-    try {
-      const response = await fetch('/api/mentor/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code,
-          language,
-          framework,
-          courseSource
-        })
-      });
-
-      const data = await response.json();
-      setResult(data.result);
-    } catch (error) {
-      console.error('Error analyzing code:', error);
-      setResult({
-        status: 'warning',
-        issues: [],
-        updatedCode: code,
-        summary: 'Nie udało się przeanalizować kodu. Spróbuj ponownie.',
-        learningPoints: []
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'outdated': return '#dc2626';
-      case 'current': return '#22c55e';
-      case 'warning': return '#f59e0b';
-      default: return '#808080';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'outdated': return 'PRZESTARZALY';
-      case 'current': return 'AKTUALNY';
-      case 'warning': return 'WYMAGA UWAGI';
-      default: return 'NIEZNANY';
-    }
-  };
-
-  // Simple markdown-like formatting
-  const formatMessage = (content: string) => {
-    return content
-      .split('\n')
-      .map((line, i) => {
-        // Bold
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        // Code blocks
-        line = line.replace(/`([^`]+)`/g, '<code style="background:#1e1e1e;color:#d4d4d4;padding:2px 4px;font-size:12px;">$1</code>');
-        // Lists
-        if (line.startsWith('- ')) {
-          return `<div style="margin-left:16px;">• ${line.substring(2)}</div>`;
-        }
-        return line;
-      })
-      .join('<br/>');
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#008080' }}>
-      {/* Windows 98 Desktop */}
-      <div className="p-4">
-        {/* Main Window */}
-        <div
-          className="win95-window mx-auto"
-          style={{ maxWidth: '1200px', minHeight: '80vh' }}
-        >
-          {/* Title Bar */}
-          <div
-            className="flex justify-between items-center px-2 py-1 text-white text-sm font-bold"
-            style={{
-              background: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)'
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span>🎓</span>
-              <span>Mentor.exe - Asystent Nauki Programowania</span>
-            </div>
-            <div className="flex gap-1">
-              <Link href="/">
-                <button
-                  className="w-5 h-5 flex items-center justify-center text-black font-bold text-xs"
-                  style={{
-                    background: '#c0c0c0',
-                    border: '2px solid',
-                    borderColor: '#fff #000 #000 #fff'
-                  }}
-                >
-                  x
-                </button>
-              </Link>
-            </div>
-          </div>
+    <div className="h-screen flex flex-col" style={{ background: '#008080' }}>
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".zip"
+        onChange={handleZipUpload}
+        className="hidden"
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        // @ts-ignore - webkitdirectory is not in types
+        webkitdirectory=""
+        multiple
+        onChange={handleFolderUpload}
+        className="hidden"
+      />
 
-          {/* Menu Bar */}
-          <div
-            className="flex gap-4 px-2 py-1 text-sm"
-            style={{ background: '#c0c0c0', borderBottom: '1px solid #808080' }}
-          >
-            <span className="cursor-pointer hover:underline">Plik</span>
-            <span className="cursor-pointer hover:underline">Edycja</span>
-            <span className="cursor-pointer hover:underline">Narzedzia</span>
-            <span className="cursor-pointer hover:underline">Pomoc</span>
-          </div>
-
-          {/* Toolbar */}
-          <div
-            className="flex gap-2 px-2 py-2 flex-wrap"
-            style={{ background: '#c0c0c0', borderBottom: '2px solid #808080' }}
-          >
-            <button
-              onClick={() => setActiveTab('chat')}
-              className="px-3 py-1 text-sm font-bold"
-              style={{
-                background: activeTab === 'chat' ? '#000080' : '#c0c0c0',
-                color: activeTab === 'chat' ? '#fff' : '#000',
-                border: '2px solid',
-                borderColor: activeTab === 'chat' ? '#000 #fff #fff #000' : '#fff #000 #000 #fff'
-              }}
-            >
-              💬 Chat z Mentorem
-            </button>
-            <button
-              onClick={() => setActiveTab('input')}
-              className="px-3 py-1 text-sm font-bold"
-              style={{
-                background: activeTab === 'input' ? '#000080' : '#c0c0c0',
-                color: activeTab === 'input' ? '#fff' : '#000',
-                border: '2px solid',
-                borderColor: activeTab === 'input' ? '#000 #fff #fff #000' : '#fff #000 #000 #fff'
-              }}
-            >
-              📝 Walidator Kodu
-            </button>
-            <button
-              onClick={() => setActiveTab('result')}
-              className="px-3 py-1 text-sm font-bold"
-              style={{
-                background: activeTab === 'result' ? '#000080' : '#c0c0c0',
-                color: activeTab === 'result' ? '#fff' : '#000',
-                border: '2px solid',
-                borderColor: activeTab === 'result' ? '#000 #fff #fff #000' : '#fff #000 #000 #fff'
-              }}
-            >
-              🔍 Wyniki
-            </button>
-            <button
-              onClick={() => setActiveTab('learn')}
-              className="px-3 py-1 text-sm font-bold"
-              style={{
-                background: activeTab === 'learn' ? '#000080' : '#c0c0c0',
-                color: activeTab === 'learn' ? '#fff' : '#000',
-                border: '2px solid',
-                borderColor: activeTab === 'learn' ? '#000 #fff #fff #000' : '#fff #000 #000 #fff'
-              }}
-            >
-              📚 Nauka
-            </button>
-          </div>
-
-          {/* Content Area */}
-          <div className="p-4" style={{ background: '#c0c0c0', minHeight: '60vh' }}>
-
-            {/* CHAT TAB */}
-            {activeTab === 'chat' && (
-              <div className="flex flex-col h-full" style={{ minHeight: '55vh' }}>
-                {/* Chat Messages */}
-                <div
-                  className="flex-1 overflow-y-auto p-3 space-y-3"
-                  style={{
-                    background: '#fff',
-                    border: '2px solid',
-                    borderColor: '#808080 #fff #fff #808080',
-                    maxHeight: '45vh'
-                  }}
-                >
-                  {chatMessages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className="max-w-[80%] p-3"
-                        style={{
-                          background: msg.role === 'user' ? '#000080' : '#f0f0f0',
-                          color: msg.role === 'user' ? '#fff' : '#000',
-                          border: '2px solid',
-                          borderColor: msg.role === 'user'
-                            ? '#1084d0 #000050 #000050 #1084d0'
-                            : '#fff #808080 #808080 #fff'
-                        }}
-                      >
-                        {msg.role === 'assistant' && (
-                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-300">
-                            <span>🎓</span>
-                            <span className="font-bold text-sm">Mentor</span>
-                          </div>
-                        )}
-                        <div
-                          className="text-sm whitespace-pre-wrap"
-                          dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }}
-                        />
-                        <div className="text-xs mt-2 opacity-60">
-                          {msg.timestamp.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isSending && (
-                    <div className="flex justify-start">
-                      <div
-                        className="p-3"
-                        style={{
-                          background: '#f0f0f0',
-                          border: '2px solid',
-                          borderColor: '#fff #808080 #808080 #fff'
-                        }}
-                      >
-                        <span className="animate-pulse">Mentor pisze...</span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-
-                {/* Chat Input */}
-                <div className="mt-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Zadaj pytanie o programowanie..."
-                    className="flex-1 px-3 py-2 text-sm"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                    disabled={isSending}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim() || isSending}
-                    className="px-4 py-2 font-bold"
-                    style={{
-                      background: chatInput.trim() && !isSending ? '#000080' : '#808080',
-                      color: '#fff',
-                      border: '2px solid',
-                      borderColor: '#fff #000 #000 #fff',
-                      cursor: chatInput.trim() && !isSending ? 'pointer' : 'not-allowed'
-                    }}
-                  >
-                    Wyslij
-                  </button>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="mt-3 flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => setChatInput('Jak dziala useEffect?')}
-                    className="px-2 py-1 text-xs"
-                    style={{
-                      background: '#e0e0e0',
-                      border: '1px solid #808080'
-                    }}
-                  >
-                    useEffect
-                  </button>
-                  <button
-                    onClick={() => setChatInput('Wyjasni App Router w Next.js')}
-                    className="px-2 py-1 text-xs"
-                    style={{
-                      background: '#e0e0e0',
-                      border: '1px solid #808080'
-                    }}
-                  >
-                    Next.js App Router
-                  </button>
-                  <button
-                    onClick={() => setChatInput('Jak uzywac async/await?')}
-                    className="px-2 py-1 text-xs"
-                    style={{
-                      background: '#e0e0e0',
-                      border: '1px solid #808080'
-                    }}
-                  >
-                    async/await
-                  </button>
-                  <button
-                    onClick={() => setChatInput('Podstawy TypeScript')}
-                    className="px-2 py-1 text-xs"
-                    style={{
-                      background: '#e0e0e0',
-                      border: '1px solid #808080'
-                    }}
-                  >
-                    TypeScript
-                  </button>
-                  <button
-                    onClick={() => setChatInput('Jak uzywac Supabase?')}
-                    className="px-2 py-1 text-xs"
-                    style={{
-                      background: '#e0e0e0',
-                      border: '1px solid #808080'
-                    }}
-                  >
-                    Supabase
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* INPUT TAB */}
-            {activeTab === 'input' && (
-              <div className="space-y-4">
-                {/* Header Info */}
-                <div
-                  className="p-3"
-                  style={{
-                    background: '#ffffcc',
-                    border: '2px solid',
-                    borderColor: '#808080 #fff #fff #808080'
-                  }}
-                >
-                  <p className="text-sm">
-                    <strong>💡 Walidator Kodu z Kursow</strong><br/>
-                    Wklej kod z kursu/tutorialu, ktory nie dziala lub moze byc przestarzaly.
-                    System przeanalizuje go i poda zaktualizowana wersje z wyjasnieniem zmian.
-                  </p>
-                </div>
-
-                {/* Settings Row */}
-                <div className="flex gap-4 flex-wrap">
-                  {/* Language Select */}
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-bold">Jezyk:</label>
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      className="px-2 py-1 text-sm"
-                      style={{
-                        background: '#fff',
-                        border: '2px solid',
-                        borderColor: '#808080 #fff #fff #808080'
-                      }}
-                    >
-                      <option value="javascript">JavaScript</option>
-                      <option value="typescript">TypeScript</option>
-                      <option value="python">Python</option>
-                      <option value="java">Java</option>
-                      <option value="csharp">C#</option>
-                      <option value="php">PHP</option>
-                    </select>
-                  </div>
-
-                  {/* Framework Select */}
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-bold">Framework:</label>
-                    <select
-                      value={framework}
-                      onChange={(e) => setFramework(e.target.value)}
-                      className="px-2 py-1 text-sm"
-                      style={{
-                        background: '#fff',
-                        border: '2px solid',
-                        borderColor: '#808080 #fff #fff #808080'
-                      }}
-                    >
-                      <option value="react">React</option>
-                      <option value="nextjs">Next.js</option>
-                      <option value="vue">Vue.js</option>
-                      <option value="angular">Angular</option>
-                      <option value="express">Express.js</option>
-                      <option value="django">Django</option>
-                      <option value="fastapi">FastAPI</option>
-                      <option value="flask">Flask</option>
-                      <option value="spring">Spring Boot</option>
-                      <option value="laravel">Laravel</option>
-                      <option value="none">Brak / Vanilla</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Course Source */}
-                <div>
-                  <label className="text-sm font-bold block mb-1">
-                    Zrodlo kursu (opcjonalne):
-                  </label>
-                  <input
-                    type="text"
-                    value={courseSource}
-                    onChange={(e) => setCourseSource(e.target.value)}
-                    placeholder="np. Udemy - React Complete Guide 2023, YouTube - Traversy Media"
-                    className="w-full px-2 py-1 text-sm"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                  />
-                </div>
-
-                {/* File Upload */}
-                <div
-                  className="p-4 text-center"
-                  style={{
-                    background: '#e0e0ff',
-                    border: '2px dashed #000080',
-                    borderRadius: '4px'
-                  }}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".js,.jsx,.ts,.tsx,.py,.php,.java,.cs,.vue,.html,.css"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 font-bold text-white"
-                    style={{
-                      background: '#000080',
-                      border: '2px solid',
-                      borderColor: '#fff #000 #000 #fff'
-                    }}
-                  >
-                    📁 Wgraj plik z kodem
-                  </button>
-                  <p className="text-xs mt-2 text-gray-600">
-                    Obsługiwane: .js, .jsx, .ts, .tsx, .py, .php, .java, .cs, .vue
-                  </p>
-                  {fileName && (
-                    <div className="mt-2 text-sm font-bold text-green-700">
-                      ✅ Wgrano: {fileName}
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center text-sm text-gray-600 font-bold">
-                  — lub wklej kod recznie —
-                </div>
-
-                {/* Code Input */}
-                <div>
-                  <label className="text-sm font-bold block mb-1">
-                    Kod z kursu/tutorialu:
-                  </label>
-                  <textarea
-                    value={code}
-                    onChange={(e) => { setCode(e.target.value); setFileName(null); }}
-                    placeholder={`// Wklej tutaj kod z kursu, ktory nie dziala lub moze byc przestarzaly
-// Na przyklad:
-
-import React from 'react';
-
-class MyComponent extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { count: 0 };
-  }
-
-  render() {
-    return <div>{this.state.count}</div>;
-  }
-}`}
-                    className="w-full px-3 py-2 font-mono text-sm"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080',
-                      minHeight: '250px',
-                      resize: 'vertical'
-                    }}
-                  />
-                </div>
-
-                {/* Analyze Button */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={!code.trim() || isAnalyzing}
-                    className="px-6 py-2 text-white font-bold text-lg"
-                    style={{
-                      background: code.trim() && !isAnalyzing ? '#000080' : '#808080',
-                      border: '2px solid',
-                      borderColor: '#fff #000 #000 #fff',
-                      cursor: code.trim() && !isAnalyzing ? 'pointer' : 'not-allowed'
-                    }}
-                  >
-                    {isAnalyzing ? '⏳ Analizuje...' : '🔍 Sprawdz i Zaktualizuj Kod'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* RESULT TAB */}
-            {activeTab === 'result' && (
-              <div className="space-y-4">
-                {isAnalyzing ? (
-                  <div
-                    className="text-center py-12"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                  >
-                    <div className="text-4xl mb-4">⏳</div>
-                    <p className="text-lg font-bold">Analizuje kod...</p>
-                    <p className="text-sm text-gray-600 mt-2">
-                      Sprawdzam wersje bibliotek, skladnie i najlepsze praktyki
-                    </p>
-                    <div className="mt-4">
-                      <div
-                        className="h-4 mx-auto"
-                        style={{
-                          width: '200px',
-                          background: '#c0c0c0',
-                          border: '2px solid',
-                          borderColor: '#808080 #fff #fff #808080'
-                        }}
-                      >
-                        <div
-                          className="h-full animate-pulse"
-                          style={{ background: '#000080', width: '60%' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : result ? (
-                  <>
-                    {/* Status Banner */}
-                    <div
-                      className="p-3 text-white font-bold text-center"
-                      style={{ background: getStatusColor(result.status) }}
-                    >
-                      {getStatusText(result.status)}
-                    </div>
-
-                    {/* Summary */}
-                    <div
-                      className="p-3"
-                      style={{
-                        background: '#fff',
-                        border: '2px solid',
-                        borderColor: '#808080 #fff #fff #808080'
-                      }}
-                    >
-                      <h3 className="font-bold mb-2">📋 Podsumowanie:</h3>
-                      <p className="text-sm">{result.summary}</p>
-                    </div>
-
-                    {/* Issues Found */}
-                    {result.issues.length > 0 && (
-                      <div
-                        className="p-3"
-                        style={{
-                          background: '#fff',
-                          border: '2px solid',
-                          borderColor: '#808080 #fff #fff #808080'
-                        }}
-                      >
-                        <h3 className="font-bold mb-3">🔧 Znalezione problemy ({result.issues.length}):</h3>
-                        <div className="space-y-4">
-                          {result.issues.map((issue, idx) => (
-                            <div
-                              key={idx}
-                              className="p-3"
-                              style={{
-                                background: '#f0f0f0',
-                                border: '1px solid #808080'
-                              }}
-                            >
-                              <div className="flex items-center gap-2 mb-2">
-                                <span
-                                  className="px-2 py-0.5 text-xs font-bold text-white"
-                                  style={{ background: '#dc2626' }}
-                                >
-                                  {issue.type}
-                                </span>
-                              </div>
-                              <p className="text-sm mb-3">{issue.description}</p>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* Old Code */}
-                                <div>
-                                  <p className="text-xs font-bold mb-1" style={{ color: '#dc2626' }}>
-                                    Stary kod (z kursu):
-                                  </p>
-                                  <pre
-                                    className="p-2 text-xs overflow-x-auto"
-                                    style={{
-                                      background: '#ffe0e0',
-                                      border: '1px solid #dc2626'
-                                    }}
-                                  >
-                                    {issue.oldCode}
-                                  </pre>
-                                </div>
-
-                                {/* New Code */}
-                                <div>
-                                  <p className="text-xs font-bold mb-1" style={{ color: '#22c55e' }}>
-                                    Nowy kod (aktualny):
-                                  </p>
-                                  <pre
-                                    className="p-2 text-xs overflow-x-auto"
-                                    style={{
-                                      background: '#e0ffe0',
-                                      border: '1px solid #22c55e'
-                                    }}
-                                  >
-                                    {issue.newCode}
-                                  </pre>
-                                </div>
-                              </div>
-
-                              <div
-                                className="mt-3 p-2"
-                                style={{
-                                  background: '#ffffcc',
-                                  border: '1px solid #f59e0b'
-                                }}
-                              >
-                                <p className="text-xs">
-                                  <strong>💡 Wyjasnienie:</strong> {issue.explanation}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Updated Code */}
-                    <div
-                      className="p-3"
-                      style={{
-                        background: '#fff',
-                        border: '2px solid',
-                        borderColor: '#808080 #fff #fff #808080'
-                      }}
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-bold">Zaktualizowany kod:</h3>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(result.updatedCode);
-                          }}
-                          className="px-3 py-1 text-sm font-bold"
-                          style={{
-                            background: '#22c55e',
-                            color: '#fff',
-                            border: '2px solid',
-                            borderColor: '#fff #000 #000 #fff'
-                          }}
-                        >
-                          📋 Kopiuj
-                        </button>
-                      </div>
-                      <pre
-                        className="p-3 text-sm overflow-x-auto font-mono"
-                        style={{
-                          background: '#1e1e1e',
-                          color: '#d4d4d4',
-                          border: '2px solid',
-                          borderColor: '#808080 #fff #fff #808080',
-                          maxHeight: '400px'
-                        }}
-                      >
-                        {result.updatedCode}
-                      </pre>
-                    </div>
-                  </>
-                ) : (
-                  <div
-                    className="text-center py-12"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                  >
-                    <div className="text-4xl mb-4">📝</div>
-                    <p className="text-lg font-bold">Brak wynikow</p>
-                    <p className="text-sm text-gray-600 mt-2">
-                      Wklej kod w zakladce Walidator Kodu i kliknij Sprawdz i Zaktualizuj Kod
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* LEARN TAB */}
-            {activeTab === 'learn' && (
-              <div className="space-y-4">
-                {/* Learning Points from Result */}
-                {result?.learningPoints && result.learningPoints.length > 0 ? (
-                  <div
-                    className="p-3"
-                    style={{
-                      background: '#fff',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                  >
-                    <h3 className="font-bold mb-3">🎓 Czego sie nauczyles z tej analizy:</h3>
-                    <ul className="space-y-2">
-                      {result.learningPoints.map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span>📌</span>
-                          <span>{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <div
-                    className="p-3"
-                    style={{
-                      background: '#ffffcc',
-                      border: '2px solid',
-                      borderColor: '#808080 #fff #fff #808080'
-                    }}
-                  >
-                    <p className="text-sm">
-                      Przeanalizuj kod, aby zobaczyc punkty nauki zwiazane z Twoim kodem.
-                    </p>
-                  </div>
-                )}
-
-                {/* General Learning Resources */}
-                <div
-                  className="p-3"
-                  style={{
-                    background: '#fff',
-                    border: '2px solid',
-                    borderColor: '#808080 #fff #fff #808080'
-                  }}
-                >
-                  <h3 className="font-bold mb-3">📚 Dlaczego kursy sie starzeja?</h3>
-                  <div className="space-y-3 text-sm">
-                    <p>
-                      <strong>1. Szybki rozwoj technologii:</strong><br/>
-                      React, Next.js, Vue i inne frameworki wydaja nowe wersje co kilka miesiecy.
-                      Kurs nagrany w 2022 moze uzywac React 17, podczas gdy aktualna wersja to React 19.
-                    </p>
-                    <p>
-                      <strong>2. Zmiany w API i skladni:</strong><br/>
-                      Next.js 13+ wprowadzil App Router zamiast Pages Router.
-                      React przeszedl z class components do functional components z hooks.
-                    </p>
-                    <p>
-                      <strong>3. Deprecjacja bibliotek:</strong><br/>
-                      Popularne biblioteki jak moment.js zostaly zastapione przez day.js.
-                      Create React App ustapilo miejsca Vite i Next.js.
-                    </p>
-                    <p>
-                      <strong>4. Najlepsze praktyki:</strong><br/>
-                      To co bylo best practice 2 lata temu, moze byc dzis anty-wzorcem.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Tips */}
-                <div
-                  className="p-3"
-                  style={{
-                    background: '#e0ffe0',
-                    border: '2px solid',
-                    borderColor: '#808080 #fff #fff #808080'
-                  }}
-                >
-                  <h3 className="font-bold mb-2">💡 Wskazowki:</h3>
-                  <ul className="text-sm space-y-1">
-                    <li>Zawsze sprawdzaj date publikacji kursu</li>
-                    <li>Porownuj wersje bibliotek z package.json kursu z aktualnymi</li>
-                    <li>Czytaj oficjalna dokumentacje obok kursu</li>
-                    <li>Uzywaj tego narzedzia do walidacji kodu z tutoriali</li>
-                  </ul>
-                </div>
-
-                {/* Link to AI KUPMAX */}
-                <div
-                  className="p-3 text-center"
-                  style={{
-                    background: '#000080',
-                    color: '#fff',
-                    border: '2px solid',
-                    borderColor: '#fff #000 #000 #fff'
-                  }}
-                >
-                  <p className="font-bold mb-2">🤖 Potrzebujesz glebszej pomocy?</p>
-                  <p className="text-sm mb-3">
-                    Odwiedz AI KUPMAX - nasz glowny system do zaawansowanej analizy kodu
-                  </p>
-                  <a
-                    href="https://ai.kupmax.pl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-4 py-2 font-bold"
-                    style={{
-                      background: '#22c55e',
-                      color: '#fff',
-                      border: '2px solid',
-                      borderColor: '#fff #000 #000 #fff'
-                    }}
-                  >
-                    🚀 Otworz AI KUPMAX
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Status Bar */}
-          <div
-            className="flex justify-between px-2 py-1 text-xs"
-            style={{
-              background: '#c0c0c0',
-              borderTop: '2px solid #fff'
-            }}
-          >
-            <span>Gotowy</span>
-            <span>KUPMAX Retro (C) 2024</span>
-          </div>
+      {/* Title Bar */}
+      <div
+        className="flex justify-between items-center px-2 py-1 text-white text-sm font-bold"
+        style={{ background: 'linear-gradient(90deg, #000080 0%, #1084d0 100%)' }}
+      >
+        <div className="flex items-center gap-2">
+          <span>🎓</span>
+          <span>Mentor IDE - KUPMAX Learning Studio</span>
         </div>
-
-        {/* Back to Desktop Link */}
-        <div className="text-center mt-4">
+        <div className="flex gap-1">
           <Link href="/">
             <button
-              className="px-4 py-2 text-sm font-bold"
-              style={{
-                background: '#c0c0c0',
-                border: '2px solid',
-                borderColor: '#fff #000 #000 #fff'
-              }}
+              className="w-6 h-5 flex items-center justify-center text-black font-bold text-xs"
+              style={{ background: '#c0c0c0', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
             >
-              Powrot do Pulpitu
+              ×
             </button>
           </Link>
         </div>
+      </div>
+
+      {/* Toolbar */}
+      <div
+        className="flex gap-2 px-2 py-2 flex-wrap"
+        style={{ background: '#c0c0c0', borderBottom: '2px solid #808080' }}
+      >
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-3 py-1 text-sm font-bold"
+          style={{ background: '#fff', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
+        >
+          📦 Wgraj ZIP
+        </button>
+        <button
+          onClick={() => folderInputRef.current?.click()}
+          className="px-3 py-1 text-sm font-bold"
+          style={{ background: '#fff', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
+        >
+          📁 Wgraj Folder
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={() => {
+            const blob = new Blob([generatePreview()], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+          }}
+          className="px-3 py-1 text-sm font-bold"
+          style={{ background: '#90EE90', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
+        >
+          ▶️ Uruchom
+        </button>
+      </div>
+
+      {/* Main Content - 3 Panels */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - File Tree */}
+        <div
+          className="w-56 flex flex-col"
+          style={{ background: '#fff', borderRight: '2px solid #808080' }}
+        >
+          <div
+            className="px-2 py-1 font-bold text-sm"
+            style={{ background: '#000080', color: '#fff' }}
+          >
+            📂 Pliki projektu
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {files.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                <p>Brak plików</p>
+                <p className="mt-2">Wgraj ZIP lub folder</p>
+              </div>
+            ) : (
+              renderFileTree(files)
+            )}
+          </div>
+        </div>
+
+        {/* Center Panel - Code Editor */}
+        <div className="flex-1 flex flex-col" style={{ background: '#1e1e1e' }}>
+          <div
+            className="px-2 py-1 font-bold text-sm flex items-center gap-2"
+            style={{ background: '#2d2d2d', color: '#fff' }}
+          >
+            <span>📝</span>
+            <span>{selectedFile ? selectedFile.name : 'Edytor kodu'}</span>
+            {selectedFile && (
+              <span className="text-xs text-gray-400 ml-2">{selectedFile.path}</span>
+            )}
+          </div>
+          <div className="flex-1">
+            <MonacoEditor
+              height="100%"
+              language={selectedFile?.language || 'plaintext'}
+              value={editorContent}
+              onChange={handleEditorChange}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                wordWrap: 'on',
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Right Panel - Preview & AI */}
+        <div
+          className="w-80 flex flex-col"
+          style={{ background: '#c0c0c0', borderLeft: '2px solid #808080' }}
+        >
+          {/* Preview */}
+          <div className="h-1/2 flex flex-col">
+            <div
+              className="px-2 py-1 font-bold text-sm"
+              style={{ background: '#000080', color: '#fff' }}
+            >
+              👁️ Podgląd Live
+            </div>
+            <div className="flex-1 bg-white">
+              <iframe
+                srcDoc={generatePreview()}
+                className="w-full h-full border-0"
+                sandbox="allow-scripts"
+                title="Preview"
+              />
+            </div>
+          </div>
+
+          {/* AI Chat */}
+          <div className="h-1/2 flex flex-col border-t-2 border-gray-600">
+            <div
+              className="px-2 py-1 font-bold text-sm"
+              style={{ background: '#000080', color: '#fff' }}
+            >
+              🤖 Mentor AI
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 bg-white">
+              {aiMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`mb-2 p-2 rounded text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-blue-100 ml-4'
+                      : 'bg-gray-100 mr-4'
+                  }`}
+                >
+                  <div className="font-bold text-xs mb-1">
+                    {msg.role === 'user' ? '👤 Ty' : '🤖 Mentor'}
+                  </div>
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                </div>
+              ))}
+              {isAiLoading && (
+                <div className="text-center text-gray-500 animate-pulse">
+                  Mentor myśli...
+                </div>
+              )}
+            </div>
+            <div className="p-2 border-t flex gap-1">
+              <input
+                type="text"
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAiSend()}
+                placeholder="Zapytaj o kod..."
+                className="flex-1 px-2 py-1 text-sm border-2"
+                style={{ borderColor: '#808080 #fff #fff #808080' }}
+              />
+              <button
+                onClick={handleAiSend}
+                disabled={isAiLoading}
+                className="px-2 py-1 text-sm font-bold"
+                style={{ background: '#000080', color: '#fff', border: '2px solid', borderColor: '#fff #000 #000 #fff' }}
+              >
+                ➤
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Status Bar */}
+      <div
+        className="flex justify-between px-2 py-1 text-xs"
+        style={{ background: '#c0c0c0', borderTop: '2px solid #fff' }}
+      >
+        <span>
+          {selectedFile ? `${selectedFile.language?.toUpperCase()} | ${selectedFile.path}` : 'Gotowy'}
+        </span>
+        <span>KUPMAX Mentor IDE v1.0</span>
       </div>
     </div>
   );

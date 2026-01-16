@@ -253,10 +253,97 @@ async function saveChatMessage(sessionId: string, role: string, content: string)
   }
 }
 
+// Analyze code and provide suggestions
+function analyzeCode(code: string, language: string): string {
+  const suggestions: string[] = [];
+
+  // Common issues detection
+  if (language === 'javascript' || language === 'typescript' || language === 'tsx' || language === 'jsx') {
+    if (code.includes('var ')) {
+      suggestions.push('- Zamień `var` na `const` lub `let` (ES6+)');
+    }
+    if (code.includes('function(') && !code.includes('function (')) {
+      suggestions.push('- Rozważ użycie arrow functions `() => {}`');
+    }
+    if (code.includes('.then(') && code.includes('.catch(')) {
+      suggestions.push('- Rozważ użycie `async/await` zamiast `.then()`');
+    }
+    if (code.includes('componentDidMount') || code.includes('componentWillUnmount')) {
+      suggestions.push('- To kod React Class Component - rozważ przepisanie na funkcyjny komponent z `useEffect`');
+    }
+    if (code.includes('getInitialProps')) {
+      suggestions.push('- `getInitialProps` jest przestarzałe w Next.js App Router - użyj `getServerSideProps` lub fetch w komponencie');
+    }
+    if (code.includes('pages/') && code.includes('export default')) {
+      suggestions.push('- To wygląda na Pages Router - nowy standard to App Router (`app/` folder)');
+    }
+  }
+
+  if (language === 'html') {
+    if (!code.includes('<!DOCTYPE')) {
+      suggestions.push('- Dodaj `<!DOCTYPE html>` na początku dokumentu');
+    }
+    if (!code.includes('<meta charset')) {
+      suggestions.push('- Dodaj `<meta charset="UTF-8">` w sekcji head');
+    }
+    if (!code.includes('viewport')) {
+      suggestions.push('- Dodaj `<meta name="viewport">` dla responsywności');
+    }
+  }
+
+  if (language === 'css') {
+    if (code.includes('float:') && !code.includes('flex') && !code.includes('grid')) {
+      suggestions.push('- Zamiast `float` użyj Flexbox lub CSS Grid');
+    }
+    if (code.includes('-webkit-') || code.includes('-moz-')) {
+      suggestions.push('- Vendor prefixy mogą być już niepotrzebne - sprawdź caniuse.com');
+    }
+  }
+
+  return suggestions.length > 0
+    ? `**Sugestie dla Twojego kodu:**\n\n${suggestions.join('\n')}`
+    : '';
+}
+
+// Generate response with file context
+async function generateResponseWithContext(
+  question: string,
+  fileContext?: { name: string; content: string; language: string }
+): Promise<string> {
+  const questionLower = question.toLowerCase();
+
+  // If file context is provided, analyze it
+  if (fileContext && fileContext.content) {
+    const analysis = analyzeCode(fileContext.content, fileContext.language);
+
+    // Questions about the current file
+    if (questionLower.includes('ten plik') || questionLower.includes('this file') ||
+        questionLower.includes('kod') || questionLower.includes('sprawdź')) {
+
+      const fileInfo = `**Analiza pliku: ${fileContext.name}**\n\nJęzyk: ${fileContext.language}\nRozmiar: ${fileContext.content.length} znaków\n\n`;
+
+      if (analysis) {
+        return fileInfo + analysis;
+      }
+
+      return fileInfo + '**Kod wygląda dobrze!** Nie znalazłem oczywistych problemów.\n\n*Zadaj pytanie o konkretną część kodu jeśli potrzebujesz pomocy.*';
+    }
+
+    // Add context to general questions
+    if (analysis) {
+      const baseResponse = await generateResponse(question);
+      return baseResponse + '\n\n---\n\n' + analysis;
+    }
+  }
+
+  // Fall back to regular response
+  return generateResponse(question);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, sessionId } = body;
+    const { message, sessionId, fileContext } = body;
 
     if (!message) {
       return NextResponse.json(
@@ -271,8 +358,8 @@ export async function POST(request: NextRequest) {
     // Save user message (optional)
     await saveChatMessage(chatSessionId, 'user', message);
 
-    // Generate response
-    const response = await generateResponse(message);
+    // Generate response with file context if provided
+    const response = await generateResponseWithContext(message, fileContext);
 
     // Save assistant response (optional)
     await saveChatMessage(chatSessionId, 'assistant', response);
