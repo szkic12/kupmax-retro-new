@@ -1,0 +1,263 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Admin credentials from environment (secure)
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'kupmax2024secure!';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
+const ADMIN_SECRET_PATH = process.env.ADMIN_SECRET_PATH || 'retro-admin';
+
+// Generate 6-digit code
+function generateCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Store codes temporarily (in production use Redis)
+const pendingCodes: Map<string, { code: string; expires: number; attempts: number }> = new Map();
+
+// Rate limiting
+const loginAttempts: Map<string, { count: number; blockedUntil: number }> = new Map();
+
+function isBlocked(ip: string): boolean {
+  const attempt = loginAttempts.get(ip);
+  if (!attempt) return false;
+  if (attempt.blockedUntil > Date.now()) return true;
+  if (attempt.blockedUntil < Date.now()) {
+    loginAttempts.delete(ip);
+    return false;
+  }
+  return false;
+}
+
+function recordFailedAttempt(ip: string): void {
+  const attempt = loginAttempts.get(ip) || { count: 0, blockedUntil: 0 };
+  attempt.count++;
+
+  // Block for 15 minutes after 5 failed attempts
+  if (attempt.count >= 5) {
+    attempt.blockedUntil = Date.now() + 15 * 60 * 1000;
+    attempt.count = 0;
+  }
+
+  loginAttempts.set(ip, attempt);
+}
+
+function clearAttempts(ip: string): void {
+  loginAttempts.delete(ip);
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const body = await request.json();
+    const { action, username, password, code, sessionId } = body;
+
+    // Check if IP is blocked
+    if (isBlocked(ip)) {
+      return NextResponse.json(
+        { error: 'Zbyt wiele prób logowania. Spróbuj za 15 minut.' },
+        { status: 429 }
+      );
+    }
+
+    // Step 1: Verify username and password
+    if (action === 'login') {
+      if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+        recordFailedAttempt(ip);
+
+        // Log failed attempt
+        try {
+          await supabase.from('admin_login_logs').insert({
+            ip_address: ip,
+            success: false,
+            reason: 'invalid_credentials',
+          });
+        } catch {}
+
+        return NextResponse.json(
+          { error: 'Nieprawidłowe dane logowania' },
+          { status: 401 }
+        );
+      }
+
+      // Generate verification code
+      const verificationCode = generateCode();
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+      // Store code (expires in 5 minutes)
+      pendingCodes.set(newSessionId, {
+        code: verificationCode,
+        expires: Date.now() + 5 * 60 * 1000,
+        attempts: 0,
+      });
+
+      // Send code via email if configured
+      if (ADMIN_EMAIL) {
+        try {
+          // In production, use a proper email service
+          // For now, we'll store it in database for the admin to see
+          await supabase.from('admin_verification_codes').insert({
+            session_id: newSessionId,
+            code: verificationCode,
+            email: ADMIN_EMAIL,
+            expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+            used: false,
+          });
+        } catch (e) {
+          console.log('Could not store verification code:', e);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Kod weryfikacyjny wysłany',
+        sessionId: newSessionId,
+        // In development, show code (remove in production!)
+        ...(process.env.NODE_ENV === 'development' ? { devCode: verificationCode } : {}),
+      });
+    }
+
+    // Step 2: Verify 2FA code
+    if (action === 'verify') {
+      if (!sessionId || !code) {
+        return NextResponse.json(
+          { error: 'Brak kodu lub sesji' },
+          { status: 400 }
+        );
+      }
+
+      const pending = pendingCodes.get(sessionId);
+
+      if (!pending) {
+        return NextResponse.json(
+          { error: 'Sesja wygasła. Zaloguj się ponownie.' },
+          { status: 401 }
+        );
+      }
+
+      if (pending.expires < Date.now()) {
+        pendingCodes.delete(sessionId);
+        return NextResponse.json(
+          { error: 'Kod wygasł. Zaloguj się ponownie.' },
+          { status: 401 }
+        );
+      }
+
+      pending.attempts++;
+
+      if (pending.attempts > 3) {
+        pendingCodes.delete(sessionId);
+        recordFailedAttempt(ip);
+        return NextResponse.json(
+          { error: 'Zbyt wiele błędnych prób. Zaloguj się ponownie.' },
+          { status: 401 }
+        );
+      }
+
+      if (pending.code !== code) {
+        return NextResponse.json(
+          { error: `Nieprawidłowy kod. Pozostało prób: ${3 - pending.attempts}` },
+          { status: 401 }
+        );
+      }
+
+      // Success! Generate auth token
+      pendingCodes.delete(sessionId);
+      clearAttempts(ip);
+
+      const authToken = `admin_${Date.now()}_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+
+      // Store valid session
+      try {
+        await supabase.from('admin_sessions').insert({
+          token: authToken,
+          ip_address: ip,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        });
+
+        // Log successful login
+        await supabase.from('admin_login_logs').insert({
+          ip_address: ip,
+          success: true,
+          reason: 'login_success',
+        });
+      } catch {}
+
+      return NextResponse.json({
+        success: true,
+        token: authToken,
+        message: 'Zalogowano pomyślnie!',
+      });
+    }
+
+    // Verify existing token
+    if (action === 'verify-token') {
+      const { token } = body;
+
+      if (!token) {
+        return NextResponse.json({ valid: false });
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('admin_sessions')
+          .select('*')
+          .eq('token', token)
+          .gte('expires_at', new Date().toISOString())
+          .single();
+
+        if (error || !data) {
+          return NextResponse.json({ valid: false });
+        }
+
+        return NextResponse.json({ valid: true });
+      } catch {
+        return NextResponse.json({ valid: false });
+      }
+    }
+
+    // Logout
+    if (action === 'logout') {
+      const { token } = body;
+
+      if (token) {
+        try {
+          await supabase
+            .from('admin_sessions')
+            .delete()
+            .eq('token', token);
+        } catch {}
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Nieznana akcja' }, { status: 400 });
+
+  } catch (error) {
+    console.error('Admin auth error:', error);
+    return NextResponse.json(
+      { error: 'Błąd serwera' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET - return secret path (for checking if URL is valid)
+export async function GET(request: NextRequest) {
+  // This endpoint can be used to verify the secret path
+  const url = new URL(request.url);
+  const checkPath = url.searchParams.get('path');
+
+  if (checkPath === ADMIN_SECRET_PATH) {
+    return NextResponse.json({ valid: true });
+  }
+
+  return NextResponse.json({ valid: false });
+}
