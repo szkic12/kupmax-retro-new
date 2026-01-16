@@ -121,6 +121,139 @@ async function findSupabaseAnswer(question: string): Promise<string | null> {
   }
 }
 
+// Search products in database
+async function searchProducts(question: string): Promise<string | null> {
+  try {
+    const questionLower = question.toLowerCase();
+
+    // Check if question is about products/shop
+    const productKeywords = ['produkt', 'sklep', 'kup', 'cena', 'ile kosztuje', 'macie', 'sprzedajecie', 'laptop', 'klawiatura', 'rezystor', 'zawias'];
+    const isProductQuestion = productKeywords.some(kw => questionLower.includes(kw));
+
+    if (!isProductQuestion) return null;
+
+    const { data, error } = await supabase
+      .from('Product')
+      .select('name, description, price, currency, stock')
+      .eq('moderationStatus', 'APPROVED')
+      .limit(10);
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    // Search for matching products
+    const matches = data.filter(product => {
+      const name = product.name?.toLowerCase() || '';
+      const desc = product.description?.toLowerCase() || '';
+      return questionLower.split(/\s+/).some(word =>
+        word.length > 2 && (name.includes(word) || desc.includes(word))
+      );
+    });
+
+    if (matches.length > 0) {
+      const productList = matches.slice(0, 3).map(p =>
+        `• **${p.name}** - ${p.price} ${p.currency}${p.stock ? ` (${p.stock} szt.)` : ''}`
+      ).join('\n');
+
+      return `🛒 Znalazłem te produkty w sklepie:\n\n${productList}\n\nWejdź do Shop.exe na pulpicie żeby zobaczyć więcej! 📎`;
+    }
+
+    // If asking about products but no match, list some
+    if (questionLower.includes('produkt') || questionLower.includes('sklep') || questionLower.includes('macie')) {
+      const productList = data.slice(0, 4).map(p =>
+        `• **${p.name}** - ${p.price} ${p.currency}`
+      ).join('\n');
+
+      return `🛒 Oto niektóre produkty w sklepie:\n\n${productList}\n\nWejdź do Shop.exe żeby zobaczyć wszystkie! 📎`;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Search news in database
+async function searchNews(question: string): Promise<string | null> {
+  try {
+    const questionLower = question.toLowerCase();
+
+    // Check if question is about news
+    const newsKeywords = ['news', 'nowości', 'aktualności', 'co nowego', 'ogłoszenie', 'wiadomości'];
+    const isNewsQuestion = newsKeywords.some(kw => questionLower.includes(kw));
+
+    if (!isNewsQuestion) return null;
+
+    const { data, error } = await supabase
+      .from('news')
+      .select('title, content, category, created_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error || !data || data.length === 0) {
+      return '📰 Nie ma jeszcze żadnych newsów. Sprawdź później! 📎';
+    }
+
+    const newsList = data.slice(0, 3).map(n =>
+      `• **${n.title}** [${n.category || 'Ogólne'}]`
+    ).join('\n');
+
+    return `📰 Najnowsze wiadomości:\n\n${newsList}\n\nKliknij News.exe na pulpicie żeby przeczytać więcej! 📎`;
+  } catch {
+    return null;
+  }
+}
+
+// Search forum threads
+async function searchForum(question: string): Promise<string | null> {
+  try {
+    const questionLower = question.toLowerCase();
+
+    // Check if question is about forum
+    const forumKeywords = ['forum', 'wątek', 'dyskusja', 'post', 'temat', 'pytanie'];
+    const isForumQuestion = forumKeywords.some(kw => questionLower.includes(kw));
+
+    if (!isForumQuestion) return null;
+
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select('title, category, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error || !data || data.length === 0) {
+      return '🗨️ Forum czeka na pierwszy wątek! Może Ty go założysz? Kliknij Forum.exe! 📎';
+    }
+
+    const threadList = data.slice(0, 3).map(t =>
+      `• **${t.title}** [${t.category || 'Ogólne'}]`
+    ).join('\n');
+
+    return `🗨️ Najnowsze wątki na forum:\n\n${threadList}\n\nDołącz do dyskusji w Forum.exe! 📎`;
+  } catch {
+    return null;
+  }
+}
+
+// Get dynamic knowledge from all sources
+async function getDynamicKnowledge(question: string): Promise<string | null> {
+  // Try products first
+  const productAnswer = await searchProducts(question);
+  if (productAnswer) return productAnswer;
+
+  // Try news
+  const newsAnswer = await searchNews(question);
+  if (newsAnswer) return newsAnswer;
+
+  // Try forum
+  const forumAnswer = await searchForum(question);
+  if (forumAnswer) return forumAnswer;
+
+  return null;
+}
+
 // System prompt for Claude API
 const systemPrompt = `Jesteś Clippy, nostalgiczny asystent AI ze stylem z lat 90. Pracujesz dla strony KUPMAX - retro portfolio i showcase.
 
@@ -179,7 +312,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // FALLBACK: Try Supabase Q&A first
+    // FALLBACK 1: Try dynamic knowledge (products, news, forum)
+    const dynamicAnswer = await getDynamicKnowledge(userQuestion);
+    if (dynamicAnswer) {
+      return NextResponse.json({
+        message: dynamicAnswer,
+        source: 'database'
+      });
+    }
+
+    // FALLBACK 2: Try Supabase Q&A
     const supabaseAnswer = await findSupabaseAnswer(userQuestion);
     if (supabaseAnswer) {
       return NextResponse.json({
@@ -188,7 +330,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // FALLBACK: Use hardcoded offline knowledge
+    // FALLBACK 3: Use hardcoded offline knowledge
     const offlineAnswer = findOfflineAnswer(userQuestion);
 
     return NextResponse.json({
