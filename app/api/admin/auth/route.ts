@@ -115,21 +115,50 @@ export async function POST(request: NextRequest) {
         attempts: 0,
       });
 
-      // Send code via email if configured
-      if (ADMIN_EMAIL) {
-        try {
-          // In production, use a proper email service
-          // For now, we'll store it in database for the admin to see
-          await supabase.from('admin_verification_codes').insert({
-            session_id: newSessionId,
-            code: verificationCode,
-            email: ADMIN_EMAIL,
-            expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-            used: false,
+      // Store code in database and send email
+      try {
+        // Save code to database
+        await supabase.from('admin_verification_codes').insert({
+          session_id: newSessionId,
+          code: verificationCode,
+          email: ADMIN_EMAIL || 'kontakt@kupmax.pl',
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          used: false,
+        });
+
+        // Send email via Resend if API key exists
+        const resendKey = process.env.RESEND_API_KEY;
+        if (resendKey && ADMIN_EMAIL) {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'KUPMAX Admin <noreply@kupmax.pl>',
+              to: ADMIN_EMAIL,
+              subject: '🔐 Kod logowania KUPMAX Admin',
+              html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+                  <div style="max-width: 400px; margin: 0 auto; background: #fff; border: 2px solid #000080; padding: 20px;">
+                    <h2 style="color: #000080; margin-top: 0;">🔐 KUPMAX Admin</h2>
+                    <p>Twój kod weryfikacyjny:</p>
+                    <div style="background: #000080; color: #fff; font-size: 32px; padding: 15px; text-align: center; letter-spacing: 8px; font-weight: bold;">
+                      ${verificationCode}
+                    </div>
+                    <p style="color: #666; font-size: 12px; margin-top: 15px;">
+                      Kod wygasa za 5 minut.<br>
+                      Jeśli to nie Ty - zignoruj tę wiadomość.
+                    </p>
+                  </div>
+                </div>
+              `,
+            }),
           });
-        } catch (e) {
-          console.log('Could not store verification code:', e);
         }
+      } catch (e) {
+        console.log('Could not store/send verification code:', e);
       }
 
       return NextResponse.json({
