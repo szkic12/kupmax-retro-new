@@ -31,6 +31,42 @@ export default function MentorPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [activeTab, setActiveTab] = useState<'chat' | 'input' | 'result' | 'learn'>('chat');
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file extension for language detection
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const languageMap: Record<string, { lang: string; fw: string }> = {
+      'js': { lang: 'javascript', fw: 'none' },
+      'jsx': { lang: 'javascript', fw: 'react' },
+      'ts': { lang: 'typescript', fw: 'none' },
+      'tsx': { lang: 'typescript', fw: 'react' },
+      'py': { lang: 'python', fw: 'none' },
+      'php': { lang: 'php', fw: 'none' },
+      'java': { lang: 'java', fw: 'none' },
+      'cs': { lang: 'csharp', fw: 'none' },
+      'vue': { lang: 'javascript', fw: 'vue' },
+    };
+
+    if (ext && languageMap[ext]) {
+      setLanguage(languageMap[ext].lang);
+      setFramework(languageMap[ext].fw);
+    }
+
+    setFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setCode(content);
+    };
+    reader.readAsText(file);
+  };
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -518,14 +554,55 @@ Jestem Twoim asystentem do nauki programowania. Mogę pomóc Ci z:
                   />
                 </div>
 
+                {/* File Upload */}
+                <div
+                  className="p-4 text-center"
+                  style={{
+                    background: '#e0e0ff',
+                    border: '2px dashed #000080',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".js,.jsx,.ts,.tsx,.py,.php,.java,.cs,.vue,.html,.css"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 font-bold text-white"
+                    style={{
+                      background: '#000080',
+                      border: '2px solid',
+                      borderColor: '#fff #000 #000 #fff'
+                    }}
+                  >
+                    📁 Wgraj plik z kodem
+                  </button>
+                  <p className="text-xs mt-2 text-gray-600">
+                    Obsługiwane: .js, .jsx, .ts, .tsx, .py, .php, .java, .cs, .vue
+                  </p>
+                  {fileName && (
+                    <div className="mt-2 text-sm font-bold text-green-700">
+                      ✅ Wgrano: {fileName}
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-center text-sm text-gray-600 font-bold">
+                  — lub wklej kod recznie —
+                </div>
+
                 {/* Code Input */}
                 <div>
                   <label className="text-sm font-bold block mb-1">
-                    Wklej kod z kursu/tutorialu:
+                    Kod z kursu/tutorialu:
                   </label>
                   <textarea
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
+                    onChange={(e) => { setCode(e.target.value); setFileName(null); }}
                     placeholder={`// Wklej tutaj kod z kursu, ktory nie dziala lub moze byc przestarzaly
 // Na przyklad:
 

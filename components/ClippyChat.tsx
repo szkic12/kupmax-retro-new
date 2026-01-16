@@ -8,6 +8,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  source?: 'ai' | 'database' | 'offline' | 'error';
 }
 
 interface ClippyChatProps {
@@ -75,6 +76,7 @@ export default function ClippyChat({ isOpen, onClose }: ClippyChatProps) {
         role: 'assistant',
         content: data.message,
         timestamp: new Date(),
+        source: data.source || 'ai',
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -115,8 +117,8 @@ export default function ClippyChat({ isOpen, onClose }: ClippyChatProps) {
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-2 flex items-center gap-2">
           <span className="text-2xl">📎</span>
           <div>
-            <div className="font-bold text-sm">Clippy AI Assistant</div>
-            <div className="text-xs opacity-90">Powered by Claude</div>
+            <div className="font-bold text-sm">Clippy Assistant</div>
+            <div className="text-xs opacity-90">KUPMAX Helper</div>
           </div>
         </div>
 
@@ -144,14 +146,26 @@ export default function ClippyChat({ isOpen, onClose }: ClippyChatProps) {
               >
                 <div className="text-sm whitespace-pre-wrap break-words">{msg.content}</div>
                 <div
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-1 flex items-center gap-2 ${
                     msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                   }`}
                 >
-                  {msg.timestamp.toLocaleTimeString('pl-PL', {
+                  <span>{msg.timestamp.toLocaleTimeString('pl-PL', {
                     hour: '2-digit',
                     minute: '2-digit',
-                  })}
+                  })}</span>
+                  {msg.role === 'assistant' && msg.source && (
+                    <span className={`px-1 rounded text-[10px] ${
+                      msg.source === 'ai' ? 'bg-green-200 text-green-800' :
+                      msg.source === 'database' ? 'bg-blue-200 text-blue-800' :
+                      msg.source === 'offline' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-red-200 text-red-800'
+                    }`}>
+                      {msg.source === 'ai' ? '🤖 AI' :
+                       msg.source === 'database' ? '💾 DB' :
+                       msg.source === 'offline' ? '📎 Offline' : '⚠️'}
+                    </span>
+                  )}
                 </div>
               </div>
               {msg.role === 'user' && (
