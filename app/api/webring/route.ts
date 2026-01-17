@@ -190,6 +190,70 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PUT - edytuj stronę webring (dla admina)
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, name, url, description, category, icon } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Site ID is required' },
+        { status: 400 }
+      );
+    }
+
+    let webringSites = await getWebringSites();
+    const siteIndex = webringSites.findIndex((site: any) => String(site.id) === String(id));
+
+    if (siteIndex === -1) {
+      return NextResponse.json(
+        { error: 'Site not found' },
+        { status: 404 }
+      );
+    }
+
+    // Aktualizuj tylko podane pola
+    if (name !== undefined) {
+      webringSites[siteIndex].name = name.substring(0, 100);
+    }
+    if (url !== undefined) {
+      webringSites[siteIndex].url = url;
+    }
+    if (description !== undefined) {
+      webringSites[siteIndex].description = description.substring(0, 200);
+    }
+    if (category !== undefined) {
+      webringSites[siteIndex].category = category;
+    }
+    if (icon !== undefined) {
+      webringSites[siteIndex].icon = icon;
+    }
+
+    // Zapisz do S3
+    const saveResult = await saveWebringSites(webringSites);
+
+    if (!saveResult.success) {
+      return NextResponse.json(
+        { error: 'Failed to save to S3' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      site: webringSites[siteIndex],
+      message: 'Site updated'
+    });
+  } catch (error) {
+    console.error('Error updating webring site:', error);
+    return NextResponse.json(
+      { error: 'Failed to update site' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

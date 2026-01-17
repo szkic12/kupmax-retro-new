@@ -49,6 +49,9 @@ export default function SecureAdminPanel() {
   // New webring site form
   const [newSite, setNewSite] = useState({ name: '', url: '', description: '', category: '', icon: ':)' });
 
+  // Webring edit
+  const [editingWebringSite, setEditingWebringSite] = useState<any>(null);
+
   // News form
   const [newNews, setNewNews] = useState({
     title: '',
@@ -473,6 +476,43 @@ export default function SecureAdminPanel() {
     } catch (error) {
       setMessage('Błąd sieci');
     }
+  };
+
+  const handleEditWebringSite = (site: any) => {
+    setEditingWebringSite({ ...site });
+  };
+
+  const handleSaveWebringSite = async () => {
+    if (!editingWebringSite) return;
+
+    try {
+      const res = await fetch('/api/webring', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingWebringSite.id,
+          name: editingWebringSite.name,
+          url: editingWebringSite.url,
+          description: editingWebringSite.description,
+          category: editingWebringSite.category,
+          icon: editingWebringSite.icon,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('Strona zaktualizowana!');
+        setEditingWebringSite(null);
+        fetchData();
+      } else {
+        setMessage('Błąd aktualizacji');
+      }
+    } catch (error) {
+      setMessage('Błąd sieci');
+    }
+  };
+
+  const handleCancelEditWebring = () => {
+    setEditingWebringSite(null);
   };
 
   const handleDeleteThread = async (threadId: string) => {
@@ -1180,6 +1220,71 @@ export default function SecureAdminPanel() {
                       🔗 Zarządzanie Webring ({webringSites.length})
                     </h3>
 
+                    {/* Edit form */}
+                    {editingWebringSite && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#ffffcc' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj stronę</legend>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa *:</label>
+                            <input
+                              type="text"
+                              value={editingWebringSite.name || ''}
+                              onChange={(e) => setEditingWebringSite({ ...editingWebringSite, name: e.target.value })}
+                              style={inputStyle}
+                              maxLength={100}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>URL *:</label>
+                            <input
+                              type="text"
+                              value={editingWebringSite.url || ''}
+                              onChange={(e) => setEditingWebringSite({ ...editingWebringSite, url: e.target.value })}
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Opis:</label>
+                            <input
+                              type="text"
+                              value={editingWebringSite.description || ''}
+                              onChange={(e) => setEditingWebringSite({ ...editingWebringSite, description: e.target.value })}
+                              style={inputStyle}
+                              maxLength={200}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kategoria:</label>
+                            <input
+                              type="text"
+                              value={editingWebringSite.category || ''}
+                              onChange={(e) => setEditingWebringSite({ ...editingWebringSite, category: e.target.value })}
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Ikona (emoji):</label>
+                            <input
+                              type="text"
+                              value={editingWebringSite.icon || ''}
+                              onChange={(e) => setEditingWebringSite({ ...editingWebringSite, icon: e.target.value })}
+                              style={{ ...inputStyle, width: '60px' }}
+                              maxLength={4}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                          <button onClick={handleSaveWebringSite} style={{ ...buttonStyle, background: '#90EE90' }}>
+                            💾 Zapisz
+                          </button>
+                          <button onClick={handleCancelEditWebring} style={buttonStyle}>
+                            Anuluj
+                          </button>
+                        </div>
+                      </fieldset>
+                    )}
+
                     <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
                       <legend style={{ fontWeight: 'bold' }}>Dodaj nową stronę</legend>
                       <form onSubmit={handleAddWebsiteSite}>
@@ -1203,7 +1308,13 @@ export default function SecureAdminPanel() {
 
                     {webringSites.map((site) => (
                       <div key={site.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: '#fff', border: '1px solid #ccc' }}>
-                        <span style={{ flex: 1 }}><a href={site.url} target="_blank" rel="noopener noreferrer">{site.name}</a></span>
+                        <span style={{ fontSize: '18px' }}>{site.icon || '🌐'}</span>
+                        <div style={{ flex: 1 }}>
+                          <a href={site.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 'bold' }}>{site.name}</a>
+                          {site.description && <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#666' }}>{site.description}</p>}
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#999', background: '#f0f0f0', padding: '2px 6px' }}>{site.category || 'General'}</span>
+                        <button onClick={() => handleEditWebringSite(site)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '4px 8px' }}>✏️</button>
                         <button onClick={() => handleDeleteWebringSite(site.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
                       </div>
                     ))}
