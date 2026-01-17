@@ -40,6 +40,9 @@ export default function SecureAdminPanel() {
   const [adSlides, setAdSlides] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Guestbook edit
+  const [editingGuestbookEntry, setEditingGuestbookEntry] = useState<any>(null);
+
   // New station form
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
 
@@ -398,6 +401,40 @@ export default function SecureAdminPanel() {
     } catch (error) {
       setMessage('Błąd sieci');
     }
+  };
+
+  const handleEditGuestbookEntry = (entry: any) => {
+    setEditingGuestbookEntry({ ...entry });
+  };
+
+  const handleSaveGuestbookEntry = async () => {
+    if (!editingGuestbookEntry) return;
+
+    try {
+      const res = await fetch('/api/guestbook', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingGuestbookEntry.id,
+          name: editingGuestbookEntry.name,
+          message: editingGuestbookEntry.message,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('Wpis zaktualizowany!');
+        setEditingGuestbookEntry(null);
+        fetchData();
+      } else {
+        setMessage('Błąd aktualizacji');
+      }
+    } catch (error) {
+      setMessage('Błąd sieci');
+    }
+  };
+
+  const handleCancelEditGuestbook = () => {
+    setEditingGuestbookEntry(null);
   };
 
   const handleAddWebsiteSite = async (e: React.FormEvent) => {
@@ -1080,14 +1117,53 @@ export default function SecureAdminPanel() {
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       📝 Wpisy w księdze gości ({guestbookEntries.length})
                     </h3>
+
+                    {/* Edit form */}
+                    {editingGuestbookEntry && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#ffffcc' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj wpis</legend>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa użytkownika:</label>
+                          <input
+                            type="text"
+                            value={editingGuestbookEntry.name || ''}
+                            onChange={(e) => setEditingGuestbookEntry({ ...editingGuestbookEntry, name: e.target.value })}
+                            style={inputStyle}
+                            maxLength={50}
+                          />
+                        </div>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Wiadomość:</label>
+                          <textarea
+                            value={editingGuestbookEntry.message || ''}
+                            onChange={(e) => setEditingGuestbookEntry({ ...editingGuestbookEntry, message: e.target.value })}
+                            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+                            maxLength={500}
+                          />
+                          <small style={{ color: '#666' }}>{editingGuestbookEntry.message?.length || 0}/500 znaków</small>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button onClick={handleSaveGuestbookEntry} style={{ ...buttonStyle, background: '#90EE90' }}>
+                            💾 Zapisz
+                          </button>
+                          <button onClick={handleCancelEditGuestbook} style={buttonStyle}>
+                            Anuluj
+                          </button>
+                        </div>
+                      </fieldset>
+                    )}
+
                     {guestbookEntries.length === 0 ? (
                       <p style={{ color: '#666', textAlign: 'center' }}>Brak wpisów</p>
                     ) : (
                       guestbookEntries.map((entry, i) => (
                         <div key={entry.id} style={{ background: i % 2 === 0 ? '#fff' : '#f0f0f0', padding: '10px', marginBottom: '5px', border: '1px solid #ccc' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <strong>{entry.name || entry.nickname || 'Anonim'}</strong>
-                            <button onClick={() => handleDeleteGuestbookEntry(entry.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '2px 6px' }}>🗑️</button>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                              <button onClick={() => handleEditGuestbookEntry(entry)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '2px 6px' }}>✏️</button>
+                              <button onClick={() => handleDeleteGuestbookEntry(entry.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '2px 6px' }}>🗑️</button>
+                            </div>
                           </div>
                           <p style={{ margin: '5px 0', color: '#333' }}>{entry.message}</p>
                           <small style={{ color: '#666' }}>{new Date(entry.timestamp || entry.date).toLocaleString('pl-PL')}</small>

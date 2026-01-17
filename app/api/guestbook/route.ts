@@ -124,6 +124,61 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PUT - edytuj wpis (dla admina)
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, name, message } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Entry ID is required' },
+        { status: 400 }
+      );
+    }
+
+    let guestbookEntries = await getGuestbookEntries();
+    const entryIndex = guestbookEntries.findIndex((entry: any) => String(entry.id) === String(id));
+
+    if (entryIndex === -1) {
+      return NextResponse.json(
+        { error: 'Entry not found' },
+        { status: 404 }
+      );
+    }
+
+    // Aktualizuj tylko podane pola
+    if (name !== undefined) {
+      guestbookEntries[entryIndex].name = name.substring(0, 50);
+    }
+    if (message !== undefined) {
+      guestbookEntries[entryIndex].message = message.substring(0, 500);
+    }
+
+    // Zapisz do S3
+    const saveResult = await saveGuestbookEntries(guestbookEntries);
+
+    if (!saveResult.success) {
+      return NextResponse.json(
+        { error: 'Failed to save to S3' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      entry: guestbookEntries[entryIndex],
+      message: 'Entry updated'
+    });
+  } catch (error) {
+    console.error('Error updating guestbook entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to update entry' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
