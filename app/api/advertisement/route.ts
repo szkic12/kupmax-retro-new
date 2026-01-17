@@ -10,17 +10,17 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// GET - pobierz reklamę (aktywną lub wszystkie)
+// GET - pobierz reklamę (aktywną lub wszystkie) ze slajdami
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all') === 'true';
 
-    // Jeśli all=true, zwróć wszystkie reklamy (dla admina)
+    // Jeśli all=true, zwróć wszystkie reklamy ze slajdami (dla admina)
     if (all) {
       const { data, error } = await supabase
         .from('advertisements')
-        .select('*')
+        .select('*, slides:advertisement_slides(*)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -28,17 +28,23 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to fetch advertisements' }, { status: 500 });
       }
 
-      return NextResponse.json({ advertisements: data || [] }, {
+      // Sortuj slajdy każdej reklamy
+      const adsWithSortedSlides = (data || []).map(ad => ({
+        ...ad,
+        slides: (ad.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
+      }));
+
+      return NextResponse.json({ advertisements: adsWithSortedSlides }, {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate',
         }
       });
     }
 
-    // Domyślnie: pobierz tylko aktywną reklamę
+    // Domyślnie: pobierz tylko aktywną reklamę ze slajdami
     const { data, error } = await supabase
       .from('advertisements')
-      .select('*')
+      .select('*, slides:advertisement_slides(*)')
       .eq('is_active', true)
       .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
       .order('created_at', { ascending: false })
@@ -50,17 +56,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch advertisement' }, { status: 500 });
     }
 
-    // Jeśli nie ma reklamy, zwróć domyślną
+    // Jeśli nie ma reklamy, zwróć domyślną z przykładowymi slajdami
     if (!data) {
       return NextResponse.json({
         advertisement: {
           id: 'default',
-          image_url: '/images/slider-1.jpg',
           title: 'Anna Juszczak Fotografia',
           description: 'Profesjonalna fotografia - sesje zdjęciowe, eventy, portrety.',
           link_url: 'https://www.facebook.com/annajuszczakfotografia/',
           advertiser_name: 'Anna Juszczak',
           is_active: true,
+          slides: [
+            { id: '1', image_url: '/images/slider-1.jpg', title: 'Sesje ślubne', order_index: 0 },
+            { id: '2', image_url: '/images/slider-2.jpg', title: 'Portrety', order_index: 1 },
+            { id: '3', image_url: '/images/slider-3.jpg', title: 'Eventy', order_index: 2 },
+          ]
         }
       }, {
         headers: {
@@ -69,7 +79,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ advertisement: data }, {
+    // Sortuj slajdy
+    const adWithSortedSlides = {
+      ...data,
+      slides: (data.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
+    };
+
+    return NextResponse.json({ advertisement: adWithSortedSlides }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       }

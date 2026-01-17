@@ -11,7 +11,7 @@ export default function SecureAdminPanel() {
   const { data: session, status } = useSession();
 
   // ============= ADMIN PANEL STATE =============
-  const [activeTab, setActiveTab] = useState('slider');
+  const [activeTab, setActiveTab] = useState('advertisement');
   const [stations, setStations] = useState<any[]>([]);
   const [guestbookEntries, setGuestbookEntries] = useState<any[]>([]);
   const [webringSites, setWebringSites] = useState<any[]>([]);
@@ -19,16 +19,15 @@ export default function SecureAdminPanel() {
   const [currentAd, setCurrentAd] = useState<any>(null);
   const [allAds, setAllAds] = useState<any[]>([]);
   const [newsList, setNewsList] = useState<any[]>([]);
-  const [slides, setSlides] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Edit mode for ads
+  // Edit/Create mode for ads
   const [editingAd, setEditingAd] = useState<any>(null);
+  const [creatingAd, setCreatingAd] = useState(false);
 
   // Advertisement form
   const [newAd, setNewAd] = useState({
-    image_url: '',
     title: '',
     description: '',
     link_url: '',
@@ -36,18 +35,10 @@ export default function SecureAdminPanel() {
     advertiser_email: '',
     end_date: '',
   });
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Slider form
-  const [newSlide, setNewSlide] = useState({
-    title: '',
-    image_url: '',
-    link_url: '',
-    order_index: 0,
-  });
-  const [editingSlide, setEditingSlide] = useState<any>(null);
-  const [slideImagePreview, setSlideImagePreview] = useState<string | null>(null);
+  // Slides for new/editing ad
+  const [adSlides, setAdSlides] = useState<any[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // New station form
   const [newStation, setNewStation] = useState({ name: '', url: '', genre: '' });
@@ -80,11 +71,7 @@ export default function SecureAdminPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'slider') {
-        const res = await fetch('/api/slider');
-        const data = await res.json();
-        setSlides(data.slides || []);
-      } else if (activeTab === 'advertisement') {
+      if (activeTab === 'advertisement') {
         const res = await fetch('/api/advertisement');
         const data = await res.json();
         setCurrentAd(data.advertisement || null);
@@ -119,8 +106,42 @@ export default function SecureAdminPanel() {
     setLoading(false);
   };
 
-  // ============= SLIDER HANDLERS =============
-  const handleSlideImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, forEdit = false) => {
+  // ============= ADVERTISEMENT HANDLERS =============
+  const handleStartCreateAd = () => {
+    setCreatingAd(true);
+    setEditingAd(null);
+    setNewAd({
+      title: '',
+      description: '',
+      link_url: '',
+      advertiser_name: '',
+      advertiser_email: '',
+      end_date: '',
+    });
+    setAdSlides([]);
+  };
+
+  const handleStartEditAd = (ad: any) => {
+    setEditingAd(ad);
+    setCreatingAd(false);
+    setNewAd({
+      title: ad.title || '',
+      description: ad.description || '',
+      link_url: ad.link_url || '',
+      advertiser_name: ad.advertiser_name || '',
+      advertiser_email: ad.advertiser_email || '',
+      end_date: ad.end_date ? ad.end_date.split('T')[0] : '',
+    });
+    setAdSlides(ad.slides || []);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAd(null);
+    setCreatingAd(false);
+    setAdSlides([]);
+  };
+
+  const handleSlideImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -134,10 +155,6 @@ export default function SecureAdminPanel() {
       setMessage('Plik za duży! Maksymalny rozmiar: 5MB');
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => setSlideImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
 
     setUploadingImage(true);
     setMessage('Wysyłanie obrazka...');
@@ -154,154 +171,154 @@ export default function SecureAdminPanel() {
       const data = await res.json();
 
       if (res.ok && data.url) {
-        if (forEdit && editingSlide) {
-          setEditingSlide({ ...editingSlide, image_url: data.url });
-        } else {
-          setNewSlide({ ...newSlide, image_url: data.url });
-        }
-        setMessage('Obrazek wgrany pomyślnie!');
+        // Dodaj nowy slajd do listy
+        setAdSlides([...adSlides, {
+          id: `temp_${Date.now()}`,
+          image_url: data.url,
+          title: '',
+          order_index: adSlides.length,
+          isNew: true,
+        }]);
+        setMessage('Obrazek dodany!');
       } else {
         setMessage('Błąd uploadu: ' + (data.error || 'Nieznany błąd'));
-        setSlideImagePreview(null);
       }
     } catch (error) {
       setMessage('Błąd sieci podczas uploadu');
-      setSlideImagePreview(null);
     } finally {
       setUploadingImage(false);
+      // Reset input
+      e.target.value = '';
     }
   };
 
-  const handleAddSlide = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSlide.title || !newSlide.image_url) {
-      setMessage('Tytuł i obrazek są wymagane!');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/slider', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSlide),
-      });
-
-      if (res.ok) {
-        setMessage('Slajd dodany!');
-        setNewSlide({ title: '', image_url: '', link_url: '', order_index: slides.length });
-        setSlideImagePreview(null);
-        fetchData();
-      } else {
-        setMessage('Błąd dodawania slajdu');
-      }
-    } catch (error) {
-      setMessage('Błąd sieci');
-    }
+  const handleRemoveSlide = (index: number) => {
+    setAdSlides(adSlides.filter((_, i) => i !== index));
   };
 
-  const handleUpdateSlide = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSlide) return;
-
-    try {
-      const res = await fetch('/api/slider', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingSlide),
-      });
-
-      if (res.ok) {
-        setMessage('Slajd zaktualizowany!');
-        setEditingSlide(null);
-        setSlideImagePreview(null);
-        fetchData();
-      } else {
-        setMessage('Błąd aktualizacji slajdu');
-      }
-    } catch (error) {
-      setMessage('Błąd sieci');
-    }
+  const handleUpdateSlideTitle = (index: number, title: string) => {
+    const updated = [...adSlides];
+    updated[index].title = title;
+    setAdSlides(updated);
   };
 
-  const handleDeleteSlide = async (id: string) => {
-    if (!confirm('Czy na pewno usunąć ten slajd?')) return;
+  const handleMoveSlide = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === adSlides.length - 1) return;
 
-    try {
-      const res = await fetch(`/api/slider?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setMessage('Slajd usunięty!');
-        fetchData();
-      }
-    } catch (error) {
-      setMessage('Błąd sieci');
-    }
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const updated = [...adSlides];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    // Update order_index
+    updated.forEach((slide, i) => slide.order_index = i);
+    setAdSlides(updated);
   };
 
-  // ============= ADVERTISEMENT HANDLERS =============
   const handleSaveAdvertisement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAd.image_url || !newAd.title || !newAd.advertiser_name) {
-      setMessage('Obrazek, tytuł i nazwa reklamodawcy są wymagane!');
+
+    if (!newAd.title || !newAd.advertiser_name) {
+      setMessage('Tytuł i nazwa reklamodawcy są wymagane!');
+      return;
+    }
+
+    if (adSlides.length === 0) {
+      setMessage('Dodaj przynajmniej jeden obrazek do reklamy!');
       return;
     }
 
     try {
-      const res = await fetch('/api/advertisement', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newAd,
-          end_date: newAd.end_date || null,
-        }),
-      });
+      let adId = editingAd?.id;
 
-      if (res.ok) {
-        setMessage('Reklama zapisana!');
-        setNewAd({
-          image_url: '',
-          title: '',
-          description: '',
-          link_url: '',
-          advertiser_name: '',
-          advertiser_email: '',
-          end_date: '',
+      // Jeśli tworzymy nową reklamę
+      if (creatingAd) {
+        const res = await fetch('/api/advertisement', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newAd,
+            image_url: adSlides[0]?.image_url || '', // Pierwszy obrazek jako główny
+            end_date: newAd.end_date || null,
+          }),
         });
-        setImagePreview(null);
-        fetchData();
-      } else {
-        setMessage('Błąd zapisywania reklamy');
+
+        if (!res.ok) {
+          setMessage('Błąd tworzenia reklamy');
+          return;
+        }
+
+        const data = await res.json();
+        adId = data.advertisement.id;
+      } else if (editingAd) {
+        // Aktualizujemy istniejącą
+        const res = await fetch('/api/advertisement', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingAd.id,
+            ...newAd,
+            image_url: adSlides[0]?.image_url || editingAd.image_url,
+            end_date: newAd.end_date || null,
+          }),
+        });
+
+        if (!res.ok) {
+          setMessage('Błąd aktualizacji reklamy');
+          return;
+        }
       }
-    } catch (error) {
-      setMessage('Błąd sieci');
-    }
-  };
 
-  const handleUpdateAdvertisement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingAd) return;
+      // Zapisz slajdy
+      if (adId && adId !== 'default') {
+        // Usuń stare slajdy (tylko przy edycji)
+        if (editingAd && editingAd.slides) {
+          for (const oldSlide of editingAd.slides) {
+            if (!adSlides.find(s => s.id === oldSlide.id)) {
+              await fetch(`/api/advertisement/slides?id=${oldSlide.id}`, { method: 'DELETE' });
+            }
+          }
+        }
 
-    try {
-      const res = await fetch('/api/advertisement', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingAd),
-      });
-
-      if (res.ok) {
-        setMessage('Reklama zaktualizowana!');
-        setEditingAd(null);
-        setImagePreview(null);
-        fetchData();
-      } else {
-        setMessage('Błąd aktualizacji reklamy');
+        // Dodaj/aktualizuj slajdy
+        for (let i = 0; i < adSlides.length; i++) {
+          const slide = adSlides[i];
+          if (slide.isNew || slide.id?.startsWith('temp_')) {
+            // Nowy slajd
+            await fetch('/api/advertisement/slides', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                advertisement_id: adId,
+                image_url: slide.image_url,
+                title: slide.title || '',
+                order_index: i,
+              }),
+            });
+          } else {
+            // Aktualizuj istniejący
+            await fetch('/api/advertisement/slides', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: slide.id,
+                title: slide.title || '',
+                order_index: i,
+              }),
+            });
+          }
+        }
       }
+
+      setMessage(creatingAd ? 'Reklama utworzona!' : 'Reklama zaktualizowana!');
+      handleCancelEdit();
+      fetchData();
     } catch (error) {
       setMessage('Błąd sieci');
     }
   };
 
   const handleDeleteAdvertisement = async (id: string) => {
-    if (!confirm('Czy na pewno usunąć reklamę?')) return;
+    if (!confirm('Czy na pewno usunąć tę reklamę i wszystkie jej obrazki?')) return;
 
     try {
       const res = await fetch(`/api/advertisement?id=${id}`, { method: 'DELETE' });
@@ -330,58 +347,7 @@ export default function SecureAdminPanel() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, forEdit = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      setMessage('Nieprawidłowy typ pliku! Dozwolone: JPG, PNG, WebP, GIF');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage('Plik za duży! Maksymalny rozmiar: 5MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-
-    setUploadingImage(true);
-    setMessage('Wysyłanie obrazka...');
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/advertisement/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.url) {
-        if (forEdit && editingAd) {
-          setEditingAd({ ...editingAd, image_url: data.url });
-        } else {
-          setNewAd({ ...newAd, image_url: data.url });
-        }
-        setMessage('Obrazek wgrany pomyślnie!');
-      } else {
-        setMessage('Błąd uploadu: ' + (data.error || 'Nieznany błąd'));
-        setImagePreview(null);
-      }
-    } catch (error) {
-      setMessage('Błąd sieci podczas uploadu');
-      setImagePreview(null);
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
+  // ============= OTHER HANDLERS =============
   const handleAddStation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStation.name || !newStation.url || !newStation.genre) {
@@ -783,9 +749,6 @@ export default function SecureAdminPanel() {
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: '2px', marginBottom: '0', flexWrap: 'wrap' }}>
-            <button style={tabStyle(activeTab === 'slider')} onClick={() => setActiveTab('slider')}>
-              🖼️ Slider
-            </button>
             <button style={tabStyle(activeTab === 'advertisement')} onClick={() => setActiveTab('advertisement')}>
               📢 Reklama
             </button>
@@ -830,242 +793,231 @@ export default function SecureAdminPanel() {
               <div style={{ textAlign: 'center', padding: '40px' }}>⏳ Ładowanie...</div>
             ) : (
               <>
-                {/* SLIDER TAB */}
-                {activeTab === 'slider' && (
-                  <div>
-                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
-                      🖼️ Zarządzanie Sliderem (strona główna)
-                    </h3>
-
-                    {/* Edit Slide Modal */}
-                    {editingSlide && (
-                      <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px', background: '#ffffcc' }}>
-                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj slajd</legend>
-                        <form onSubmit={handleUpdateSlide}>
-                          <div style={{ marginBottom: '10px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Obrazek:</label>
-                            <input type="file" accept="image/*" onChange={(e) => handleSlideImageUpload(e, true)} disabled={uploadingImage} />
-                            {(slideImagePreview || editingSlide.image_url) && (
-                              <img src={slideImagePreview || editingSlide.image_url} alt="Preview" style={{ maxWidth: '200px', marginTop: '8px', display: 'block' }} />
-                            )}
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                            <div>
-                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł *:</label>
-                              <input type="text" value={editingSlide.title} onChange={(e) => setEditingSlide({ ...editingSlide, title: e.target.value })} style={inputStyle} />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link (URL):</label>
-                              <input type="text" value={editingSlide.link_url || ''} onChange={(e) => setEditingSlide({ ...editingSlide, link_url: e.target.value })} style={inputStyle} />
-                            </div>
-                            <div>
-                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kolejność:</label>
-                              <input type="number" value={editingSlide.order_index || 0} onChange={(e) => setEditingSlide({ ...editingSlide, order_index: parseInt(e.target.value) })} style={inputStyle} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <button type="submit" style={{ ...buttonStyle, background: '#90EE90' }}>💾 Zapisz zmiany</button>
-                            <button type="button" onClick={() => { setEditingSlide(null); setSlideImagePreview(null); }} style={{ ...buttonStyle }}>Anuluj</button>
-                          </div>
-                        </form>
-                      </fieldset>
-                    )}
-
-                    {/* Add New Slide */}
-                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
-                      <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowy slajd</legend>
-                      <form onSubmit={handleAddSlide}>
-                        <div style={{ marginBottom: '10px' }}>
-                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Obrazek *:</label>
-                          <input type="file" accept="image/*" onChange={(e) => handleSlideImageUpload(e, false)} disabled={uploadingImage} />
-                          {slideImagePreview && !editingSlide && <img src={slideImagePreview} alt="Preview" style={{ maxWidth: '200px', marginTop: '8px', display: 'block' }} />}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł *:</label>
-                            <input type="text" value={newSlide.title} onChange={(e) => setNewSlide({ ...newSlide, title: e.target.value })} style={inputStyle} placeholder="np. Witaj w KUPMAX" />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link (URL):</label>
-                            <input type="text" value={newSlide.link_url} onChange={(e) => setNewSlide({ ...newSlide, link_url: e.target.value })} style={inputStyle} placeholder="np. /shop lub https://..." />
-                          </div>
-                        </div>
-                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px', background: '#90EE90' }}>
-                          ➕ Dodaj slajd
-                        </button>
-                      </form>
-                    </fieldset>
-
-                    {/* Slides List */}
-                    <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
-                      <legend style={{ fontWeight: 'bold' }}>📋 Aktualne slajdy ({slides.length})</legend>
-                      {slides.length === 0 ? (
-                        <p style={{ color: '#666', textAlign: 'center' }}>Brak slajdów. Dodaj pierwszy!</p>
-                      ) : (
-                        slides.map((slide, i) => (
-                          <div key={slide.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', marginBottom: '8px', background: '#fff', border: '1px solid #ccc' }}>
-                            <div style={{ width: '80px', height: '50px', background: '#f0f0f0', border: '1px solid #999', overflow: 'hidden', flexShrink: 0 }}>
-                              {slide.image_url && <img src={slide.image_url} alt={slide.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <strong>{slide.title}</strong>
-                              <br />
-                              <small style={{ color: '#666' }}>Link: {slide.link_url || 'brak'} • Kolejność: {slide.order_index}</small>
-                            </div>
-                            <button onClick={() => { setEditingSlide(slide); setSlideImagePreview(null); }} style={{ ...buttonStyle, fontSize: '11px', padding: '4px 8px', background: '#87CEEB' }}>✏️ Edytuj</button>
-                            <button onClick={() => handleDeleteSlide(slide.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
-                          </div>
-                        ))
-                      )}
-                    </fieldset>
-                  </div>
-                )}
-
                 {/* ADVERTISEMENT TAB */}
                 {activeTab === 'advertisement' && (
                   <div>
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
-                      📢 Zarządzanie Reklamą
+                      📢 Zarządzanie Reklamami (Slider)
                     </h3>
 
-                    {/* Edit Ad Modal */}
-                    {editingAd && (
-                      <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px', background: '#ffffcc' }}>
-                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj reklamę</legend>
-                        <form onSubmit={handleUpdateAdvertisement}>
-                          <div style={{ marginBottom: '10px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Obrazek:</label>
-                            <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, true)} disabled={uploadingImage} />
-                            {(imagePreview || editingAd.image_url) && (
-                              <img src={imagePreview || editingAd.image_url} alt="Preview" style={{ maxWidth: '200px', marginTop: '8px', display: 'block' }} />
-                            )}
-                          </div>
+                    {/* Create/Edit Form */}
+                    {(creatingAd || editingAd) && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#ffffcc' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>
+                          {creatingAd ? '➕ Nowa reklama' : '✏️ Edytuj reklamę'}
+                        </legend>
+                        <form onSubmit={handleSaveAdvertisement}>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                             <div>
-                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł *:</label>
-                              <input type="text" value={editingAd.title} onChange={(e) => setEditingAd({ ...editingAd, title: e.target.value })} style={inputStyle} />
+                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł reklamy *:</label>
+                              <input type="text" value={newAd.title} onChange={(e) => setNewAd({ ...newAd, title: e.target.value })} style={inputStyle} placeholder="np. Anna Fotografia" />
                             </div>
                             <div>
                               <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Reklamodawca *:</label>
-                              <input type="text" value={editingAd.advertiser_name} onChange={(e) => setEditingAd({ ...editingAd, advertiser_name: e.target.value })} style={inputStyle} />
+                              <input type="text" value={newAd.advertiser_name} onChange={(e) => setNewAd({ ...newAd, advertiser_name: e.target.value })} style={inputStyle} placeholder="np. Anna Juszczak" />
                             </div>
                             <div>
-                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link:</label>
-                              <input type="text" value={editingAd.link_url || ''} onChange={(e) => setEditingAd({ ...editingAd, link_url: e.target.value })} style={inputStyle} />
+                              <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link (gdzie prowadzi):</label>
+                              <input type="text" value={newAd.link_url} onChange={(e) => setNewAd({ ...newAd, link_url: e.target.value })} style={inputStyle} placeholder="https://..." />
                             </div>
                             <div>
                               <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Data wygaśnięcia:</label>
-                              <input type="date" value={editingAd.end_date ? editingAd.end_date.split('T')[0] : ''} onChange={(e) => setEditingAd({ ...editingAd, end_date: e.target.value })} style={inputStyle} />
+                              <input type="date" value={newAd.end_date} onChange={(e) => setNewAd({ ...newAd, end_date: e.target.value })} style={inputStyle} />
                             </div>
                           </div>
-                          <div style={{ marginTop: '10px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Opis:</label>
-                            <textarea value={editingAd.description || ''} onChange={(e) => setEditingAd({ ...editingAd, description: e.target.value })} style={{ ...inputStyle, height: '60px' }} />
+
+                          {/* Slides section */}
+                          <div style={{ marginTop: '15px', padding: '10px', background: '#fff', border: '1px solid #999' }}>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#000080' }}>🖼️ Obrazki (slider) - min. 1</h4>
+
+                            <div style={{ marginBottom: '10px' }}>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleSlideImageUpload}
+                                disabled={uploadingImage}
+                                style={{ marginRight: '10px' }}
+                              />
+                              {uploadingImage && <span>⏳ Wysyłanie...</span>}
+                            </div>
+
+                            {adSlides.length === 0 ? (
+                              <p style={{ color: '#666', fontStyle: 'italic' }}>Brak obrazków. Dodaj przynajmniej jeden!</p>
+                            ) : (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                                {adSlides.map((slide, index) => (
+                                  <div key={slide.id} style={{
+                                    width: '150px',
+                                    background: '#f0f0f0',
+                                    border: '1px solid #999',
+                                    padding: '5px',
+                                  }}>
+                                    <div style={{
+                                      width: '100%',
+                                      height: '80px',
+                                      overflow: 'hidden',
+                                      marginBottom: '5px',
+                                    }}>
+                                      <img
+                                        src={slide.image_url}
+                                        alt={slide.title || `Slajd ${index + 1}`}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      />
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Podpis (opcj.)"
+                                      value={slide.title || ''}
+                                      onChange={(e) => handleUpdateSlideTitle(index, e.target.value)}
+                                      style={{ ...inputStyle, fontSize: '10px', marginBottom: '5px' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                      <button type="button" onClick={() => handleMoveSlide(index, 'up')} disabled={index === 0} style={{ ...buttonStyle, padding: '2px 6px', fontSize: '10px' }}>◀</button>
+                                      <button type="button" onClick={() => handleMoveSlide(index, 'down')} disabled={index === adSlides.length - 1} style={{ ...buttonStyle, padding: '2px 6px', fontSize: '10px' }}>▶</button>
+                                      <button type="button" onClick={() => handleRemoveSlide(index)} style={{ ...buttonStyle, padding: '2px 6px', fontSize: '10px', background: '#ff6666' }}>✕</button>
+                                    </div>
+                                    <div style={{ textAlign: 'center', fontSize: '10px', color: '#666', marginTop: '3px' }}>
+                                      #{index + 1}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <button type="submit" style={{ ...buttonStyle, background: '#90EE90' }}>💾 Zapisz zmiany</button>
-                            <button type="button" onClick={() => { setEditingAd(null); setImagePreview(null); }} style={{ ...buttonStyle }}>Anuluj</button>
+
+                          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                            <button type="submit" style={{ ...buttonStyle, background: '#90EE90' }}>
+                              💾 {creatingAd ? 'Utwórz reklamę' : 'Zapisz zmiany'}
+                            </button>
+                            <button type="button" onClick={handleCancelEdit} style={buttonStyle}>
+                              Anuluj
+                            </button>
                           </div>
                         </form>
                       </fieldset>
                     )}
 
-                    {currentAd && !editingAd && (
+                    {/* Current active ad */}
+                    {currentAd && !creatingAd && !editingAd && (
                       <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
-                        <legend style={{ fontWeight: 'bold', color: '#006600' }}>✅ Aktualna reklama</legend>
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                          <div style={{ width: '200px', flexShrink: 0 }}>
-                            <div style={{
-                              width: '100%',
-                              height: '120px',
-                              background: '#f0f0f0',
-                              border: '2px inset #808080',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden'
-                            }}>
-                              {currentAd.image_url ? (
-                                <img src={currentAd.image_url} alt={currentAd.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              ) : (
-                                <span style={{ fontSize: '40px' }}>📷</span>
-                              )}
-                            </div>
+                        <legend style={{ fontWeight: 'bold', color: '#006600' }}>✅ Aktywna reklama na stronie</legend>
+                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                            {(currentAd.slides || []).slice(0, 4).map((slide: any, i: number) => (
+                              <div key={slide.id || i} style={{
+                                width: '60px',
+                                height: '40px',
+                                background: '#f0f0f0',
+                                border: '1px solid #999',
+                                overflow: 'hidden',
+                              }}>
+                                <img src={slide.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ))}
+                            {(currentAd.slides || []).length > 4 && (
+                              <div style={{ width: '60px', height: '40px', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>
+                                +{currentAd.slides.length - 4}
+                              </div>
+                            )}
                           </div>
                           <div style={{ flex: 1, minWidth: '200px' }}>
-                            <p><strong>Tytuł:</strong> {currentAd.title}</p>
-                            <p><strong>Reklamodawca:</strong> {currentAd.advertiser_name}</p>
-                            {currentAd.end_date && (
-                              <p>
-                                <strong>Wygasa:</strong> {new Date(currentAd.end_date).toLocaleDateString('pl-PL')}
-                                {getDaysUntilExpiry(currentAd.end_date)! <= 3 && (
-                                  <span style={{ color: '#cc0000', marginLeft: '8px' }}>⚠️ Wkrótce!</span>
-                                )}
-                              </p>
-                            )}
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                              <button onClick={() => { setEditingAd(currentAd); setImagePreview(null); }} style={{ ...buttonStyle, background: '#87CEEB' }}>
-                                ✏️ Edytuj
-                              </button>
-                              <button onClick={() => handleDeleteAdvertisement(currentAd.id)} style={{ ...buttonStyle, background: '#ff6666' }}>
-                                🗑️ Usuń
-                              </button>
-                            </div>
+                            <p style={{ margin: '0 0 5px 0' }}><strong>{currentAd.title}</strong></p>
+                            <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#666' }}>Reklamodawca: {currentAd.advertiser_name}</p>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#666' }}>
+                              Obrazków: {(currentAd.slides || []).length}
+                              {currentAd.end_date && (
+                                <span style={{ marginLeft: '10px' }}>
+                                  | Wygasa: {new Date(currentAd.end_date).toLocaleDateString('pl-PL')}
+                                  {getDaysUntilExpiry(currentAd.end_date)! <= 3 && <span style={{ color: '#cc0000' }}> ⚠️</span>}
+                                </span>
+                              )}
+                            </p>
                           </div>
+                          <button onClick={() => handleStartEditAd(currentAd)} style={{ ...buttonStyle, background: '#87CEEB' }}>✏️ Edytuj</button>
                         </div>
                       </fieldset>
                     )}
 
-                    <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
-                      <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nową reklamę</legend>
-                      <form onSubmit={handleSaveAdvertisement}>
-                        <div style={{ marginBottom: '10px' }}>
-                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Obrazek:</label>
-                          <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, false)} disabled={uploadingImage} />
-                          {imagePreview && !editingAd && <img src={imagePreview} alt="Preview" style={{ maxWidth: '200px', marginTop: '8px' }} />}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł *:</label>
-                            <input type="text" value={newAd.title} onChange={(e) => setNewAd({ ...newAd, title: e.target.value })} style={inputStyle} />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Reklamodawca *:</label>
-                            <input type="text" value={newAd.advertiser_name} onChange={(e) => setNewAd({ ...newAd, advertiser_name: e.target.value })} style={inputStyle} />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Link:</label>
-                            <input type="text" value={newAd.link_url} onChange={(e) => setNewAd({ ...newAd, link_url: e.target.value })} style={inputStyle} />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Data wygaśnięcia:</label>
-                            <input type="date" value={newAd.end_date} onChange={(e) => setNewAd({ ...newAd, end_date: e.target.value })} style={inputStyle} />
-                          </div>
-                        </div>
-                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px', background: '#90EE90' }}>
-                          📢 Zapisz reklamę
-                        </button>
-                      </form>
-                    </fieldset>
+                    {/* Add new button */}
+                    {!creatingAd && !editingAd && (
+                      <button onClick={handleStartCreateAd} style={{ ...buttonStyle, background: '#90EE90', marginBottom: '15px' }}>
+                        ➕ Dodaj nową reklamę
+                      </button>
+                    )}
 
-                    {allAds.length > 0 && (
-                      <fieldset style={{ border: '2px groove #fff', padding: '10px', marginTop: '15px' }}>
-                        <legend style={{ fontWeight: 'bold' }}>📋 Wszystkie reklamy ({allAds.length})</legend>
-                        {allAds.map((ad) => (
-                          <div key={ad.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: ad.is_active ? '#ccffcc' : '#f5f5f5', border: '1px solid #ccc' }}>
-                            <span style={{ flex: 1 }}>
-                              {ad.title}
-                              {ad.end_date && <small style={{ marginLeft: '8px', color: '#666' }}>(do {new Date(ad.end_date).toLocaleDateString('pl-PL')})</small>}
-                            </span>
-                            {ad.is_active ? (
-                              <span style={{ background: '#00aa00', color: '#fff', padding: '2px 8px', fontSize: '11px' }}>AKTYWNA</span>
-                            ) : (
-                              <button onClick={() => handleActivateAdvertisement(ad.id)} style={{ ...buttonStyle, fontSize: '11px', padding: '4px 8px' }}>Aktywuj</button>
-                            )}
-                            <button onClick={() => { setEditingAd(ad); setImagePreview(null); }} style={{ ...buttonStyle, fontSize: '11px', padding: '4px 8px', background: '#87CEEB' }}>✏️</button>
-                            <button onClick={() => handleDeleteAdvertisement(ad.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
-                          </div>
-                        ))}
+                    {/* Bank of ads */}
+                    {!creatingAd && !editingAd && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
+                        <legend style={{ fontWeight: 'bold' }}>🏦 Bank reklam ({allAds.length})</legend>
+                        {allAds.length === 0 ? (
+                          <p style={{ color: '#666', textAlign: 'center' }}>Brak reklam. Utwórz pierwszą!</p>
+                        ) : (
+                          allAds.map((ad) => (
+                            <div key={ad.id} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '10px',
+                              marginBottom: '8px',
+                              background: ad.is_active ? '#ccffcc' : '#fff',
+                              border: ad.is_active ? '2px solid #00aa00' : '1px solid #ccc',
+                            }}>
+                              {/* Mini slider preview */}
+                              <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                                {(ad.slides || []).slice(0, 3).map((slide: any, i: number) => (
+                                  <div key={slide.id || i} style={{
+                                    width: '40px',
+                                    height: '30px',
+                                    background: '#f0f0f0',
+                                    border: '1px solid #999',
+                                    overflow: 'hidden',
+                                  }}>
+                                    <img src={slide.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </div>
+                                ))}
+                                {(ad.slides || []).length === 0 && (
+                                  <div style={{ width: '40px', height: '30px', background: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
+                                    ?
+                                  </div>
+                                )}
+                              </div>
+
+                              <div style={{ flex: 1 }}>
+                                <strong>{ad.title}</strong>
+                                <br />
+                                <small style={{ color: '#666' }}>
+                                  {ad.advertiser_name} • {(ad.slides || []).length} obr.
+                                  {ad.end_date && ` • do ${new Date(ad.end_date).toLocaleDateString('pl-PL')}`}
+                                </small>
+                              </div>
+
+                              {ad.is_active ? (
+                                <span style={{ background: '#00aa00', color: '#fff', padding: '3px 10px', fontSize: '11px', fontWeight: 'bold' }}>
+                                  ✓ AKTYWNA
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleActivateAdvertisement(ad.id)}
+                                  style={{ ...buttonStyle, fontSize: '11px', padding: '4px 10px', background: '#90EE90' }}
+                                >
+                                  Aktywuj
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleStartEditAd(ad)}
+                                style={{ ...buttonStyle, fontSize: '11px', padding: '4px 8px', background: '#87CEEB' }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAdvertisement(ad.id)}
+                                style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          ))
+                        )}
                       </fieldset>
                     )}
                   </div>
@@ -1255,7 +1207,7 @@ export default function SecureAdminPanel() {
       </div>
 
       <div style={{ textAlign: 'center', color: '#fff', marginTop: '20px', fontSize: '12px' }}>
-        KupMax Admin Panel v3.1 | 2024 | 🔐 Google OAuth
+        KupMax Admin Panel v4.0 | 2024 | 🔐 Google OAuth
       </div>
     </div>
   );

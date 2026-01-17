@@ -160,23 +160,30 @@ export default function Home() {
     }
   };
 
-  const slides = [
-    {
-      title: 'Koniec odkładania. Czas tworzenia.',
-      imageUrl: '/images/slider-1.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-    {
-      title: 'Przestań marzyć. Zacznij działać.',
-      imageUrl: '/images/slider-2.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-    {
-      title: 'Każdy wielki projekt zaczyna się od pierwszego kroku.',
-      imageUrl: '/images/slider-3.jpg',
-      linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
-    },
-  ];
+  // Przygotuj slajdy z aktywnej reklamy lub domyślne
+  const slides = advertisement?.slides && advertisement.slides.length > 0
+    ? advertisement.slides.map((slide: any) => ({
+        title: slide.title || advertisement.title,
+        imageUrl: slide.image_url,
+        linkTo: advertisement.link_url || '#',
+      }))
+    : [
+        {
+          title: 'Koniec odkładania. Czas tworzenia.',
+          imageUrl: '/images/slider-1.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+        {
+          title: 'Przestań marzyć. Zacznij działać.',
+          imageUrl: '/images/slider-2.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+        {
+          title: 'Każdy wielki projekt zaczyna się od pierwszego kroku.',
+          imageUrl: '/images/slider-3.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+      ];
 
   const desktopIcons: DesktopIcon[] = [
     {
@@ -459,39 +466,6 @@ export default function Home() {
                   <p className="text-sm">Ładowanie reklamy...</p>
                 </div>
               </div>
-            ) : advertisement ? (
-              <a
-                href={ensureHttps(advertisement.link_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full h-full relative group cursor-pointer"
-              >
-                {/* Background image */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${advertisement.image_url})` }}
-                />
-                {/* Overlay with text */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
-                  <h2 className="text-white text-2xl md:text-3xl font-bold drop-shadow-lg mb-2">
-                    {advertisement.title}
-                  </h2>
-                  {advertisement.description && (
-                    <p className="text-white/90 text-sm md:text-base drop-shadow-md mb-2">
-                      {advertisement.description}
-                    </p>
-                  )}
-                  <p className="text-white/70 text-xs">
-                    Reklamodawca: {advertisement.advertiser_name}
-                  </p>
-                  {/* Click hint */}
-                  {advertisement.link_url && (
-                    <div className="absolute top-4 right-4 bg-yellow-400 text-black px-3 py-1 text-xs font-bold rounded shadow-lg group-hover:scale-110 transition-transform">
-                      🔗 Kliknij aby odwiedzić
-                    </div>
-                  )}
-                </div>
-              </a>
             ) : (
               <HeroSlider slides={slides} />
             )}

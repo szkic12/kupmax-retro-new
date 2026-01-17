@@ -7,13 +7,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// GET - pobierz wszystkie slajdy
-export async function GET() {
+// GET - pobierz slajdy dla reklamy
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const advertisementId = searchParams.get('advertisementId');
+
+    if (!advertisementId) {
+      return NextResponse.json({ error: 'advertisementId jest wymagane' }, { status: 400 });
+    }
+
     const { data: slides, error } = await supabase
-      .from('slider_slides')
+      .from('advertisement_slides')
       .select('*')
-      .eq('is_active', true)
+      .eq('advertisement_id', advertisementId)
       .order('order_index', { ascending: true });
 
     if (error) throw error;
@@ -25,27 +32,26 @@ export async function GET() {
   }
 }
 
-// POST - dodaj nowy slajd
+// POST - dodaj slajd do reklamy
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, image_url, link_url, order_index } = body;
+    const { advertisement_id, image_url, title, order_index } = body;
 
-    if (!title || !image_url) {
+    if (!advertisement_id || !image_url) {
       return NextResponse.json(
-        { error: 'Tytuł i obrazek są wymagane' },
+        { error: 'advertisement_id i image_url są wymagane' },
         { status: 400 }
       );
     }
 
     const { data, error } = await supabase
-      .from('slider_slides')
+      .from('advertisement_slides')
       .insert({
-        title,
+        advertisement_id,
         image_url,
-        link_url: link_url || '#',
+        title: title || '',
         order_index: order_index || 0,
-        is_active: true,
       })
       .select()
       .single();
@@ -66,24 +72,19 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, image_url, link_url, order_index, is_active } = body;
+    const { id, image_url, title, order_index } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID slajdu jest wymagane' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'ID slajdu jest wymagane' }, { status: 400 });
     }
 
     const updateData: Record<string, any> = {};
-    if (title !== undefined) updateData.title = title;
     if (image_url !== undefined) updateData.image_url = image_url;
-    if (link_url !== undefined) updateData.link_url = link_url;
+    if (title !== undefined) updateData.title = title;
     if (order_index !== undefined) updateData.order_index = order_index;
-    if (is_active !== undefined) updateData.is_active = is_active;
 
     const { data, error } = await supabase
-      .from('slider_slides')
+      .from('advertisement_slides')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -108,14 +109,11 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID slajdu jest wymagane' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'ID slajdu jest wymagane' }, { status: 400 });
     }
 
     const { error } = await supabase
-      .from('slider_slides')
+      .from('advertisement_slides')
       .delete()
       .eq('id', id);
 
