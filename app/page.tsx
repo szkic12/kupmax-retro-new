@@ -433,19 +433,39 @@ export default function Home() {
 
       {/* Desktop Icons - below taskbar */}
       <div className="absolute top-12 sm:top-10 left-2 right-2 grid grid-cols-6 sm:grid-cols-8 gap-1 z-10">
-        {desktopIcons.map((item) => (
-          <div
-            key={item.id}
-            className="desktop-icon cursor-pointer flex flex-col items-center p-1"
-            onDoubleClick={item.action}
-            onClick={item.action}
-          >
-            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-white/20 backdrop-blur rounded flex items-center justify-center text-lg sm:text-xl">
-              {item.icon}
+        {desktopIcons.map((item) => {
+          // Powiększone ikonki dla wybranych elementów
+          const isHighlighted = ['ai-studio', 'vibe3d', 'roblox'].includes(item.id);
+
+          return (
+            <div
+              key={item.id}
+              className={`desktop-icon cursor-pointer flex flex-col items-center p-1 ${isHighlighted ? 'transform hover:scale-110 transition-transform' : ''}`}
+              onDoubleClick={item.action}
+              onClick={item.action}
+              style={isHighlighted ? { gridColumn: 'span 1' } : {}}
+            >
+              <div
+                className={`bg-white/20 backdrop-blur rounded flex items-center justify-center ${
+                  isHighlighted
+                    ? 'w-14 h-14 sm:w-16 sm:h-16 text-2xl sm:text-3xl shadow-lg ring-2 ring-yellow-400/50'
+                    : 'w-9 h-9 sm:w-11 sm:h-11 text-lg sm:text-xl'
+                }`}
+              >
+                {item.icon}
+              </div>
+              <span
+                className={`text-center truncate text-white drop-shadow-[1px_1px_1px_rgba(0,0,0,0.8)] ${
+                  isHighlighted
+                    ? 'text-[10px] sm:text-xs font-bold max-w-[60px]'
+                    : 'text-[8px] sm:text-[10px] max-w-[50px]'
+                }`}
+              >
+                {item.label}
+              </span>
             </div>
-            <span className="text-[8px] sm:text-[10px] text-center max-w-[50px] truncate text-white drop-shadow-[1px_1px_1px_rgba(0,0,0,0.8)]">{item.label}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Windows - positioned below icons */}
