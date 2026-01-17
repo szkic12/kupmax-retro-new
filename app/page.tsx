@@ -54,7 +54,10 @@ export default function Home() {
   useEffect(() => {
     const fetchAdvertisement = async () => {
       try {
-        const res = await fetch('/api/advertisement');
+        const res = await fetch('/api/advertisement', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const data = await res.json();
         if (data.advertisement) {
           setAdvertisement(data.advertisement);
@@ -72,7 +75,10 @@ export default function Home() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch('/api/news?limit=3');
+        const res = await fetch('/api/news?limit=3', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const data = await res.json();
         if (data.news) {
           setLatestNews(data.news);
