@@ -175,6 +175,61 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PUT - edytuj wątek (dla admina)
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { threadId, title, message } = body;
+
+    if (!threadId) {
+      return NextResponse.json(
+        { success: false, error: 'Thread ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const forumData = await getForumData();
+
+    // Znajdź wątek
+    const threadIndex = forumData.threads.findIndex((t: any) => String(t.id) === String(threadId));
+    if (threadIndex === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Thread not found' },
+        { status: 404 }
+      );
+    }
+
+    // Aktualizuj tylko podane pola
+    if (title !== undefined) {
+      forumData.threads[threadIndex].title = title.substring(0, 100);
+    }
+    if (message !== undefined) {
+      forumData.threads[threadIndex].message = message.substring(0, 5000);
+    }
+
+    // Zapisz
+    const saveResult = await saveForumData(forumData);
+    if (!saveResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to update thread' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      thread: forumData.threads[threadIndex],
+      message: 'Thread updated'
+    });
+  } catch (error) {
+    console.error('Error updating thread:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

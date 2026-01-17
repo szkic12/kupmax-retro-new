@@ -62,6 +62,12 @@ export default function SecureAdminPanel() {
     category: 'Niesamowite Historie',
   });
 
+  // News edit
+  const [editingNews, setEditingNews] = useState<any>(null);
+
+  // Forum edit
+  const [editingThread, setEditingThread] = useState<any>(null);
+
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
   // Check if user is admin
@@ -592,6 +598,77 @@ export default function SecureAdminPanel() {
     } catch (error) {
       setMessage('Błąd sieci');
     }
+  };
+
+  const handleEditNews = (newsItem: any) => {
+    setEditingNews({ ...newsItem });
+  };
+
+  const handleSaveNews = async () => {
+    if (!editingNews) return;
+
+    try {
+      const res = await fetch('/api/news', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingNews.id,
+          title: editingNews.title,
+          content: editingNews.content,
+          excerpt: editingNews.excerpt,
+          category: editingNews.category,
+          author: editingNews.author,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('News zaktualizowany!');
+        setEditingNews(null);
+        fetchData();
+      } else {
+        setMessage('Błąd aktualizacji');
+      }
+    } catch (error) {
+      setMessage('Błąd sieci');
+    }
+  };
+
+  const handleCancelEditNews = () => {
+    setEditingNews(null);
+  };
+
+  const handleEditThread = (thread: any) => {
+    setEditingThread({ ...thread });
+  };
+
+  const handleSaveThread = async () => {
+    if (!editingThread) return;
+
+    try {
+      const res = await fetch('/api/forum/threads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: editingThread.id,
+          title: editingThread.title,
+          message: editingThread.message,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('Wątek zaktualizowany!');
+        setEditingThread(null);
+        fetchData();
+      } else {
+        setMessage('Błąd aktualizacji');
+      }
+    } catch (error) {
+      setMessage('Błąd sieci');
+    }
+  };
+
+  const handleCancelEditThread = () => {
+    setEditingThread(null);
   };
 
   const getDaysUntilExpiry = (endDate: string | null) => {
@@ -1327,16 +1404,57 @@ export default function SecureAdminPanel() {
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       💬 Zarządzanie Forum ({forumThreads.length} wątków)
                     </h3>
-                    {forumThreads.map((thread) => (
-                      <div key={thread.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: '#fff', border: '1px solid #ccc' }}>
-                        <div style={{ flex: 1 }}>
-                          <strong>{thread.title}</strong>
-                          <br />
-                          <small style={{ color: '#666' }}>przez {thread.author?.nickname || 'Anonim'} • {thread.replyCount || 0} odpowiedzi</small>
+
+                    {/* Edit form */}
+                    {editingThread && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#ffffcc' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj wątek</legend>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł wątku:</label>
+                          <input
+                            type="text"
+                            value={editingThread.title || ''}
+                            onChange={(e) => setEditingThread({ ...editingThread, title: e.target.value })}
+                            style={inputStyle}
+                            maxLength={100}
+                          />
                         </div>
-                        <button onClick={() => handleDeleteThread(thread.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
-                      </div>
-                    ))}
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Treść:</label>
+                          <textarea
+                            value={editingThread.message || ''}
+                            onChange={(e) => setEditingThread({ ...editingThread, message: e.target.value })}
+                            style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
+                            maxLength={5000}
+                          />
+                          <small style={{ color: '#666' }}>{editingThread.message?.length || 0}/5000 znaków</small>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button onClick={handleSaveThread} style={{ ...buttonStyle, background: '#90EE90' }}>
+                            💾 Zapisz
+                          </button>
+                          <button onClick={handleCancelEditThread} style={buttonStyle}>
+                            Anuluj
+                          </button>
+                        </div>
+                      </fieldset>
+                    )}
+
+                    {forumThreads.length === 0 ? (
+                      <p style={{ color: '#666', textAlign: 'center' }}>Brak wątków</p>
+                    ) : (
+                      forumThreads.map((thread) => (
+                        <div key={thread.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: '#fff', border: '1px solid #ccc' }}>
+                          <div style={{ flex: 1 }}>
+                            <strong>{thread.title}</strong>
+                            <br />
+                            <small style={{ color: '#666' }}>przez {thread.author?.nickname || 'Anonim'} • {thread.replyCount || 0} odpowiedzi</small>
+                          </div>
+                          <button onClick={() => handleEditThread(thread)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '4px 8px' }}>✏️</button>
+                          <button onClick={() => handleDeleteThread(thread.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
 
@@ -1346,6 +1464,61 @@ export default function SecureAdminPanel() {
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       📰 Zarządzanie News ({newsList.length})
                     </h3>
+
+                    {/* Edit form */}
+                    {editingNews && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#ffffcc' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>✏️ Edytuj artykuł</legend>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Tytuł:</label>
+                            <input
+                              type="text"
+                              value={editingNews.title || ''}
+                              onChange={(e) => setEditingNews({ ...editingNews, title: e.target.value })}
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kategoria:</label>
+                            <select
+                              value={editingNews.category || ''}
+                              onChange={(e) => setEditingNews({ ...editingNews, category: e.target.value })}
+                              style={{ ...inputStyle, height: '30px' }}
+                            >
+                              {NEWS_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Autor:</label>
+                            <input
+                              type="text"
+                              value={editingNews.author || ''}
+                              onChange={(e) => setEditingNews({ ...editingNews, author: e.target.value })}
+                              style={inputStyle}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Treść:</label>
+                          <textarea
+                            value={editingNews.content || ''}
+                            onChange={(e) => setEditingNews({ ...editingNews, content: e.target.value })}
+                            style={{ ...inputStyle, height: '150px', resize: 'vertical' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                          <button onClick={handleSaveNews} style={{ ...buttonStyle, background: '#90EE90' }}>
+                            💾 Zapisz
+                          </button>
+                          <button onClick={handleCancelEditNews} style={buttonStyle}>
+                            Anuluj
+                          </button>
+                        </div>
+                      </fieldset>
+                    )}
 
                     <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
                       <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowy artykuł</legend>
@@ -1377,8 +1550,9 @@ export default function SecureAdminPanel() {
                         <div style={{ flex: 1 }}>
                           <strong>{newsItem.title}</strong>
                           <br />
-                          <small style={{ color: '#666' }}>{newsItem.category} • {new Date(newsItem.created_at).toLocaleDateString('pl-PL')}</small>
+                          <small style={{ color: '#666' }}>{newsItem.category} • {newsItem.author} • {new Date(newsItem.created_at).toLocaleDateString('pl-PL')}</small>
                         </div>
+                        <button onClick={() => handleEditNews(newsItem)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '4px 8px' }}>✏️</button>
                         <button onClick={() => handleToggleNewsPublished(newsItem)} style={{ ...buttonStyle, fontSize: '11px', padding: '4px 8px', background: newsItem.is_published ? '#ffaa00' : '#90EE90' }}>
                           {newsItem.is_published ? 'Ukryj' : 'Publikuj'}
                         </button>
