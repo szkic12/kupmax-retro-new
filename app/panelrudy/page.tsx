@@ -80,6 +80,11 @@ export default function SecureAdminPanel() {
   const [loadingRss, setLoadingRss] = useState(false);
   const [newRssSource, setNewRssSource] = useState({ name: '', url: '', category: 'Tech' });
 
+  // Trends
+  const [trends, setTrends] = useState<any[]>([]);
+  const [loadingTrends, setLoadingTrends] = useState(false);
+  const [trendCategory, setTrendCategory] = useState('general');
+
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
   // Simple formatting helpers for news content
@@ -849,6 +854,31 @@ export default function SecureAdminPanel() {
   const handleUseRssForArticle = (item: any) => {
     setActiveTab('news');
     setAiPrompt(`Napisz artykuł na temat: "${item.title}"\n\nŹródło: ${item.source}\nLink: ${item.link}\n\nKontekst: ${item.description}`);
+    setShowAiGenerator(true);
+    setMessage('💡 Użyj AI żeby napisać artykuł na ten temat!');
+  };
+
+  // Trends handlers
+  const handleFetchTrends = async () => {
+    setLoadingTrends(true);
+    setMessage('🔮 Szukam aktualnych trendów...');
+    try {
+      const res = await fetch(`/api/news/trends?category=${trendCategory}`);
+      const data = await res.json();
+      if (data.trends) {
+        setTrends(data.trends);
+        setMessage(`✅ Znaleziono ${data.trends.length} trendów! (źródło: ${data.source})`);
+      }
+    } catch (error) {
+      setMessage('❌ Błąd pobierania trendów');
+    } finally {
+      setLoadingTrends(false);
+    }
+  };
+
+  const handleUseTrendForArticle = (trend: any) => {
+    setActiveTab('news');
+    setAiPrompt(`Napisz artykuł na temat: "${trend.title}"\n\nDlaczego to ciekawe: ${trend.why}\n\nUnikalny kąt: ${trend.angle}\n\nTagi: ${trend.tags?.join(', ')}`);
     setShowAiGenerator(true);
     setMessage('💡 Użyj AI żeby napisać artykuł na ten temat!');
   };
@@ -1787,6 +1817,77 @@ export default function SecureAdminPanel() {
                     <p style={{ marginTop: '15px', fontSize: '11px', color: '#666' }}>
                       💡 Tip: Kliknij "✨ Napisz" przy artykule żeby użyć go jako inspiracji do własnego artykułu z pomocą AI!
                     </p>
+
+                    {/* TRENDY AI */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginTop: '20px', background: '#f5f0ff' }}>
+                      <legend style={{ fontWeight: 'bold', color: '#800080' }}>🔮 Trendy AI - O czym teraz pisać?</legend>
+
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <select
+                          value={trendCategory}
+                          onChange={(e) => setTrendCategory(e.target.value)}
+                          style={{ ...inputStyle, height: '30px', width: 'auto' }}
+                        >
+                          <option value="general">🌍 Ogólne</option>
+                          <option value="tech">💻 Technologia</option>
+                          <option value="health">🌿 Zdrowie naturalne</option>
+                          <option value="retro">📺 Retro/Nostalgia</option>
+                          <option value="diy">🔧 DIY/Majsterkowanie</option>
+                        </select>
+                        <button
+                          onClick={handleFetchTrends}
+                          disabled={loadingTrends}
+                          style={{ ...buttonStyle, background: loadingTrends ? '#ccc' : '#DDA0DD' }}
+                        >
+                          {loadingTrends ? '⏳ Szukam...' : '🔮 Znajdź trendy'}
+                        </button>
+                      </div>
+
+                      {trends.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                          {trends.map((trend, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                background: '#fff',
+                                padding: '10px',
+                                border: '1px solid #ddd',
+                                borderLeft: '4px solid #800080'
+                              }}
+                            >
+                              <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#333' }}>
+                                {trend.title}
+                              </div>
+                              <p style={{ fontSize: '11px', color: '#666', marginBottom: '5px' }}>
+                                💡 {trend.why}
+                              </p>
+                              <p style={{ fontSize: '11px', color: '#800080', marginBottom: '8px' }}>
+                                🎯 {trend.angle}
+                              </p>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                                  {trend.tags?.map((tag: string, j: number) => (
+                                    <span key={j} style={{ fontSize: '9px', background: '#e0e0e0', padding: '2px 5px', borderRadius: '3px' }}>
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => handleUseTrendForArticle(trend)}
+                                  style={{ ...buttonStyle, background: '#90EE90', fontSize: '10px', padding: '3px 8px' }}
+                                >
+                                  ✨ Napisz
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p style={{ marginTop: '10px', fontSize: '10px', color: '#666' }}>
+                        🤖 AI analizuje aktualne trendy i sugeruje unikalne kąty na artykuły. Twoja perspektywa = oryginalność!
+                      </p>
+                    </fieldset>
                   </div>
                 )}
 
