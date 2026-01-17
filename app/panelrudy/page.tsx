@@ -82,6 +82,62 @@ export default function SecureAdminPanel() {
 
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
+  // Simple formatting helpers for news content
+  const insertFormatting = (format: string) => {
+    const textarea = document.querySelector('textarea[data-news-content]') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const content = newNews.content;
+
+    let newText = '';
+    let cursorOffset = 0;
+
+    switch (format) {
+      case 'h2':
+        newText = `\n## ${selectedText || 'Nagłówek sekcji'}\n`;
+        cursorOffset = 4;
+        break;
+      case 'h3':
+        newText = `\n### ${selectedText || 'Podtytuł'}\n`;
+        cursorOffset = 5;
+        break;
+      case 'bold':
+        newText = `**${selectedText || 'pogrubiony tekst'}**`;
+        cursorOffset = 2;
+        break;
+      case 'italic':
+        newText = `*${selectedText || 'kursywa'}*`;
+        cursorOffset = 1;
+        break;
+      case 'list':
+        newText = `\n- ${selectedText || 'Element listy'}\n- Kolejny element\n- Jeszcze jeden\n`;
+        cursorOffset = 3;
+        break;
+      case 'link':
+        newText = `[${selectedText || 'tekst linku'}](https://example.com)`;
+        cursorOffset = 1;
+        break;
+      case 'quote':
+        newText = `\n> ${selectedText || 'Cytat lub ważna myśl'}\n`;
+        cursorOffset = 3;
+        break;
+      default:
+        return;
+    }
+
+    const newContent = content.substring(0, start) + newText + content.substring(end);
+    setNewNews({ ...newNews, content: newContent });
+
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+    }, 10);
+  };
+
   // Check if user is admin
   const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email.toLowerCase());
 
@@ -1878,7 +1934,26 @@ export default function SecureAdminPanel() {
                         </div>
                         <div style={{ marginTop: '10px' }}>
                           <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Treść *:</label>
-                          <textarea value={newNews.content} onChange={(e) => setNewNews({ ...newNews, content: e.target.value })} style={{ ...inputStyle, height: '150px' }} />
+                          {/* Formatting toolbar */}
+                          <div style={{ display: 'flex', gap: '3px', marginBottom: '5px', flexWrap: 'wrap' }}>
+                            <button type="button" onClick={() => insertFormatting('h2')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Nagłówek sekcji">H2</button>
+                            <button type="button" onClick={() => insertFormatting('h3')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Podtytuł">H3</button>
+                            <button type="button" onClick={() => insertFormatting('bold')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', fontWeight: 'bold' }} title="Pogrubienie">B</button>
+                            <button type="button" onClick={() => insertFormatting('italic')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', fontStyle: 'italic' }} title="Kursywa">I</button>
+                            <button type="button" onClick={() => insertFormatting('list')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Lista punktowana">• Lista</button>
+                            <button type="button" onClick={() => insertFormatting('link')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Link">🔗 Link</button>
+                            <button type="button" onClick={() => insertFormatting('quote')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Cytat">„ Cytat</button>
+                          </div>
+                          <textarea
+                            data-news-content="true"
+                            value={newNews.content}
+                            onChange={(e) => setNewNews({ ...newNews, content: e.target.value })}
+                            style={{ ...inputStyle, height: '200px', fontFamily: 'monospace', fontSize: '13px' }}
+                            placeholder="Pisz swój artykuł tutaj...&#10;&#10;Używaj Markdown:&#10;## Nagłówek sekcji&#10;### Podtytuł&#10;**pogrubienie**&#10;*kursywa*&#10;- lista&#10;> cytat"
+                          />
+                          <small style={{ color: '#666', display: 'block', marginTop: '3px' }}>
+                            💡 Formatowanie: **pogrubienie**, *kursywa*, ## nagłówek, - lista, &gt; cytat, [link](url)
+                          </small>
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                           <button type="submit" style={{ ...buttonStyle, background: '#90EE90' }}>📰 Opublikuj</button>

@@ -64,6 +64,37 @@ export default function NewsPage() {
     });
   };
 
+  // Simple Markdown to HTML parser
+  const parseMarkdown = (text: string): string => {
+    if (!text) return '';
+
+    let html = text
+      // Headers
+      .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-4 mb-2" style="color: #000080;">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-4 mb-2" style="color: #000080;">$1</h2>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Links
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #0000ff; text-decoration: underline;">$1</a>')
+      // Blockquotes
+      .replace(/^> (.+)$/gm, '<blockquote style="border-left: 4px solid #000080; padding-left: 12px; margin: 8px 0; font-style: italic; color: #555;">$1</blockquote>')
+      // Lists
+      .replace(/^- (.+)$/gm, '<li style="margin-left: 20px;">$1</li>')
+      // Paragraphs (double newline)
+      .replace(/\n\n/g, '</p><p style="margin-bottom: 12px;">')
+      // Single newlines to br
+      .replace(/\n/g, '<br />');
+
+    // Wrap in paragraph if needed
+    if (!html.startsWith('<h') && !html.startsWith('<blockquote') && !html.startsWith('<li')) {
+      html = '<p style="margin-bottom: 12px;">' + html + '</p>';
+    }
+
+    return html;
+  };
+
   // Convert API news to display format
   const getMainNews = () => {
     if (news.length === 0) {
@@ -343,9 +374,14 @@ export default function NewsPage() {
                         >
                           {item.title}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          {expandedNews === item.id ? item.content : item.excerpt}
-                        </p>
+                        {expandedNews === item.id ? (
+                          <div
+                            className="text-sm text-gray-700"
+                            dangerouslySetInnerHTML={{ __html: parseMarkdown(item.content) }}
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-600">{item.excerpt}</p>
+                        )}
                         {expandedNews === item.id && (
                           <div className="mt-2 pt-2 border-t text-xs text-gray-500">
                             ✍️ {item.author} | 👁️ {item.views} odsłon
