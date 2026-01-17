@@ -65,8 +65,20 @@ export default function SecureAdminPanel() {
   // News edit
   const [editingNews, setEditingNews] = useState<any>(null);
 
+  // AI News generator
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiStyle, setAiStyle] = useState('blog');
+  const [generatingAi, setGeneratingAi] = useState(false);
+
   // Forum edit
   const [editingThread, setEditingThread] = useState<any>(null);
+
+  // RSS
+  const [rssSources, setRssSources] = useState<any[]>([]);
+  const [rssItems, setRssItems] = useState<any[]>([]);
+  const [loadingRss, setLoadingRss] = useState(false);
+  const [newRssSource, setNewRssSource] = useState({ name: '', url: '', category: 'Tech' });
 
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
@@ -111,6 +123,11 @@ export default function SecureAdminPanel() {
         const res = await fetch('/api/news?all=true');
         const data = await res.json();
         setNewsList(data.news || []);
+      } else if (activeTab === 'rss') {
+        // Pobierz źródła RSS
+        const resSources = await fetch('/api/news/rss?action=sources');
+        const dataSources = await resSources.json();
+        setRssSources(dataSources.sources || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -637,6 +654,49 @@ export default function SecureAdminPanel() {
     setEditingNews(null);
   };
 
+  const handleGenerateWithAi = async () => {
+    if (!aiPrompt.trim()) {
+      setMessage('Wpisz temat artykułu!');
+      return;
+    }
+
+    setGeneratingAi(true);
+    setMessage('🤖 AI pisze artykuł...');
+
+    try {
+      const res = await fetch('/api/news/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          style: aiStyle,
+          language: 'pl',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Wypełnij formularz wygenerowanym artykułem
+        setNewNews({
+          ...newNews,
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt,
+        });
+        setMessage('✅ Artykuł wygenerowany! Możesz go edytować przed publikacją.');
+        setShowAiGenerator(false);
+        setAiPrompt('');
+      } else {
+        setMessage('❌ Błąd: ' + (data.error || 'Nie udało się wygenerować'));
+      }
+    } catch (error) {
+      setMessage('❌ Błąd sieci');
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
+
   const handleEditThread = (thread: any) => {
     setEditingThread({ ...thread });
   };
@@ -669,6 +729,72 @@ export default function SecureAdminPanel() {
 
   const handleCancelEditThread = () => {
     setEditingThread(null);
+  };
+
+  // RSS handlers
+  const handleFetchRssItems = async () => {
+    setLoadingRss(true);
+    setMessage('📡 Pobieram artykuły z RSS...');
+    try {
+      const res = await fetch('/api/news/rss?action=fetch');
+      const data = await res.json();
+      if (data.items) {
+        setRssItems(data.items);
+        setMessage(`✅ Pobrano ${data.items.length} artykułów!`);
+      }
+    } catch (error) {
+      setMessage('❌ Błąd pobierania RSS');
+    } finally {
+      setLoadingRss(false);
+    }
+  };
+
+  const handleAddRssSource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRssSource.name || !newRssSource.url) {
+      setMessage('Nazwa i URL są wymagane!');
+      return;
+    }
+
+    setMessage('Sprawdzam źródło RSS...');
+    try {
+      const res = await fetch('/api/news/rss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRssSource),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('✅ Źródło dodane!');
+        setNewRssSource({ name: '', url: '', category: 'Tech' });
+        fetchData();
+      } else {
+        setMessage('❌ ' + (data.error || 'Błąd dodawania'));
+      }
+    } catch (error) {
+      setMessage('❌ Błąd sieci');
+    }
+  };
+
+  const handleDeleteRssSource = async (id: string) => {
+    if (!confirm('Czy na pewno usunąć to źródło?')) return;
+    try {
+      const res = await fetch(`/api/news/rss?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMessage('Źródło usunięte!');
+        fetchData();
+      }
+    } catch (error) {
+      setMessage('Błąd sieci');
+    }
+  };
+
+  const handleUseRssForArticle = (item: any) => {
+    setActiveTab('news');
+    setAiPrompt(`Napisz artykuł na temat: "${item.title}"\n\nŹródło: ${item.source}\nLink: ${item.link}\n\nKontekst: ${item.description}`);
+    setShowAiGenerator(true);
+    setMessage('💡 Użyj AI żeby napisać artykuł na ten temat!');
   };
 
   const getDaysUntilExpiry = (endDate: string | null) => {
@@ -920,6 +1046,9 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === 'news')} onClick={() => setActiveTab('news')}>
               📰 News
+            </button>
+            <button style={tabStyle(activeTab === 'rss')} onClick={() => setActiveTab('rss')}>
+              📡 Inspiracje
             </button>
           </div>
 
@@ -1458,12 +1587,210 @@ export default function SecureAdminPanel() {
                   </div>
                 )}
 
+                {/* RSS/INSPIRACJE TAB */}
+                {activeTab === 'rss' && (
+                  <div>
+                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
+                      📡 Inspiracje - RSS Agregator
+                    </h3>
+
+                    {/* Dodaj źródło */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
+                      <legend style={{ fontWeight: 'bold' }}>➕ Dodaj źródło RSS</legend>
+                      <form onSubmit={handleAddRssSource}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Nazwa *:</label>
+                            <input
+                              type="text"
+                              value={newRssSource.name}
+                              onChange={(e) => setNewRssSource({ ...newRssSource, name: e.target.value })}
+                              placeholder="np. TechCrunch"
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>URL RSS *:</label>
+                            <input
+                              type="text"
+                              value={newRssSource.url}
+                              onChange={(e) => setNewRssSource({ ...newRssSource, url: e.target.value })}
+                              placeholder="https://example.com/feed.xml"
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Kategoria:</label>
+                            <select
+                              value={newRssSource.category}
+                              onChange={(e) => setNewRssSource({ ...newRssSource, category: e.target.value })}
+                              style={{ ...inputStyle, height: '30px' }}
+                            >
+                              <option value="Tech">Tech</option>
+                              <option value="News">News</option>
+                              <option value="Blog">Blog</option>
+                              <option value="Science">Science</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                        </div>
+                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px' }}>+ Dodaj źródło</button>
+                      </form>
+                    </fieldset>
+
+                    {/* Lista źródeł */}
+                    <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
+                      <legend style={{ fontWeight: 'bold' }}>📋 Twoje źródła ({rssSources.length})</legend>
+                      {rssSources.length === 0 ? (
+                        <p style={{ color: '#666', textAlign: 'center' }}>Brak źródeł RSS</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                          {rssSources.map((source) => (
+                            <span
+                              key={source.id}
+                              style={{
+                                background: '#fff',
+                                padding: '4px 8px',
+                                border: '1px solid #ccc',
+                                fontSize: '12px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}
+                            >
+                              {source.name}
+                              <button
+                                onClick={() => handleDeleteRssSource(source.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f00', fontSize: '10px' }}
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </fieldset>
+
+                    {/* Pobierz artykuły */}
+                    <div style={{ marginBottom: '15px' }}>
+                      <button
+                        onClick={handleFetchRssItems}
+                        disabled={loadingRss}
+                        style={{ ...buttonStyle, background: loadingRss ? '#ccc' : '#87CEEB' }}
+                      >
+                        {loadingRss ? '⏳ Pobieram...' : '🔄 Pobierz najnowsze artykuły'}
+                      </button>
+                    </div>
+
+                    {/* Lista artykułów */}
+                    {rssItems.length > 0 && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
+                        <legend style={{ fontWeight: 'bold' }}>📰 Najnowsze artykuły ({rssItems.length})</legend>
+                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                          {rssItems.map((item, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                background: i % 2 === 0 ? '#fff' : '#f5f5f5',
+                                padding: '10px',
+                                marginBottom: '5px',
+                                border: '1px solid #ddd'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                                <div style={{ flex: 1 }}>
+                                  <a
+                                    href={item.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontWeight: 'bold', color: '#000080', textDecoration: 'none' }}
+                                  >
+                                    {item.title}
+                                  </a>
+                                  <p style={{ margin: '5px 0', fontSize: '12px', color: '#666' }}>
+                                    {item.description?.substring(0, 150)}...
+                                  </p>
+                                  <small style={{ color: '#999' }}>
+                                    📰 {item.source} • {new Date(item.pubDate).toLocaleDateString('pl-PL')}
+                                  </small>
+                                </div>
+                                <button
+                                  onClick={() => handleUseRssForArticle(item)}
+                                  style={{ ...buttonStyle, background: '#90EE90', fontSize: '11px', whiteSpace: 'nowrap' }}
+                                  title="Użyj tego tematu do napisania artykułu z AI"
+                                >
+                                  ✨ Napisz
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </fieldset>
+                    )}
+
+                    <p style={{ marginTop: '15px', fontSize: '11px', color: '#666' }}>
+                      💡 Tip: Kliknij "✨ Napisz" przy artykule żeby użyć go jako inspiracji do własnego artykułu z pomocą AI!
+                    </p>
+                  </div>
+                )}
+
                 {/* NEWS TAB */}
                 {activeTab === 'news' && (
                   <div>
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       📰 Zarządzanie News ({newsList.length})
                     </h3>
+
+                    {/* AI Generator */}
+                    {showAiGenerator && (
+                      <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#e6f3ff' }}>
+                        <legend style={{ fontWeight: 'bold', color: '#000080' }}>🤖 Napisz z AI</legend>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>O czym chcesz napisać?</label>
+                          <textarea
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            placeholder="np. Najnowsze trendy w technologii retro, Jak zacząć przygodę z programowaniem, Wspomnienia z ery Windows 95..."
+                            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+                            disabled={generatingAi}
+                          />
+                        </div>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Styl artykułu:</label>
+                          <select
+                            value={aiStyle}
+                            onChange={(e) => setAiStyle(e.target.value)}
+                            style={{ ...inputStyle, height: '30px', width: 'auto' }}
+                            disabled={generatingAi}
+                          >
+                            <option value="blog">📝 Blogowy (osobisty, angażujący)</option>
+                            <option value="news">📰 Newsowy (profesjonalny, obiektywny)</option>
+                            <option value="tech">💻 Techniczny (szczegółowy, branżowy)</option>
+                            <option value="casual">😊 Luźny (przyjacielski, z humorem)</option>
+                            <option value="retro">💾 Retro (nostalgiczny, lata 90)</option>
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={handleGenerateWithAi}
+                            disabled={generatingAi}
+                            style={{ ...buttonStyle, background: generatingAi ? '#ccc' : '#90EE90' }}
+                          >
+                            {generatingAi ? '⏳ Generuję...' : '✨ Generuj artykuł'}
+                          </button>
+                          <button
+                            onClick={() => { setShowAiGenerator(false); setAiPrompt(''); }}
+                            disabled={generatingAi}
+                            style={buttonStyle}
+                          >
+                            Anuluj
+                          </button>
+                        </div>
+                        <p style={{ marginTop: '10px', fontSize: '11px', color: '#666' }}>
+                          💡 Tip: AI wygeneruje artykuł, który możesz potem edytować przed publikacją.
+                        </p>
+                      </fieldset>
+                    )}
 
                     {/* Edit form */}
                     {editingNews && (
@@ -1522,6 +1849,18 @@ export default function SecureAdminPanel() {
 
                     <fieldset style={{ border: '2px groove #fff', padding: '10px', marginBottom: '15px' }}>
                       <legend style={{ fontWeight: 'bold' }}>➕ Dodaj nowy artykuł</legend>
+
+                      {/* AI Button */}
+                      {!showAiGenerator && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAiGenerator(true)}
+                          style={{ ...buttonStyle, background: '#e6f3ff', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                        >
+                          🤖 Napisz z AI
+                        </button>
+                      )}
+
                       <form onSubmit={handleAddNews}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                           <div>
@@ -1539,9 +1878,20 @@ export default function SecureAdminPanel() {
                         </div>
                         <div style={{ marginTop: '10px' }}>
                           <label style={{ display: 'block', marginBottom: '3px', fontSize: '12px' }}>Treść *:</label>
-                          <textarea value={newNews.content} onChange={(e) => setNewNews({ ...newNews, content: e.target.value })} style={{ ...inputStyle, height: '100px' }} />
+                          <textarea value={newNews.content} onChange={(e) => setNewNews({ ...newNews, content: e.target.value })} style={{ ...inputStyle, height: '150px' }} />
                         </div>
-                        <button type="submit" style={{ ...buttonStyle, marginTop: '10px', background: '#90EE90' }}>📰 Opublikuj</button>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                          <button type="submit" style={{ ...buttonStyle, background: '#90EE90' }}>📰 Opublikuj</button>
+                          {newNews.title && (
+                            <button
+                              type="button"
+                              onClick={() => setNewNews({ title: '', content: '', excerpt: '', image_url: '', author: 'Admin', category: 'Niesamowite Historie' })}
+                              style={buttonStyle}
+                            >
+                              🗑️ Wyczyść
+                            </button>
+                          )}
+                        </div>
                       </form>
                     </fieldset>
 
