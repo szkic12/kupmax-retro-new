@@ -7,67 +7,86 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Przykładowe produkty jako fallback
-const SAMPLE_PRODUCTS = [
+// Fallback produkty - pokazywane gdy brak prawdziwych produktów z showInRetro = true
+// Usunąć/zastąpić gdy KUPMAX PSA doda prawdziwe produkty (BossxD, Inception Honey)
+const FALLBACK_PRODUCTS = [
   {
-    id: '1',
+    id: 'fallback-1',
     name: 'Retro Keyboard PS/2',
     description: 'Klasyczna klawiatura mechaniczna w stylu lat 90. Idealna do retro setupu!',
     price: 149.99,
+    currency: 'PLN',
     category: 'Hardware',
-    imageUrl: '/images/products/keyboard.jpg',
+    images: ['/images/products/keyboard.jpg'],
     stock: 15,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
   {
-    id: '2',
+    id: 'fallback-2',
     name: 'CRT Monitor 17"',
     description: 'Autentyczny monitor CRT do retro gamingu. Idealne kolory i zero input lag!',
     price: 299.99,
+    currency: 'PLN',
     category: 'Hardware',
-    imageUrl: '/images/products/crt.jpg',
+    images: ['/images/products/crt.jpg'],
     stock: 5,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
   {
-    id: '3',
+    id: 'fallback-3',
     name: 'Windows 95 T-Shirt',
     description: 'Koszulka z logo Windows 95. 100% bawełna, rozmiary S-XXL.',
     price: 79.99,
+    currency: 'PLN',
     category: 'Merch',
-    imageUrl: '/images/products/tshirt.jpg',
+    images: ['/images/products/tshirt.jpg'],
     stock: 50,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
   {
-    id: '4',
+    id: 'fallback-4',
     name: 'Floppy Disk Pack (10szt)',
     description: 'Zestaw 10 dyskietek 3.5" - idealne do archiwizacji!',
     price: 49.99,
+    currency: 'PLN',
     category: 'Accessories',
-    imageUrl: '/images/products/floppy.jpg',
+    images: ['/images/products/floppy.jpg'],
     stock: 30,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
   {
-    id: '5',
+    id: 'fallback-5',
     name: 'Retro Mouse Ball',
     description: 'Klasyczna myszka kulkowa. Pamiętasz te czasy?',
     price: 59.99,
+    currency: 'PLN',
     category: 'Hardware',
-    imageUrl: '/images/products/mouse.jpg',
+    images: ['/images/products/mouse.jpg'],
     stock: 20,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
   {
-    id: '6',
+    id: 'fallback-6',
     name: 'Dial-Up Modem USB',
     description: 'Dekoracyjny modem dial-up z dźwiękami połączenia!',
     price: 89.99,
+    currency: 'PLN',
     category: 'Accessories',
-    imageUrl: '/images/products/modem.jpg',
+    images: ['/images/products/modem.jpg'],
     stock: 10,
     moderationStatus: 'APPROVED',
+    isKupmaxProduct: true,
+    showInRetro: true,
   },
 ];
 
@@ -79,80 +98,86 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
 
-    // Próbuj pobrać z Supabase (tabela 'products' lub 'Product')
     let products: any[] = [];
     let total = 0;
 
-    // Najpierw spróbuj tabeli 'products' (mała litera)
-    let { data, error, count } = await supabase
-      .from('products')
+    // Pobierz produkty z Supabase gdzie showInRetro = true
+    // To są produkty które mają się pokazywać w Shop.exe (kupmax.pl)
+    const { data, error, count } = await supabase
+      .from('Product')
       .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
+      .eq('showInRetro', true)
+      .eq('moderationStatus', 'APPROVED')
+      .order('createdAt', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      // Spróbuj 'Product' (duża litera - stara nazwa)
-      const result = await supabase
-        .from('Product')
-        .select('*', { count: 'exact' })
-        .eq('moderationStatus', 'APPROVED')
-        .order('createdAt', { ascending: false });
-
-      data = result.data;
-      error = result.error;
-      count = result.count;
+    if (error) {
+      console.error('Supabase error:', error.message);
     }
 
-    if (error || !data || data.length === 0) {
-      // Użyj sample products jako fallback
-      console.log('Using sample products as fallback');
-      let filtered = [...SAMPLE_PRODUCTS];
-
-      if (category) {
-        filtered = filtered.filter(p => p.category === category);
-      }
-      if (search) {
-        filtered = filtered.filter(p =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.description.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      const start = (page - 1) * perPage;
-      products = filtered.slice(start, start + perPage);
-      total = filtered.length;
-    } else {
+    if (!error && data && data.length > 0) {
+      // Mamy prawdziwe produkty z bazy!
+      console.log(`Found ${data.length} products with showInRetro=true`);
       products = data;
       total = count || data.length;
 
-      // Apply filters if from Supabase
-      if (category && products.length > 0) {
+      // Filtruj po kategorii jeśli podana
+      if (category && category !== 'all') {
         products = products.filter((p: any) => p.category === category);
       }
-      if (search && products.length > 0) {
+
+      // Filtruj po wyszukiwaniu
+      if (search) {
+        const searchLower = search.toLowerCase();
         products = products.filter((p: any) =>
-          p.name?.toLowerCase().includes(search.toLowerCase())
+          p.name?.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower)
         );
       }
+
+      total = products.length;
+    } else {
+      // Brak produktów z showInRetro=true - użyj fallback
+      console.log('No products with showInRetro=true, using fallback products');
+      let filtered = [...FALLBACK_PRODUCTS];
+
+      if (category && category !== 'all') {
+        filtered = filtered.filter(p => p.category === category);
+      }
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filtered = filtered.filter(p =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description.toLowerCase().includes(searchLower)
+        );
+      }
+
+      products = filtered;
+      total = filtered.length;
     }
 
+    // Paginacja
     const start = (page - 1) * perPage;
+    const paginatedProducts = products.slice(start, start + perPage);
 
     return NextResponse.json({
-      products: products || [],
-      total: total || 0,
+      products: paginatedProducts,
+      total,
       page,
       perPage,
       hasMore: total > start + perPage,
+      source: products[0]?.id?.startsWith('fallback') ? 'fallback' : 'database',
     });
   } catch (error) {
     console.error('Error fetching products:', error);
-    // Zwróć sample products nawet przy błędzie
+    // W razie błędu zwróć fallback
     return NextResponse.json({
-      products: SAMPLE_PRODUCTS,
-      total: SAMPLE_PRODUCTS.length,
+      products: FALLBACK_PRODUCTS,
+      total: FALLBACK_PRODUCTS.length,
       page: 1,
       perPage: 12,
       hasMore: false,
+      source: 'fallback',
+      error: 'Database error, showing fallback products',
     });
   }
 }
