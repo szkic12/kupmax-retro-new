@@ -4,11 +4,23 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function NotFound() {
-  const [windowPosition, setWindowPosition] = useState({ x: 100, y: 100 });
+  const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detect mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return; // Disable drag on mobile
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - windowPosition.x,
@@ -17,7 +29,7 @@ export default function NotFound() {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
+    if (isDragging && !isMobile) {
       setWindowPosition({
         x: e.clientX - dragOffset.x,
         y: e.clientY - dragOffset.y,
@@ -34,6 +46,96 @@ export default function NotFound() {
     return () => document.removeEventListener('mouseup', handleMouseUp);
   }, []);
 
+  // Mobile layout - centered, responsive
+  if (isMobile) {
+    return (
+      <div
+        className="w-full min-h-screen flex flexlex-col items-center justify-center p-4"
+        style={{
+          background: 'linear-gradient(135deg, #008080 0%, #004d4d 100%)',
+        }}
+      >
+        {/* Okno błędu w stylu Windows 95 */}
+        <div
+          className="win95-window w-full max-w-sm"
+          style={{
+            boxShadow: '3px 3px 10px rgba(0, 0, 0, 0.7)',
+          }}
+        >
+          {/* Title Bar */}
+          <div
+            className="win95-titlebar"
+            style={{
+              userSelect: 'none',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '12px' }}>⚠️</span>
+              <span>Error.exe</span>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="win95-content" style={{ padding: '12px' }}>
+            {/* Error Message */}
+            <div style={{ marginBottom: '12px' }}>
+              <p
+                style={{
+                  fontWeight: 'bold',
+                  marginBottom: '6px',
+                  fontSize: '11px',
+                }}
+              >
+                404 - PAGE NOT FOUND
+              </p>
+              <p style={{ fontSize: '10px', lineHeight: '1.5' }}>
+                The file or folder you are looking for does not exist.
+              </p>
+            </div>
+
+            {/* Detailed Message */}
+            <div
+              style={{
+                background: '#fff',
+                border: '2px solid #dfdfdf #000 #000 #dfdfdf',
+                padding: '6px',
+                marginBottom: '12px',
+                fontSize: '9px',
+                fontFamily: 'monospace',
+                minHeight: '60px',
+                overflowY: 'auto',
+              }}
+            >
+              <div>• HTTP Error: 404</div>
+              <div>• Resource not available</div>
+              <div>• Check the URL</div>
+              <div style={{ marginTop: '4px' }}>✓ Options:</div>
+              <div>- Return to home</div>
+              <div>- Go back</div>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <Link href="/">
+                <button className="win95-button" style={{ fontSize: '10px', padding: '2px 6px' }}>
+                  Home
+                </button>
+              </Link>
+              <button
+                className="win95-button"
+                style={{ fontSize: '10px', padding: '2px 6px' }}
+                onClick={() => window.history.back()}
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout - draggable
   return (
     <div
       className="w-screen h-screen"
@@ -104,9 +206,6 @@ export default function NotFound() {
               fontSize: '10px',
               cursor: 'pointer',
             }}
-            onClick={() => {
-              // Minimilizuj okno lub zamknij
-            }}
           >
             ×
           </button>
@@ -147,27 +246,13 @@ export default function NotFound() {
               overflowY: 'auto',
             }}
           >
-            <div>
-              • HTTP Error: 404
-            </div>
-            <div>
-              • Resource not available
-            </div>
-            <div>
-              • Check the URL and try again
-            </div>
-            <div style={{ marginTop: '8px' }}>
-              ✓ Suggestions:
-            </div>
-            <div>
-              - Return to home page
-            </div>
-            <div>
-              - Check the navigation menu
-            </div>
-            <div>
-              - Verify the URL spelling
-            </div>
+            <div>• HTTP Error: 404</div>
+            <div>• Resource not available</div>
+            <div>• Check the URL and try again</div>
+            <div style={{ marginTop: '8px' }}>✓ Suggestions:</div>
+            <div>- Return to home page</div>
+            <div>- Check the navigation menu</div>
+            <div>- Verify the URL spelling</div>
           </div>
 
           {/* Buttons */}
@@ -185,7 +270,7 @@ export default function NotFound() {
         </div>
       </div>
 
-      {/* Minimalne informacje na dole ekranu (taskbar style) */}
+      {/* Taskbar */}
       <div
         style={{
           position: 'fixed',
