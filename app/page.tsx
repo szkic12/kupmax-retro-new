@@ -126,6 +126,55 @@ export default function Home() {
   const [showStartMenu, setShowStartMenu] = useState(false);
   const [activeWindow, setActiveWindow] = useState<string | null>("reklama");
 
+  
+  // Przygotuj slajdy z aktywnej reklamy lub domyślne
+  const slides = advertisement?.slides && advertisement.slides.length > 0
+    ? advertisement.slides.map((slide: any) => ({
+        title: slide.title || advertisement.title,
+        imageUrl: slide.image_url,
+        linkTo: advertisement.link_url || "#",
+      }))
+    : [
+        {
+          title: "Koniec odkładania. Czas tworzenia.",
+          imageUrl: "/images/slider-1.jpg",
+          linkTo: "https://www.facebook.com/annajuszczakfotografia/",
+        },
+        {
+          title: "Przestań marzyć. Zacznij działać.",
+          imageUrl: "/images/slider-2.jpg",
+          linkTo: "https://www.facebook.com/annajuszczakfotografia/",
+        },
+        {
+          title: "Każdy wielki projekt zaczyna się od pierwszego kroku.",
+          imageUrl: "/images/slider-3.jpg",
+          linkTo: "https://www.facebook.com/annajuszczakfotografia/",
+        },
+      ];
+
+  
+  // Fetch products when shop opens
+  useEffect(() => {
+    if (windows.shop && products.length === 0 && !loadingProducts) {
+      fetchProducts();
+    }
+  }, [windows.shop]);
+
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const response = await fetch("/api/products?perPage=12");
+      const data = await response.json();
+      if (data.products) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   const desktopIcons: DesktopIcon[] = [
     // MAGNETS (Zostają na pulpicie)
     {
