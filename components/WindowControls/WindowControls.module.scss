@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Kolory Windows 95
 $win95-gray: #c0c0c0;
 $win95-light: #ffffff;
@@ -62,7 +64,7 @@ $win95-dark: #000000;
   }
 
   &:hover {
-    background: darken($win95-gray, 10%);
+    background: color.adjust($win95-gray, $lightness: -10%);
   }
 }
 
@@ -73,7 +75,7 @@ $win95-dark: #000000;
   }
 
   &:hover {
-    background: darken($win95-gray, 10%);
+    background: color.adjust($win95-gray, $lightness: -10%);
   }
 }
 

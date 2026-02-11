@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // RETRO WEBRING STYLES - Inspirowane komputerami lat 80/90
 
 // Zmienne kolorów retro
@@ -127,7 +129,7 @@ $lcd-blue: #0088ff;
     max-width: 800px;
     box-shadow: 
       8px 8px 0 rgba(0, 0, 0, 0.3),
-      inset 0 0 0 2px lighten($retro-brown, 20%);
+      inset 0 0 0 2px color.adjust($retro-brown, $lightness: 20%);
     position: relative;
     font-family: 'Courier New', monospace;
     

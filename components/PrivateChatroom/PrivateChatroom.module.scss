@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Kolory Windows 95
 $win95-gray: #c0c0c0;
 $win95-light: #ffffff;
@@ -36,7 +38,7 @@ $win95-title: #000080;
 }
 
 .windowHeader {
-  background: linear-gradient(90deg, $win95-title 0%, lighten($win95-title, 20%) 100%);
+  background: linear-gradient(90deg, $win95-title 0%, color.adjust($win95-title, $lightness: 20%) 100%);
   color: $win95-light;
   padding: 4px 8px;
   display: flex;
@@ -71,7 +73,7 @@ $win95-title: #000080;
     }
 
     &:hover {
-      background: darken($win95-gray, 10%);
+      background: color.adjust($win95-gray, $lightness: -10%);
     }
   }
 
@@ -127,7 +129,7 @@ $win95-title: #000080;
   font-size: 16px;
   
   &:hover {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
   
   &:active {
@@ -188,7 +190,7 @@ $win95-title: #000080;
       
       &:focus {
         outline: none;
-        background: lighten($win95-light, 5%);
+        background: color.adjust($win95-light, $lightness: 5%);
       }
     }
   }
@@ -217,7 +219,7 @@ $win95-title: #000080;
   font-size: 14px;
   
   &:hover:not(:disabled) {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
   
   &:active:not(:disabled) {
@@ -450,7 +452,7 @@ $win95-title: #000080;
     
     &:focus {
       outline: none;
-      background: lighten($win95-light, 5%);
+      background: color.adjust($win95-light, $lightness: 5%);
     }
     
     &:disabled {
@@ -474,7 +476,7 @@ $win95-title: #000080;
   font-size: 14px;
   
   &:hover:not(:disabled) {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
   
   &:active:not(:disabled) {
@@ -512,7 +514,7 @@ $win95-title: #000080;
   cursor: pointer;
   
   &:hover {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
   
   &:active {
@@ -579,12 +581,12 @@ $win95-title: #000080;
   transition: all 0.1s;
 
   &:hover {
-    background: lighten($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: 5%);
   }
 }
 
 .selectedMessage {
-  background: lighten($win95-title, 60%) !important;
+  background: color.adjust($win95-title, $lightness: 60%) !important;
   border: 2px solid $win95-title !important;
 }
 
@@ -608,7 +610,7 @@ $win95-title: #000080;
   border: none;
 
   &:hover {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
 
   &:active {
@@ -636,7 +638,7 @@ $win95-title: #000080;
 
   &:focus {
     outline: none;
-    background: lighten($win95-light, 5%);
+    background: color.adjust($win95-light, $lightness: 5%);
   }
 }
 
@@ -656,7 +658,7 @@ $win95-title: #000080;
   font-weight: bold;
 
   &:hover {
-    background: darken($win95-gray, 5%);
+    background: color.adjust($win95-gray, $lightness: -5%);
   }
 
   &:active {
