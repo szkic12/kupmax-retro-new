@@ -16,8 +16,6 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 };
 
@@ -25,6 +23,9 @@ export const metadata: Metadata = {
   title: "KUPMAX Retro - Portfolio & Showcase",
   description: "Explore our retro-inspired portfolio showcasing creative projects, 3D models, and innovative designs.",
   keywords: ["kupmax", "retro", "portfolio", "3D", "web design", "creative"],
+  alternates: {
+    canonical: 'https://www.kupmax.pl',
+  },
 };
 
 export default function RootLayout({

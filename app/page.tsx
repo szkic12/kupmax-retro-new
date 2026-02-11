@@ -376,8 +376,13 @@ export default function Home() {
     <main className="w-screen h-screen relative overflow-hidden bg-[#008080]">
       {/* Taskbar */}
       <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-[110]">
-        <button className="win95-button px-3 h-6 font-bold flex items-center gap-2" onClick={() => setShowStartMenu(!showStartMenu)}>
-          <span className="text-lg">🪟</span><span>Start</span>
+        <button
+          className="win95-button px-3 h-6 font-bold flex items-center gap-2"
+          onClick={() => setShowStartMenu(!showStartMenu)}
+          aria-label="Otwórz menu Start"
+          aria-expanded={showStartMenu}
+        >
+          <span className="text-lg" role="img" aria-label="Okno">🪟</span><span>Start</span>
         </button>
         <StartMenu show={showStartMenu} onClose={() => setShowStartMenu(false)} desktopIcons={desktopIcons} session={session} />
         <div className="flex gap-1 flex-1 overflow-x-auto">
@@ -386,12 +391,18 @@ export default function Home() {
               key={win.key}
               onClick={() => handleTaskbarClick(win.key)}
               className={`px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] border-2 ${activeWindow === win.key ? 'bg-[#c0c0c0] font-bold' : 'bg-[#dfdfdf]'} border-t-white border-l-white border-r-black border-b-black`}
+              aria-label={`Przełącz na okno ${win.label}`}
+              aria-pressed={activeWindow === win.key}
             >
-              <span>{win.icon}</span><span className="truncate">{win.label}</span>
+              <span role="img" aria-hidden="true">{win.icon}</span><span className="truncate">{win.label}</span>
             </button>
           ))}
         </div>
-        <div className="text-xs px-2 border-2 border-t-black border-l-black h-6 flex items-center ml-1 bg-[#c0c0c0] shadow-inner">
+        <div
+          className="text-xs px-2 border-2 border-t-black border-l-black h-6 flex items-center ml-1 bg-[#c0c0c0] shadow-inner"
+          role="status"
+          aria-label={`Aktualny czas: ${currentTime}`}
+        >
           {currentTime}
         </div>
       </div>
@@ -399,12 +410,18 @@ export default function Home() {
       {/* Desktop Icons */}
       <div className="absolute top-12 left-4 right-4 grid grid-cols-4 sm:grid-cols-8 gap-6 z-10">
         {mainIcons.map((item) => (
-          <div key={item.id} className="flex flex-col items-center cursor-pointer group" onClick={item.action} onDoubleClick={item.action}>
+          <button
+            key={item.id}
+            className="flex flex-col items-center cursor-pointer group"
+            onClick={item.action}
+            onDoubleClick={item.action}
+            aria-label={`Otwórz ${item.label}`}
+          >
             <div className={`w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white/10 rounded hover:bg-white/20 transition-colors ${["ai-studio", "vibe3d", "roblox"].includes(item.id) ? "ring-2 ring-yellow-400" : ""}`}>
-              <span className="text-3xl sm:text-4xl">{item.icon}</span>
+              <span className="text-3xl sm:text-4xl" role="img" aria-hidden="true">{item.icon}</span>
             </div>
             <span className="text-[10px] sm:text-xs text-white text-center mt-1 drop-shadow-md font-medium max-w-[80px] truncate">{item.label}</span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -420,10 +437,15 @@ export default function Home() {
         >
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 p-4 bg-white h-full overflow-y-auto">
             {folderIcons(openFolder).map((item) => (
-              <div key={item.id} className="flex flex-col items-center cursor-pointer hover:bg-blue-50 p-2 rounded" onClick={() => { item.action(); setOpenFolder(null); }}>
-                <span className="text-3xl">{item.icon}</span>
+              <button
+                key={item.id}
+                className="flex flex-col items-center cursor-pointer hover:bg-blue-50 p-2 rounded"
+                onClick={() => { item.action(); setOpenFolder(null); }}
+                aria-label={`Otwórz ${item.label}`}
+              >
+                <span className="text-3xl" role="img" aria-hidden="true">{item.icon}</span>
                 <span className="text-[10px] text-center mt-1 text-black font-medium truncate w-full">{item.label}</span>
-              </div>
+              </button>
             ))}
           </div>
         </Window>
