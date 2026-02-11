@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState } from 'react';
 import GuestbookForm from '../GuestbookForm';
@@ -21,7 +22,7 @@ export default function Guestbook({
    * Callback wywoływany po pomyślnym dodaniu wpisu
    */
   const handleEntryAdded = (newEntry) => {
-    console.log('Nowy wpis dodany:', newEntry);
+    logger.log('Nowy wpis dodany:', newEntry);
     
     // Wymuszenie odświeżenia listy
     setRefreshKey(prev => prev + 1);

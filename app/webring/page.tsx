@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -29,7 +30,7 @@ export default function WebringCatalog() {
       const data = await response.json();
       setSites(data.sites || []);
     } catch (error) {
-      console.error('Error fetching webring sites:', error);
+      logger.error('Error fetching webring sites:', error);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -132,7 +133,7 @@ async function getPatterns(language: string, framework: string) {
       .or(`language.eq.${language},framework.eq.${framework}`);
 
     if (error) {
-      console.log('Database not available, using fallback patterns');
+      logger.log('Database not available, using fallback patterns');
       return fallbackPatterns.filter(p =>
         p.language === language || p.framework === framework
       );
@@ -147,7 +148,7 @@ async function getPatterns(language: string, framework: string) {
       p.language === language || p.framework === framework
     );
   } catch (e) {
-    console.log('Error fetching patterns, using fallback');
+    logger.log('Error fetching patterns, using fallback');
     return fallbackPatterns.filter(p =>
       p.language === language || p.framework === framework
     );
@@ -178,7 +179,7 @@ async function analyzeCode(code: string, language: string, framework: string): P
       }
     } catch (e) {
       // Skip invalid regex patterns
-      console.error('Invalid regex pattern:', pattern.pattern_regex);
+      logger.error('Invalid regex pattern:', pattern.pattern_regex);
     }
   }
 
@@ -315,7 +316,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error validating code:', error);
+    logger.error('Error validating code:', error);
     return NextResponse.json(
       { error: 'Błąd podczas analizy kodu' },
       { status: 500 }

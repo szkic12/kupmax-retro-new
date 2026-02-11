@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import S3Service from '../../../../lib/aws-s3';
 import FileDatabase from '../../../../lib/file-database';
 
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
       file: savedFile,
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
+    logger.error('Error uploading file:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

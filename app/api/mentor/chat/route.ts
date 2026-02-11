@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
           source: 'ai'
         });
       } catch (apiError: any) {
-        console.log('Mentor Claude API unavailable:', apiError?.message);
+        logger.log('Mentor Claude API unavailable:', apiError?.message);
         // Fall through to offline mode
       }
     }
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Mentor chat error:', error);
+    logger.error('Mentor chat error:', error);
     return NextResponse.json({
       response: '❌ Wystąpił błąd. Spróbuj ponownie.',
       source: 'error'

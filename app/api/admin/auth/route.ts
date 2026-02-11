@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
           });
         }
       } catch (e) {
-        console.log('Could not store/send verification code:', e);
+        logger.log('Could not store/send verification code:', e);
       }
 
       return NextResponse.json({
@@ -288,7 +289,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nieznana akcja' }, { status: 400 });
 
   } catch (error) {
-    console.error('Admin auth error:', error);
+    logger.error('Admin auth error:', error);
     return NextResponse.json(
       { error: 'Błąd serwera' },
       { status: 500 }

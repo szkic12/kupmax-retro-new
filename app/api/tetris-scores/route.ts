@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // In-memory storage for high scores (temporary)
 // In production, use Supabase or database
@@ -24,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({ scores: sorted });
   } catch (error) {
-    console.error('Error fetching scores:', error);
+    logger.error('Error fetching scores:', error);
     return NextResponse.json(
       { error: 'Failed to fetch scores' },
       { status: 500 }
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, score: newScore });
   } catch (error) {
-    console.error('Error saving score:', error);
+    logger.error('Error saving score:', error);
     return NextResponse.json(
       { error: 'Failed to save score' },
       { status: 500 }

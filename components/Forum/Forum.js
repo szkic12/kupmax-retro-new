@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import styles from './Forum.module.scss';
@@ -36,7 +37,7 @@ export default function Forum() {
         setCategories(data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
     }
   };
 
@@ -53,7 +54,7 @@ export default function Forum() {
         setThreads(data.threads);
       }
     } catch (error) {
-      console.error('Error fetching threads:', error);
+      logger.error('Error fetching threads:', error);
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export default function Forum() {
         setThreadContent({ posts: data.posts, loading: false });
       }
     } catch (error) {
-      console.error('Error fetching thread content:', error);
+      logger.error('Error fetching thread content:', error);
       setThreadContent({ posts: [], loading: false });
     }
   };

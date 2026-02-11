@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 // Wyłącz cache
@@ -12,16 +13,16 @@ const DEFAULT_SITES = [
 
 // Pobierz strony z S3
 async function getWebringSites() {
-  console.log('📖 Navigate: Loading webring from S3...');
+  logger.log('📖 Navigate: Loading webring from S3...');
   try {
     const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
-    console.log('📖 Navigate: S3 result success:', result.success, 'count:', result.data?.length);
+    logger.log('📖 Navigate: S3 result success:', result.success, 'count:', result.data?.length);
     const allSites = result.data || DEFAULT_SITES;
     const approved = allSites.filter((site: any) => site.approved);
-    console.log('📖 Navigate: Approved sites:', approved.length);
+    logger.log('📖 Navigate: Approved sites:', approved.length);
     return approved;
   } catch (error) {
-    console.error('📖 Navigate: S3 error:', error);
+    logger.error('📖 Navigate: S3 error:', error);
     return DEFAULT_SITES;
   }
 }
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Webring navigate error:', error);
+    logger.error('Webring navigate error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to navigate webring' },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Mock photo data (replace with Supabase later)
 const mockPhotos = Array.from({ length: 20 }, (_, i) => ({
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       hasMore: end < photos.length,
     });
   } catch (error) {
-    console.error('Error fetching photos:', error);
+    logger.error('Error fetching photos:', error);
     return NextResponse.json(
       { error: 'Failed to fetch photos' },
       { status: 500 }

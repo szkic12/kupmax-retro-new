@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
+      logger.error('Supabase upload error:', error);
       return NextResponse.json(
         { error: 'Błąd uploadu: ' + error.message },
         { status: 500 }
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       path: data.path,
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error:', error);
     return NextResponse.json(
       { error: 'Błąd serwera' },
       { status: 500 }

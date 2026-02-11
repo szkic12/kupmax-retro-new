@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import FileDatabase from '../../../../lib/file-database';
 
 export async function GET(req: NextRequest) {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching files:', error);
+    logger.error('Error fetching files:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch files' },
       { status: 500 }

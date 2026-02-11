@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 // Wyłącz cache
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching forum posts:', error);
+    logger.error('Error fetching forum posts:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -162,7 +163,7 @@ export async function POST(req: NextRequest) {
       post: newPost
     });
   } catch (error) {
-    console.error('Error creating forum post:', error);
+    logger.error('Error creating forum post:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -218,7 +219,7 @@ export async function DELETE(req: NextRequest) {
       message: 'Post deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting post:', error);
+    logger.error('Error deleting post:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

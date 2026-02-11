@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching all advertisements:', error);
+        logger.error('Error fetching all advertisements:', error);
         return NextResponse.json({ error: 'Failed to fetch advertisements' }, { status: 500 });
       }
 
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching advertisement:', error);
+      logger.error('Error fetching advertisement:', error);
       return NextResponse.json({ error: 'Failed to fetch advertisement' }, { status: 500 });
     }
 
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -153,13 +154,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating advertisement:', error);
+      logger.error('Error creating advertisement:', error);
       return NextResponse.json({ error: 'Failed to create advertisement' }, { status: 500 });
     }
 
     return NextResponse.json({ advertisement: data, message: 'Reklama dodana!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -192,13 +193,13 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error updating advertisement:', error);
+      logger.error('Error updating advertisement:', error);
       return NextResponse.json({ error: 'Failed to update advertisement' }, { status: 500 });
     }
 
     return NextResponse.json({ advertisement: data, message: 'Reklama zaktualizowana!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -220,7 +221,7 @@ export async function PATCH(request: NextRequest) {
       .eq('is_active', true);
 
     if (deactivateError) {
-      console.error('Error deactivating advertisements:', deactivateError);
+      logger.error('Error deactivating advertisements:', deactivateError);
     }
 
     // Krok 2: Aktywuj tylko wybraną reklamę
@@ -232,13 +233,13 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error activating advertisement:', error);
+      logger.error('Error activating advertisement:', error);
       return NextResponse.json({ error: 'Failed to activate advertisement' }, { status: 500 });
     }
 
     return NextResponse.json({ advertisement: data, message: 'Reklama aktywowana!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -259,13 +260,13 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting advertisement:', error);
+      logger.error('Error deleting advertisement:', error);
       return NextResponse.json({ error: 'Failed to delete advertisement' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Reklama usunięta!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

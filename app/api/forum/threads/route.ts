@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 // Wyłącz cache
@@ -24,9 +25,9 @@ async function getForumData() {
 
 // Zapisz dane forum
 async function saveForumData(data: any) {
-  console.log('💾 Saving forum data, threads:', data.threads?.length);
+  logger.log('💾 Saving forum data, threads:', data.threads?.length);
   const result = await s3Service.saveJsonData('forum', data);
-  console.log('💾 Forum save result:', result);
+  logger.log('💾 Forum save result:', result);
   return result;
 }
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching forum threads:', error);
+    logger.error('Error fetching forum threads:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
       thread: newThread
     });
   } catch (error) {
-    console.error('Error creating forum thread:', error);
+    logger.error('Error creating forum thread:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -222,7 +223,7 @@ export async function PUT(req: NextRequest) {
       message: 'Thread updated'
     });
   } catch (error) {
-    console.error('Error updating thread:', error);
+    logger.error('Error updating thread:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -281,7 +282,7 @@ export async function DELETE(req: NextRequest) {
       message: 'Thread deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting thread:', error);
+    logger.error('Error deleting thread:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

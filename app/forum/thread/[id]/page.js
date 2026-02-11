@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -60,7 +61,7 @@ export default function ThreadPage() {
         setCategories(data.categories);
       }
     } catch (err) {
-      console.error('Error fetching categories:', err);
+      logger.error('Error fetching categories:', err);
     }
   };
 

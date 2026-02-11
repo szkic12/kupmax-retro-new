@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ slides: slides || [] });
   } catch (error) {
-    console.error('Error fetching slides:', error);
+    logger.error('Error fetching slides:', error);
     return NextResponse.json({ slides: [] });
   }
 }
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ slide: data, success: true });
   } catch (error) {
-    console.error('Error creating slide:', error);
+    logger.error('Error creating slide:', error);
     return NextResponse.json(
       { error: 'Błąd tworzenia slajdu' },
       { status: 500 }
@@ -94,7 +95,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ slide: data, success: true });
   } catch (error) {
-    console.error('Error updating slide:', error);
+    logger.error('Error updating slide:', error);
     return NextResponse.json(
       { error: 'Błąd aktualizacji slajdu' },
       { status: 500 }
@@ -121,7 +122,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting slide:', error);
+    logger.error('Error deleting slide:', error);
     return NextResponse.json(
       { error: 'Błąd usuwania slajdu' },
       { status: 500 }

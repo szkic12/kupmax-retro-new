@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useRef } from 'react';
 import { useDownloads } from '../../hooks/useDownloads';
@@ -99,7 +100,7 @@ const playSuccessSound = () => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (error) {
-    console.log('Audio not supported or blocked');
+    logger.log('Audio not supported or blocked');
   }
 };
 
@@ -165,7 +166,7 @@ const FileUploadModal = ({ onClose }) => {
         showNotification('❌ Upload failed: ' + result.error, 'error');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       showNotification('❌ Upload failed: ' + error.message, 'error');
     } finally {
       setUploading(false);

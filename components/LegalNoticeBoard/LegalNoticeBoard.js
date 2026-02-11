@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -124,7 +125,7 @@ const LegalNoticeBoard = () => {
       const data = await response.json();
       setContent(data.content);
     } catch (error) {
-      console.error('Błąd:', error);
+      logger.error('Błąd:', error);
       setContent('❌ Nie udało się wczytać dokumentu. Spróbuj ponownie.');
     } finally {
       setLoading(false);

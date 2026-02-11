@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -80,7 +81,7 @@ Podaj TYLKO JSON, bez dodatkowego tekstu.`
         throw new Error('No JSON found');
       }
     } catch (parseError) {
-      console.error('Error parsing trends:', parseError);
+      logger.error('Error parsing trends:', parseError);
       return NextResponse.json({
         trends: getStaticTrends(category),
         source: 'static',
@@ -96,7 +97,7 @@ Podaj TYLKO JSON, bez dodatkowego tekstu.`
     });
 
   } catch (error: any) {
-    console.error('Error fetching trends:', error);
+    logger.error('Error fetching trends:', error);
     return NextResponse.json({
       trends: getStaticTrends('general'),
       source: 'static',

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,7 @@ async function parseFeed(url: string): Promise<any[]> {
     });
 
     if (!response.ok) {
-      console.error(`Failed to fetch ${url}: ${response.status}`);
+      logger.error(`Failed to fetch ${url}: ${response.status}`);
       return [];
     }
 
@@ -72,7 +73,7 @@ async function parseFeed(url: string): Promise<any[]> {
 
     return items;
   } catch (error) {
-    console.error(`Error parsing feed ${url}:`, error);
+    logger.error(`Error parsing feed ${url}:`, error);
     return [];
   }
 }
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
 
   } catch (error) {
-    console.error('RSS error:', error);
+    logger.error('RSS error:', error);
     return NextResponse.json({ error: 'Failed to fetch RSS' }, { status: 500 });
   }
 }
@@ -162,14 +163,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error adding RSS source:', error);
+      logger.error('Error adding RSS source:', error);
       return NextResponse.json({ error: 'Błąd dodawania źródła' }, { status: 500 });
     }
 
     return NextResponse.json({ source: data, message: 'Źródło dodane!' });
 
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -190,14 +191,14 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting RSS source:', error);
+      logger.error('Error deleting RSS source:', error);
       return NextResponse.json({ error: 'Błąd usuwania źródła' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Źródło usunięte!' });
 
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

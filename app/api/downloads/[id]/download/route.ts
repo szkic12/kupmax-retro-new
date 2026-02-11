@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import S3Service from '../../../../../lib/aws-s3';
 import FileDatabase from '../../../../../lib/file-database';
 
@@ -42,7 +43,7 @@ export async function GET(
       file: updatedFile,
     });
   } catch (error) {
-    console.error('Error generating download URL:', error);
+    logger.error('Error generating download URL:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

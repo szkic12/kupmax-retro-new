@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../lib/aws-s3.js';
 
 // Wyłącz cache dla tego route
@@ -73,17 +74,17 @@ const DEFAULT_SITES = [
 
 // Pobierz strony z S3
 async function getWebringSites() {
-  console.log('📖 Loading webring sites from S3...');
+  logger.log('📖 Loading webring sites from S3...');
   const result = await s3Service.loadJsonData('webring', DEFAULT_SITES);
-  console.log('📖 Loaded sites count:', result.data?.length || 0, 'success:', result.success);
+  logger.log('📖 Loaded sites count:', result.data?.length || 0, 'success:', result.success);
   return result.data || DEFAULT_SITES;
 }
 
 // Zapisz strony do S3
 async function saveWebringSites(sites: any[]) {
-  console.log('💾 Saving webring sites to S3, count:', sites.length);
+  logger.log('💾 Saving webring sites to S3, count:', sites.length);
   const result = await s3Service.saveJsonData('webring', sites);
-  console.log('💾 Save result:', result);
+  logger.log('💾 Save result:', result);
   return result;
 }
 
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching webring:', error);
+    logger.error('Error fetching webring:', error);
     return NextResponse.json(
       { error: 'Failed to fetch webring' },
       { status: 500 }
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
     const saveResult = await saveWebringSites(webringSites);
 
     if (!saveResult.success) {
-      console.error('Save result:', saveResult);
+      logger.error('Save result:', saveResult);
       return NextResponse.json(
         { error: 'Failed to save to S3', details: saveResult.error },
         { status: 500 }
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
       saveResult: saveResult
     });
   } catch (error) {
-    console.error('Error adding to webring:', error);
+    logger.error('Error adding to webring:', error);
     return NextResponse.json(
       { error: 'Failed to add site' },
       { status: 500 }
@@ -246,7 +247,7 @@ export async function PUT(req: NextRequest) {
       message: 'Site updated'
     });
   } catch (error) {
-    console.error('Error updating webring site:', error);
+    logger.error('Error updating webring site:', error);
     return NextResponse.json(
       { error: 'Failed to update site' },
       { status: 500 }
@@ -288,7 +289,7 @@ export async function DELETE(req: NextRequest) {
       saveResult: saveResult
     });
   } catch (error) {
-    console.error('Error deleting from webring:', error);
+    logger.error('Error deleting from webring:', error);
     return NextResponse.json(
       { error: 'Failed to delete site' },
       { status: 500 }

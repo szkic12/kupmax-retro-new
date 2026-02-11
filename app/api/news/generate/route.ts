@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -102,7 +103,7 @@ TYTUŁ: [tytuł artykułu]
     });
 
   } catch (error: any) {
-    console.error('Error generating article:', error);
+    logger.error('Error generating article:', error);
 
     if (error.status === 401) {
       return NextResponse.json(

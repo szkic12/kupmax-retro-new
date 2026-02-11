@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 export const dynamic = 'force-dynamic';
@@ -154,7 +155,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching private room:', error);
+    logger.error('Error fetching private room:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -446,7 +447,7 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    console.error('Error in private chat action:', error);
+    logger.error('Error in private chat action:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -526,7 +527,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting message/room:', error);
+    logger.error('Error deleting message/room:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -596,7 +597,7 @@ export async function PUT(req: NextRequest) {
       message: room.messages[messageIndex]
     });
   } catch (error) {
-    console.error('Error editing message:', error);
+    logger.error('Error editing message:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -658,7 +659,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error banning user:', error);
+    logger.error('Error banning user:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

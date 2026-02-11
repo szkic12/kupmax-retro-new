@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -35,7 +36,7 @@ export default function ForumPage() {
         }
       })
       .catch(err => {
-        console.error('Error verifying session:', err);
+        logger.error('Error verifying session:', err);
       });
 
     // Cleanup: Przywróć overflow: hidden gdy użytkownik opuszcza stronę
@@ -52,7 +53,7 @@ export default function ForumPage() {
         setCategories(data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
     }
   };
 
@@ -69,7 +70,7 @@ export default function ForumPage() {
         setThreads(data.threads);
       }
     } catch (error) {
-      console.error('Error fetching threads:', error);
+      logger.error('Error fetching threads:', error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function ForumPage() {
       }
     } catch (err) {
       alert('Błąd sieci podczas logowania');
-      console.error('Admin login error:', err);
+      logger.error('Admin login error:', err);
     }
   };
 
@@ -131,7 +132,7 @@ export default function ForumPage() {
       setIsAdminLoggedIn(false);
       alert('Wylogowano z panelu administratora forum');
     } catch (err) {
-      console.error('Logout error:', err);
+      logger.error('Logout error:', err);
       setIsAdminLoggedIn(false);
     }
   };
@@ -172,7 +173,7 @@ export default function ForumPage() {
       }
     } catch (err) {
       alert('Błąd sieci podczas usuwania wątku');
-      console.error('Delete thread error:', err);
+      logger.error('Delete thread error:', err);
     } finally {
       setDeletingThread(null);
     }

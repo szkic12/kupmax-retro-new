@@ -1,4 +1,5 @@
 // Kompaktowy komponent Webring dla bocznego panelu
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import styles from './Webring.module.scss';
 
@@ -34,7 +35,7 @@ export default function WebringCompact({ currentUrl }) {
       }
     } catch (err) {
       setError('Network error occurred');
-      console.error('Webring navigation error:', err);
+      logger.error('Webring navigation error:', err);
     } finally {
       setLoading(false);
     }

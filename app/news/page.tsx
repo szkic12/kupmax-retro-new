@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -50,7 +51,7 @@ export default function NewsPage() {
       const data = await res.json();
       setNews(data.news || []);
     } catch (error) {
-      console.error('Error fetching news:', error);
+      logger.error('Error fetching news:', error);
     } finally {
       setLoading(false);
     }

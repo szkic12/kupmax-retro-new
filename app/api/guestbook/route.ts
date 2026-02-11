@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../lib/aws-s3.js';
 
 // Wyłącz cache dla tego route
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching guestbook:', error);
+    logger.error('Error fetching guestbook:', error);
     return NextResponse.json(
       { error: 'Failed to fetch guestbook entries' },
       { status: 500 }
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, entry: newEntry });
   } catch (error) {
-    console.error('Error saving guestbook entry:', error);
+    logger.error('Error saving guestbook entry:', error);
     return NextResponse.json(
       { error: 'Failed to save entry' },
       { status: 500 }
@@ -171,7 +172,7 @@ export async function PUT(req: NextRequest) {
       message: 'Entry updated'
     });
   } catch (error) {
-    console.error('Error updating guestbook entry:', error);
+    logger.error('Error updating guestbook entry:', error);
     return NextResponse.json(
       { error: 'Failed to update entry' },
       { status: 500 }
@@ -211,7 +212,7 @@ export async function DELETE(req: NextRequest) {
       message: 'Entry deleted'
     });
   } catch (error) {
-    console.error('Error deleting guestbook entry:', error);
+    logger.error('Error deleting guestbook entry:', error);
     return NextResponse.json(
       { error: 'Failed to delete entry' },
       { status: 500 }

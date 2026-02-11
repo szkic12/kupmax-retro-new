@@ -1,4 +1,5 @@
 // Komponent modal do dodawania stron webringu - podobny do systemu downloads
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import styles from './AddSiteModal.module.scss';
 
@@ -121,7 +122,7 @@ export default function AddSiteModal({ isOpen, onClose, onSiteAdded }) {
         setError(result.error || 'Failed to add site. Please try again.');
       }
     } catch (err) {
-      console.error('Error adding site:', err);
+      logger.error('Error adding site:', err);
       setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);

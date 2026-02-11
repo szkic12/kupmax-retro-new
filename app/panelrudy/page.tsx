@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -191,7 +192,7 @@ export default function SecureAdminPanel() {
         setRssSources(dataSources.sources || []);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data:', error);
     }
     setLoading(false);
   };

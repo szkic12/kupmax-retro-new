@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 // Komponent Webring - nawigacja między stronami retro z pełną funkcjonalnością
 import { useState, useEffect } from 'react';
@@ -46,7 +47,7 @@ export default function Webring({ currentUrl, variant = 'full' }) {
       }
     } catch (err) {
       setError('Network error occurred');
-      console.error('Webring navigation error:', err);
+      logger.error('Webring navigation error:', err);
     } finally {
       setLoading(false);
       setTimeout(() => setIsAnimating(false), 300);

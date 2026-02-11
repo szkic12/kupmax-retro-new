@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Mock download files (replace with Supabase later)
 const mockFiles = [
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ files });
   } catch (error) {
-    console.error('Error fetching downloads:', error);
+    logger.error('Error fetching downloads:', error);
     return NextResponse.json(
       { error: 'Failed to fetch downloads' },
       { status: 500 }

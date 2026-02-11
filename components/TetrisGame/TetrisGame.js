@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 import styles from './TetrisGame.module.scss';
 
 // Konfiguracja gry
@@ -79,7 +80,7 @@ const TetrisGame = ({ onGameComplete }) => {
         throw new Error(data.error || 'Failed to fetch scores');
       }
     } catch (error) {
-      console.error("Failed to fetch high scores:", error.message);
+      logger.error("Failed to fetch high scores:", error.message);
       setHighScores([]); // Set to empty array on error to prevent crash
     }
   }, []);

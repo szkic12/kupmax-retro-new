@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -301,7 +302,7 @@ export default function TetrisPage() {
             <div className="p-4">
               <TetrisGame
                 onGameComplete={(code: string) => {
-                  console.log('Discount code:', code);
+                  logger.log('Discount code:', code);
                   setShowGame(false);
                 }}
               />

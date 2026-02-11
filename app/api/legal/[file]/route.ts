@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import fs from 'fs';
 import path from 'path';
 
@@ -30,7 +31,7 @@ export async function GET(
 
     return NextResponse.json({ content });
   } catch (error) {
-    console.error('Błąd wczytywania pliku:', error);
+    logger.error('Błąd wczytywania pliku:', error);
     return NextResponse.json({ error: 'Błąd wczytywania pliku' }, { status: 500 });
   }
 }

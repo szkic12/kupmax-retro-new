@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import useSimpleChat from '../../hooks/useSimpleChat';
 import styles from './Chatroom.module.scss';
 import { EmojiParser } from '../RetroEmoji';
@@ -140,7 +141,7 @@ export default function Chatroom() {
       // Wiadomość automatycznie zniknie przez polling
     } catch (err) {
       alert('Błąd podczas usuwania wiadomości');
-      console.error('Delete error:', err);
+      logger.error('Delete error:', err);
     } finally {
       setDeletingMessageId(null);
     }
@@ -182,7 +183,7 @@ export default function Chatroom() {
       // Wiadomość automatycznie zaktualizuje się przez polling
     } catch (err) {
       alert('Błąd podczas edycji wiadomości');
-      console.error('Edit error:', err);
+      logger.error('Edit error:', err);
     } finally {
       setEditingMessageId(null);
       setEditText('');
@@ -240,7 +241,7 @@ export default function Chatroom() {
       }
     } catch (err) {
       alert('Błąd podczas banowania użytkownika');
-      console.error('Ban error:', err);
+      logger.error('Ban error:', err);
     } finally {
       setBanningUserId(null);
     }

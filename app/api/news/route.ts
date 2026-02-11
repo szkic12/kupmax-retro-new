@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching news:', error);
+      logger.error('Error fetching news:', error);
       return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 });
     }
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -77,13 +78,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating news:', error);
+      logger.error('Error creating news:', error);
       return NextResponse.json({ error: 'Failed to create news' }, { status: 500 });
     }
 
     return NextResponse.json({ news: data, message: 'News dodany!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -114,13 +115,13 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error updating news:', error);
+      logger.error('Error updating news:', error);
       return NextResponse.json({ error: 'Failed to update news' }, { status: 500 });
     }
 
     return NextResponse.json({ news: data, message: 'News zaktualizowany!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -141,13 +142,13 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting news:', error);
+      logger.error('Error deleting news:', error);
       return NextResponse.json({ error: 'Failed to delete news' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'News usunięty!' });
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
         reason: `honeypot_access: ${body.path || '/retro-admin'}`,
       });
     } catch (e) {
-      console.log('Could not log honeypot access:', e);
+      logger.log('Could not log honeypot access:', e);
     }
 
     // Return success to not alert attacker

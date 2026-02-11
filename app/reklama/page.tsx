@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -26,7 +27,7 @@ export default function ReklamaPage() {
           setAdvertisement(data.advertisement);
         }
       } catch (error) {
-        console.error('Error fetching advertisement:', error);
+        logger.error('Error fetching advertisement:', error);
       } finally {
         setLoadingAd(false);
       }

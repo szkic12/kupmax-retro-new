@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,12 +112,12 @@ export async function GET(req: NextRequest) {
       .order('createdAt', { ascending: false });
 
     if (error) {
-      console.error('Supabase error:', error.message);
+      logger.error('Supabase error:', error.message);
     }
 
     if (!error && data && data.length > 0) {
       // Mamy prawdziwe produkty z bazy!
-      console.log(`Found ${data.length} products with showInRetro=true`);
+      logger.log(`Found ${data.length} products with showInRetro=true`);
       products = data;
       total = count || data.length;
 
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
       total = products.length;
     } else {
       // Brak produktów z showInRetro=true - użyj fallback
-      console.log('No products with showInRetro=true, using fallback products');
+      logger.log('No products with showInRetro=true, using fallback products');
       let filtered = [...FALLBACK_PRODUCTS];
 
       if (category && category !== 'all') {
@@ -168,7 +169,7 @@ export async function GET(req: NextRequest) {
       source: products[0]?.id?.startsWith('fallback') ? 'fallback' : 'database',
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products:', error);
     // W razie błędu zwróć fallback
     return NextResponse.json({
       products: FALLBACK_PRODUCTS,

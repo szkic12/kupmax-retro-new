@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 // Wyłącz cache
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
-    console.error('Error fetching forum categories:', error);
+    logger.error('Error fetching forum categories:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

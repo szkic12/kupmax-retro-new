@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -63,7 +64,7 @@ export default function Home() {
         const data = await res.json();
         if (data.advertisement) setAdvertisement(data.advertisement);
       } catch (error) {
-        console.error("Error fetching advertisement:", error);
+        logger.error("Error fetching advertisement:", error);
       } finally {
         setLoadingAd(false);
       }
@@ -78,7 +79,7 @@ export default function Home() {
         const data = await res.json();
         if (data.news) setLatestNews(data.news);
       } catch (error) {
-        console.error("Error fetching news:", error);
+        logger.error("Error fetching news:", error);
       } finally {
         setLoadingNews(false);
       }
@@ -186,7 +187,7 @@ export default function Home() {
         setProducts(data.products);
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
+      logger.error("Error fetching products:", error);
     } finally {
       setLoadingProducts(false);
     }
@@ -795,7 +796,7 @@ export default function Home() {
           onFocus={() => setActiveWindow('tetris')}
           fullPageUrl="/tetris"
         >
-          <TetrisGame onGameComplete={(code: string) => console.log('Discount code:', code)} />
+          <TetrisGame onGameComplete={(code: string) => logger.log('Discount code:', code)} />
         </Window>
       )}
 

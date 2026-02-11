@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -307,7 +308,7 @@ export async function POST(req: NextRequest) {
           source: 'ai' // Let frontend know this is AI response
         });
       } catch (apiError: any) {
-        console.log('Claude API unavailable, falling back to offline mode:', apiError?.message);
+        logger.log('Claude API unavailable, falling back to offline mode:', apiError?.message);
         // Fall through to offline mode
       }
     }
@@ -339,7 +340,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Chat error:', error);
+    logger.error('Chat error:', error);
 
     return NextResponse.json({
       message: 'Ups! Coś poszło nie tak. 😅 Spróbuj ponownie za chwilę!',

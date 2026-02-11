@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,7 +82,7 @@ export default function ClippyChat({ isOpen, onClose }: ClippyChatProps) {
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
+      logger.error('Chat error:', error);
       const errorMessage: Message = {
         role: 'assistant',
         content: 'Przepraszam, wystąpił błąd. Spróbuj ponownie za chwilę.',

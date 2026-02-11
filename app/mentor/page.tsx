@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
@@ -205,7 +206,7 @@ export default function MentorIDEPage() {
       }]);
 
     } catch (error) {
-      console.error('Error loading ZIP:', error);
+      logger.error('Error loading ZIP:', error);
       setAiMessages(prev => [...prev, {
         role: 'assistant',
         content: '❌ Nie udało się otworzyć ZIP. Sprawdź czy plik nie jest uszkodzony.'

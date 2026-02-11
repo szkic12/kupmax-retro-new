@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../../lib/aws-s3.js';
 
 // Domyślne stacje
@@ -49,7 +50,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Stacja została usunięta.' });
   } catch (error) {
-    console.error('Error deleting station:', error);
+    logger.error('Error deleting station:', error);
     return NextResponse.json({ message: 'Błąd serwera.' }, { status: 500 });
   }
 }
@@ -88,7 +89,7 @@ export async function PUT(
 
     return NextResponse.json(updatedStation);
   } catch (error) {
-    console.error('Error updating station:', error);
+    logger.error('Error updating station:', error);
     return NextResponse.json({ message: 'Błąd serwera.' }, { status: 500 });
   }
 }

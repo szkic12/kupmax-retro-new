@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useRef } from 'react';
 import { useGuestbook } from '../../hooks/useGuestbook';
@@ -136,11 +137,11 @@ export default function GuestbookForm({ productRef = null, onSuccess = null }) {
           onSuccess(result.data);
         }
       } else {
-        console.error('Błąd podczas dodawania wpisu:', result.error);
+        logger.error('Błąd podczas dodawania wpisu:', result.error);
         setErrors({ submit: result.error || 'Wystąpił błąd podczas dodawania wpisu' });
       }
     } catch (err) {
-      console.error('Nieoczekiwany błąd:', err);
+      logger.error('Nieoczekiwany błąd:', err);
       setErrors({ submit: 'Wystąpił nieoczekiwany błąd' });
     }
   };

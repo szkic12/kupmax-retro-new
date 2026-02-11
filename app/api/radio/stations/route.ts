@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 
 // Domyślne stacje (używane gdy S3 jest puste)
@@ -33,7 +34,7 @@ export async function GET() {
     const stations = await getStations();
     return NextResponse.json(stations);
   } catch (error) {
-    console.error('Error reading stations:', error);
+    logger.error('Error reading stations:', error);
     return NextResponse.json(
       { message: 'Nie udało się odczytać stacji.' },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newStation, { status: 201 });
   } catch (error) {
-    console.error('Error saving station:', error);
+    logger.error('Error saving station:', error);
     return NextResponse.json(
       { message: 'Nie udało się zapisać stacji.' },
       { status: 500 }
