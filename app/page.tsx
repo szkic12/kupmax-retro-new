@@ -44,6 +44,22 @@ export default function Home() {
   // Stan dla folderów
   const [openFolder, setOpenFolder] = useState<string | null>(null);
 
+  // Ujednolicone parametry okien (zoptymalizowane pod mobilki)
+  const windowConfig = {
+    width: "min(96vw, 700px)",
+    height: "min(75vh, 550px)",
+    x: 4,
+    y: 60, // Przesunięte pod pasek zadań (który jest na topie)
+  };
+
+  // Funkcja przełączania okien (Taskbar)
+  const toggleWindow = (key: string) => {
+    setWindows(prev => ({ ...prev, [key]: true }));
+    setMinimized(prev => ({ ...prev, [key]: false }));
+    setActiveWindow(key);
+  };
+
+
   useEffect(() => {
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }));
@@ -373,10 +389,7 @@ export default function Home() {
         <Window
           title={`📁 Folder: ${openFolder}`}
           icon="📁"
-          width="min(94vw, 500px)"
-          height="min(60vh, 400px)"
-          x={20}
-          y={100}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           onClose={() => setOpenFolder(null)}
           isActive={true}
         >
@@ -396,10 +409,7 @@ export default function Home() {
         <Window
           title={`📷 Reklama - ${advertisement?.advertiser_name || 'Ładowanie...'}`}
           icon="📷"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.reklama}
           onMinimize={() => setMinimized({ ...minimized, reklama: true })}
           onClose={() => setWindows({ ...windows, reklama: false })}
@@ -426,10 +436,7 @@ export default function Home() {
         <Window
           title="KUPMAX News - Netscape Navigator"
           icon="📰"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.news}
           onMinimize={() => setMinimized({ ...minimized, news: true })}
           onClose={() => setWindows({ ...windows, news: false })}
@@ -478,10 +485,7 @@ export default function Home() {
         <Window
           title="KUPMAX Shop - Internet Explorer"
           icon="🛒"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.shop}
           onMinimize={() => setMinimized({ ...minimized, shop: true })}
           onClose={() => setWindows({ ...windows, shop: false })}
@@ -540,10 +544,7 @@ export default function Home() {
         <Window
           title="Chlapak.bmp - Paint"
           icon="📷"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.image}
           onMinimize={() => setMinimized({ ...minimized, image: true })}
           onClose={() => setWindows({ ...windows, image: false })}
@@ -564,10 +565,7 @@ export default function Home() {
         <Window
           title="Movie.avi - Windows Media Player"
           icon="🎬"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.video}
           onMinimize={() => setMinimized({ ...minimized, video: true })}
           onClose={() => setWindows({ ...windows, video: false })}
@@ -584,10 +582,7 @@ export default function Home() {
         <Window
           title="Shirt3D.obj - 3D Viewer"
           icon="👕"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.model3d}
           onMinimize={() => setMinimized({ ...minimized, model3d: true })}
           onClose={() => setWindows({ ...windows, model3d: false })}
@@ -602,10 +597,7 @@ export default function Home() {
         <Window
           title="Character.3ds - 3D Studio MAX"
           icon="🧑"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.character}
           onMinimize={() => setMinimized({ ...minimized, character: true })}
           onClose={() => setWindows({ ...windows, character: false })}
@@ -620,10 +612,7 @@ export default function Home() {
         <Window
           title="KUPMAX Forum - Microsoft Internet Explorer"
           icon="💬"
-          width="min(96vw, 800px)"
-          height="min(80vh, 600px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.forum}
           onMinimize={() => setMinimized({ ...minimized, forum: true })}
           onClose={() => setWindows({ ...windows, forum: false })}
@@ -639,10 +628,7 @@ export default function Home() {
         <Window
           title="Webring - Netscape Navigator"
           icon="🌐"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.webring}
           onMinimize={() => setMinimized({ ...minimized, webring: true })}
           onClose={() => setWindows({ ...windows, webring: false })}
@@ -658,10 +644,7 @@ export default function Home() {
         <Window
           title="Guestbook - Sign Here!"
           icon="📖"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.guestbook}
           onMinimize={() => setMinimized({ ...minimized, guestbook: true })}
           onClose={() => setWindows({ ...windows, guestbook: false })}
@@ -677,10 +660,7 @@ export default function Home() {
         <Window
           title="KUPMAX Chat - mIRC"
           icon="💬"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.chat}
           onMinimize={() => setMinimized({ ...minimized, chat: true })}
           onClose={() => setWindows({ ...windows, chat: false })}
@@ -696,10 +676,7 @@ export default function Home() {
         <Window
           title="Private Chat - Secure Channel"
           icon="🔒"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.privateChat}
           onMinimize={() => setMinimized({ ...minimized, privateChat: true })}
           onClose={() => setWindows({ ...windows, privateChat: false })}
@@ -715,10 +692,7 @@ export default function Home() {
         <Window
           title="Photo Gallery - Microsoft Photo Editor"
           icon="📸"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.photos}
           onMinimize={() => setMinimized({ ...minimized, photos: true })}
           onClose={() => setWindows({ ...windows, photos: false })}
@@ -734,10 +708,7 @@ export default function Home() {
         <Window
           title="Downloads - File Manager"
           icon="💾"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.downloads}
           onMinimize={() => setMinimized({ ...minimized, downloads: true })}
           onClose={() => setWindows({ ...windows, downloads: false })}
@@ -753,10 +724,7 @@ export default function Home() {
         <Window
           title="Radio Player - Winamp"
           icon="📻"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.radio}
           onMinimize={() => setMinimized({ ...minimized, radio: true })}
           onClose={() => setWindows({ ...windows, radio: false })}
@@ -772,10 +740,7 @@ export default function Home() {
         <Window
           title="Block Blitz - Extreme Puzzle"
           icon="🕹️"
-          width="min(98vw, 800px)"
-          height="min(85vh, 650px)"
-          x={2}
-          y={20}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.tetris}
           onMinimize={() => setMinimized({ ...minimized, tetris: true })}
           onClose={() => setWindows({ ...windows, tetris: false })}
@@ -791,10 +756,7 @@ export default function Home() {
         <Window
           title="Regulamin Serwisu - Terms of Service"
           icon="📜"
-          width="min(96vw, 700px)"
-          height="min(70vh, 550px)"
-          x={4}
-          y={260}
+          width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.bulletin}
           onMinimize={() => setMinimized({ ...minimized, bulletin: true })}
           onClose={() => setWindows({ ...windows, bulletin: false })}
