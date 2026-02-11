@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useSession } from "next-auth/react";
 import Window from "@/components/Window";
 import HeroSlider from "@/components/HeroSlider";
 import RollupImage from "@/components/RollupImage";
 import RollupVideo from "@/components/RollupVideo";
+import StartMenu from "@/components/StartMenu";
 
 const Rollup3D = dynamic(() => import("@/components/Rollup3D"), { ssr: false });
 const RollupCharacter = dynamic(() => import("@/components/RollupCharacter"), { ssr: false });
@@ -32,6 +34,7 @@ interface DesktopIcon {
 }
 
 export default function Home() {
+  const { data: session } = useSession();
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showClippyChat, setShowClippyChat] = useState(false);
@@ -43,22 +46,6 @@ export default function Home() {
   
   // Stan dla folderów
   const [openFolder, setOpenFolder] = useState<string | null>(null);
-
-  // Ujednolicone parametry okien (zoptymalizowane pod mobilki)
-  const windowConfig = {
-    width: "min(96vw, 700px)",
-    height: "min(75vh, 550px)",
-    x: 4,
-    y: 60, // Przesunięte pod pasek zadań (który jest na topie)
-  };
-
-  // Funkcja przełączania okien (Taskbar)
-  const toggleWindow = (key: string) => {
-    setWindows(prev => ({ ...prev, [key]: true }));
-    setMinimized(prev => ({ ...prev, [key]: false }));
-    setActiveWindow(key);
-  };
-
 
   useEffect(() => {
     const updateTime = () => {
@@ -168,7 +155,21 @@ export default function Home() {
         },
       ];
 
-  
+  // Ujednolicone parametry okien (zoptymalizowane pod mobilki)
+  const windowConfig = {
+    width: "min(96vw, 700px)",
+    height: "min(60vh, 450px)", // Zmniejszona wysokość
+    x: 4,
+    y: 200, // Przesunięte niżej
+  };
+
+  // Funkcja przełączania okien (Taskbar)
+  const toggleWindow = (key: string) => {
+    setWindows(prev => ({ ...prev, [key]: true }));
+    setMinimized(prev => ({ ...prev, [key]: false }));
+    setActiveWindow(key);
+  };
+
   // Fetch products when shop opens
   useEffect(() => {
     if (windows.shop && products.length === 0 && !loadingProducts) {
@@ -347,22 +348,45 @@ export default function Home() {
 
   const openWindowsList = Object.entries(windows)
     .filter(([_, isOpen]) => isOpen)
-    .map(([key]) => ({
-      key,
-      icon: key === "reklama" ? "📷" : key === "news" ? "📰" : key === "shop" ? "🛒" : "📁",
-      label: key.charAt(0).toUpperCase() + key.slice(1),
-    }));
+    .map(([key]) => {
+      const iconDef = desktopIcons.find(icon => icon.id === key);
+      return {
+        key,
+        icon: iconDef?.icon || "📁",
+        label: iconDef?.label.replace('.exe', '') || key.charAt(0).toUpperCase() + key.slice(1),
+      }
+    });
+
+  if (openFolder) {
+    const folderIconDef = desktopIcons.find(icon => icon.id === `folder-${openFolder.toLowerCase()}`);
+    openWindowsList.push({
+      key: `folder-${openFolder}`,
+      icon: folderIconDef?.icon || "📁",
+      label: openFolder,
+    });
+  }
+
+  const handleTaskbarClick = (key: string) => {
+    setActiveWindow(key);
+    // For regular windows, this un-minimizes them. For folders, it does nothing, which is fine.
+    setMinimized(prev => ({ ...prev, [key]: false }));
+  };
 
   return (
     <main className="w-screen h-screen relative overflow-hidden bg-[#008080]">
       {/* Taskbar */}
-      <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
+      <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-[110]">
         <button className="win95-button px-3 h-6 font-bold flex items-center gap-2" onClick={() => setShowStartMenu(!showStartMenu)}>
           <span className="text-lg">🪟</span><span>Start</span>
         </button>
+        <StartMenu show={showStartMenu} onClose={() => setShowStartMenu(false)} desktopIcons={desktopIcons} session={session} />
         <div className="flex gap-1 flex-1 overflow-x-auto">
           {openWindowsList.map((win) => (
-            <button key={win.key} className="px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] bg-[#dfdfdf] border-2 border-t-white border-l-white border-r-black border-b-black">
+            <button
+              key={win.key}
+              onClick={() => handleTaskbarClick(win.key)}
+              className={`px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] border-2 ${activeWindow === win.key ? 'bg-[#c0c0c0] font-bold' : 'bg-[#dfdfdf]'} border-t-white border-l-white border-r-black border-b-black`}
+            >
               <span>{win.icon}</span><span className="truncate">{win.label}</span>
             </button>
           ))}
@@ -391,7 +415,8 @@ export default function Home() {
           icon="📁"
           width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           onClose={() => setOpenFolder(null)}
-          isActive={true}
+          isActive={activeWindow === `folder-${openFolder}`}
+          onFocus={() => setActiveWindow(`folder-${openFolder}`)}
         >
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 p-4 bg-white h-full overflow-y-auto">
             {folderIcons(openFolder).map((item) => (
