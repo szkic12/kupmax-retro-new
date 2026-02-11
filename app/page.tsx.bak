@@ -1,66 +1,69 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-import Window from "@/components/Window";
-import HeroSlider from "@/components/HeroSlider";
-import RollupImage from "@/components/RollupImage";
-import RollupVideo from "@/components/RollupVideo";
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import Window from '@/components/Window';
+import HeroSlider from '@/components/HeroSlider';
+import RollupImage from '@/components/RollupImage';
+import RollupVideo from '@/components/RollupVideo';
 
-const Rollup3D = dynamic(() => import("@/components/Rollup3D"), { ssr: false });
-const RollupCharacter = dynamic(() => import("@/components/RollupCharacter"), { ssr: false });
-const TetrisGame = dynamic(() => import("@/components/TetrisGame/TetrisGame"), { ssr: false });
-const ReactRadio = dynamic(() => import("@/components/ReactRadio/ReactRadio"), { ssr: false });
-const Chatroom = dynamic(() => import("@/components/Chatroom/Chatroom"), { ssr: false });
-const PrivateChatroom = dynamic(() => import("@/components/PrivateChatroom/PrivateChatroom"), { ssr: false });
-const Guestbook = dynamic(() => import("@/components/Guestbook/Guestbook"), { ssr: false });
-const PhotoGallery = dynamic(() => import("@/components/PhotoGallery/PhotoGallery"), { ssr: false });
-const Downloads = dynamic(() => import("@/components/Downloads/Downloads"), { ssr: false });
-const Webring = dynamic(() => import("@/components/Webring/Webring"), { ssr: false });
-const Forum = dynamic(() => import("@/components/Forum/Forum"), { ssr: false });
-const Clippy = dynamic(() => import("@/components/Clippy"), { ssr: false });
-const ClippyChat = dynamic(() => import("@/components/ClippyChat"), { ssr: false });
-const LegalNoticeBoard = dynamic(() => import("@/components/LegalNoticeBoard"), { ssr: false });
+const Rollup3D = dynamic(() => import('@/components/Rollup3D'), { ssr: false });
+const RollupCharacter = dynamic(() => import('@/components/RollupCharacter'), { ssr: false });
+const TetrisGame = dynamic(() => import('@/components/TetrisGame/TetrisGame'), { ssr: false });
+const ReactRadio = dynamic(() => import('@/components/ReactRadio/ReactRadio'), { ssr: false });
+const Chatroom = dynamic(() => import('@/components/Chatroom/Chatroom'), { ssr: false });
+const PrivateChatroom = dynamic(() => import('@/components/PrivateChatroom/PrivateChatroom'), { ssr: false });
+const Guestbook = dynamic(() => import('@/components/Guestbook/Guestbook'), { ssr: false });
+const PhotoGallery = dynamic(() => import('@/components/PhotoGallery/PhotoGallery'), { ssr: false });
+const Downloads = dynamic(() => import('@/components/Downloads/Downloads'), { ssr: false });
+const Webring = dynamic(() => import('@/components/Webring/Webring'), { ssr: false });
+const Forum = dynamic(() => import('@/components/Forum/Forum'), { ssr: false });
+const Clippy = dynamic(() => import('@/components/Clippy'), { ssr: false });
+const ClippyChat = dynamic(() => import('@/components/ClippyChat'), { ssr: false });
+const LegalNoticeBoard = dynamic(() => import('@/components/LegalNoticeBoard'), { ssr: false });
 
 interface DesktopIcon {
   id: string;
   icon: string;
   label: string;
-  type: "app" | "link" | "folder";
+  type: 'app' | 'link' | 'folder';
   action: () => void;
-  folder?: string;
 }
 
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showClippyChat, setShowClippyChat] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>("--:--");
+  const [currentTime, setCurrentTime] = useState<string>('--:--');
   const [advertisement, setAdvertisement] = useState<any>(null);
   const [loadingAd, setLoadingAd] = useState(true);
   const [latestNews, setLatestNews] = useState<any[]>([]);
   const [loadingNews, setLoadingNews] = useState(true);
-  
-  // Stan dla folderów
-  const [openFolder, setOpenFolder] = useState<string | null>(null);
 
+  // Update clock only on client side to avoid hydration mismatch
   useEffect(() => {
     const updateTime = () => {
-      setCurrentTime(new Date().toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }));
+      setCurrentTime(new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }));
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch advertisement from API
   useEffect(() => {
     const fetchAdvertisement = async () => {
       try {
-        const res = await fetch("/api/advertisement", { cache: "no-store" });
+        const res = await fetch('/api/advertisement', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const data = await res.json();
-        if (data.advertisement) setAdvertisement(data.advertisement);
+        if (data.advertisement) {
+          setAdvertisement(data.advertisement);
+        }
       } catch (error) {
-        console.error("Error fetching advertisement:", error);
+        console.error('Error fetching advertisement:', error);
       } finally {
         setLoadingAd(false);
       }
@@ -68,14 +71,20 @@ export default function Home() {
     fetchAdvertisement();
   }, []);
 
+  // Fetch latest news from API
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch("/api/news?limit=3", { cache: "no-store" });
+        const res = await fetch('/api/news?limit=3', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const data = await res.json();
-        if (data.news) setLatestNews(data.news);
+        if (data.news) {
+          setLatestNews(data.news);
+        }
       } catch (error) {
-        console.error("Error fetching news:", error);
+        console.error('Error fetching news:', error);
       } finally {
         setLoadingNews(false);
       }
@@ -83,8 +92,17 @@ export default function Home() {
     fetchNews();
   }, []);
 
+  // Helper: ensure link has https://
+  const ensureHttps = (url: string | null | undefined): string => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
+  };
+
   const [windows, setWindows] = useState({
-    reklama: true,
+    reklama: true, // Auto-open on startup - Reklama fotografki
     news: false,
     shop: false,
     image: false,
@@ -124,225 +142,333 @@ export default function Home() {
   });
 
   const [showStartMenu, setShowStartMenu] = useState(false);
-  const [activeWindow, setActiveWindow] = useState<string | null>("reklama");
+  const [activeWindow, setActiveWindow] = useState<string | null>('reklama'); // Aktywne okno
+
+  // Fetch products when shop opens
+  useEffect(() => {
+    if (windows.shop && products.length === 0 && !loadingProducts) {
+      fetchProducts();
+    }
+  }, [windows.shop]);
+
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const response = await fetch('/api/products?perPage=12');
+      const data = await response.json();
+      if (data.products) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  // Przygotuj slajdy z aktywnej reklamy lub domyślne
+  const slides = advertisement?.slides && advertisement.slides.length > 0
+    ? advertisement.slides.map((slide: any) => ({
+        title: slide.title || advertisement.title,
+        imageUrl: slide.image_url,
+        linkTo: advertisement.link_url || '#',
+      }))
+    : [
+        {
+          title: 'Koniec odkładania. Czas tworzenia.',
+          imageUrl: '/images/slider-1.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+        {
+          title: 'Przestań marzyć. Zacznij działać.',
+          imageUrl: '/images/slider-2.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+        {
+          title: 'Każdy wielki projekt zaczyna się od pierwszego kroku.',
+          imageUrl: '/images/slider-3.jpg',
+          linkTo: 'https://www.facebook.com/annajuszczakfotografia/',
+        },
+      ];
 
   const desktopIcons: DesktopIcon[] = [
-    // MAGNETS (Zostają na pulpicie)
     {
-      id: "ai-studio",
-      icon: "🤖",
-      label: "AI Studio.lnk",
-      type: "link",
-      action: () => window.open("https://ai.kupmax.pl", "_blank"),
+      id: 'reklama',
+      icon: '📷',
+      label: 'Reklama.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, reklama: true }),
     },
     {
-      id: "vibe3d",
-      icon: "🎮",
-      label: "Vibe3D.apk",
-      type: "link",
-      action: () => window.open("https://play.google.com/store/apps/details?id=com.kupmax.vibe3d", "_blank"),
+      id: 'news',
+      icon: '📰',
+      label: 'News.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, news: true }),
     },
     {
-      id: "roblox",
-      icon: "🎪",
-      label: "Roblox.url",
-      type: "link",
-      action: () => window.open("https://www.roblox.com", "_blank"),
-    },
-    // FOLDERY
-    {
-      id: "folder-system",
-      icon: "📁",
-      label: "SYSTEM",
-      type: "folder",
-      action: () => setOpenFolder("SYSTEM"),
+      id: 'shop',
+      icon: '🛒',
+      label: 'Shop.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, shop: true }),
     },
     {
-      id: "folder-community",
-      icon: "👥",
-      label: "SPOŁECZNOŚĆ",
-      type: "folder",
-      action: () => setOpenFolder("SPOŁECZNOŚĆ"),
+      id: 'ai-studio',
+      icon: '🤖',
+      label: 'AI Studio.lnk',
+      type: 'link',
+      action: () => window.open('https://ai.kupmax.pl', '_blank'),
     },
     {
-      id: "folder-fun",
-      icon: "🎡",
-      label: "ROZRYWKA",
-      type: "folder",
-      action: () => setOpenFolder("ROZRYWKA"),
+      id: 'vibe3d',
+      icon: '🎮',
+      label: 'Vibe3D.apk',
+      type: 'link',
+      action: () => window.open('https://play.google.com/store/apps/details?id=com.kupmax.vibe3d', '_blank'),
     },
     {
-      id: "folder-data",
-      icon: "🗄️",
-      label: "ZASOBY",
-      type: "folder",
-      action: () => setOpenFolder("ZASOBY"),
-    },
-    // UKRYTE W FOLDERACH (Przykładowe przypisanie)
-    {
-      id: "reklama",
-      icon: "📷",
-      label: "Reklama.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, reklama: true })),
-      folder: "SYSTEM"
+      id: 'roblox',
+      icon: '🎪',
+      label: 'Roblox.url',
+      type: 'link',
+      action: () => window.open('https://www.roblox.com', '_blank'),
     },
     {
-      id: "news",
-      icon: "📰",
-      label: "News.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, news: true })),
-      folder: "SYSTEM"
+      id: 'chat',
+      icon: '💬',
+      label: 'Chat.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, chat: true }),
     },
     {
-      id: "shop",
-      icon: "🛒",
-      label: "Shop.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, shop: true })),
-      folder: "SYSTEM"
+      id: 'privateChat',
+      icon: '🔒',
+      label: 'Private Chat.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, privateChat: true }),
     },
     {
-      id: "chat",
-      icon: "💬",
-      label: "Chat.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, chat: true })),
-      folder: "SPOŁECZNOŚĆ"
+      id: 'forum',
+      icon: '🗨️',
+      label: 'Forum.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, forum: true }),
     },
     {
-      id: "forum",
-      icon: "🗨️",
-      label: "Forum.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, forum: true })),
-      folder: "SPOŁECZNOŚĆ"
+      id: 'photos',
+      icon: '📸',
+      label: 'Photos.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, photos: true }),
     },
     {
-      id: "guestbook",
-      icon: "📖",
-      label: "Guestbook.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, guestbook: true })),
-      folder: "SPOŁECZNOŚĆ"
+      id: 'webring',
+      icon: '🌐',
+      label: 'Webring.htm',
+      type: 'app',
+      action: () => setWindows({ ...windows, webring: true }),
     },
     {
-      id: "tetris",
-      icon: "🕹️",
-      label: "BlockBlitz.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, tetris: true })),
-      folder: "ROZRYWKA"
+      id: 'guestbook',
+      icon: '📖',
+      label: 'Guestbook.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, guestbook: true }),
     },
     {
-      id: "radio",
-      icon: "📻",
-      label: "Radio.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, radio: true })),
-      folder: "ROZRYWKA"
+      id: 'downloads',
+      icon: '💾',
+      label: 'Downloads',
+      type: 'folder',
+      action: () => setWindows({ ...windows, downloads: true }),
     },
     {
-      id: "photos",
-      icon: "📸",
-      label: "Photos.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, photos: true })),
-      folder: "ZASOBY"
+      id: 'radio',
+      icon: '📻',
+      label: 'Radio.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, radio: true }),
     },
     {
-      id: "downloads",
-      icon: "💾",
-      label: "Downloads",
-      type: "folder",
-      action: () => setWindows(prev => ({ ...prev, downloads: true })),
-      folder: "ZASOBY"
+      id: 'tetris',
+      icon: '🕹️',
+      label: 'BlockBlitz.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, tetris: true }),
     },
     {
-      id: "clippy",
-      icon: "📎",
-      label: "Clippy AI.exe",
-      type: "app",
+      id: 'clippy',
+      icon: '📎',
+      label: 'Clippy AI.exe',
+      type: 'app',
       action: () => setShowClippyChat(true),
-      folder: "SYSTEM"
     },
     {
-      id: "bulletin",
-      icon: "📜",
-      label: "Regulamin.exe",
-      type: "app",
-      action: () => setWindows(prev => ({ ...prev, bulletin: true })),
-      folder: "SYSTEM"
-    }
+      id: 'mentor',
+      icon: '🎓',
+      label: 'Mentor.exe',
+      type: 'link',
+      action: () => window.open('/mentor', '_self'),
+    },
+    {
+      id: 'bulletin',
+      icon: '📜',
+      label: 'Regulamin.exe',
+      type: 'app',
+      action: () => setWindows({ ...windows, bulletin: true }),
+    },
   ];
 
-  const mainIcons = desktopIcons.filter(icon => !icon.folder);
-  const folderIcons = (folderName: string) => desktopIcons.filter(icon => icon.folder === folderName);
-
-  const openWindowsList = Object.entries(windows)
+  // Get list of open windows for taskbar buttons
+  const openWindows = Object.entries(windows)
     .filter(([_, isOpen]) => isOpen)
     .map(([key]) => ({
       key,
-      icon: key === "reklama" ? "📷" : key === "news" ? "📰" : key === "shop" ? "🛒" : "📁",
-      label: key.charAt(0).toUpperCase() + key.slice(1),
+      icon: key === 'reklama' ? '📷' :
+            key === 'news' ? '📰' :
+            key === 'shop' ? '🛒' :
+            key === 'image' ? '📷' :
+            key === 'video' ? '🎬' :
+            key === 'model3d' ? '👕' :
+            key === 'character' ? '🧑' :
+            key === 'chat' ? '💬' :
+            key === 'privateChat' ? '🔒' :
+            key === 'forum' ? '🗨️' :
+            key === 'photos' ? '📸' :
+            key === 'webring' ? '🌐' :
+            key === 'guestbook' ? '📖' :
+            key === 'downloads' ? '💾' :
+            key === 'radio' ? '📻' :
+            key === 'tetris' ? '🕹️' :
+            key === 'bulletin' ? '📌' : '📁',
+      label: key === 'privateChat' ? 'Private Chat' :
+             key === 'reklama' ? 'Reklama' :
+             key.charAt(0).toUpperCase() + key.slice(1),
     }));
 
   return (
-    <main className="w-screen h-screen relative overflow-hidden bg-[#008080]">
-      {/* Taskbar */}
+    <main className="w-screen h-screen relative overflow-hidden">
+      {/* Taskbar - at very TOP */}
       <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-50">
-        <button className="win95-button px-3 h-6 font-bold flex items-center gap-2" onClick={() => setShowStartMenu(!showStartMenu)}>
-          <span className="text-lg">🪟</span><span>Start</span>
+        {/* Start Button */}
+        <button
+          className="win95-button px-3 h-6 font-bold flex items-center gap-2"
+          onClick={() => setShowStartMenu(!showStartMenu)}
+        >
+          <span className="text-lg">🪟</span>
+          <span>Start</span>
         </button>
+
+        {/* Taskbar Buttons for Open Windows - click to switch/restore */}
         <div className="flex gap-1 flex-1 overflow-x-auto">
-          {openWindowsList.map((win) => (
-            <button key={win.key} className="px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] bg-[#dfdfdf] border-2 border-t-white border-l-white border-r-black border-b-black">
-              <span>{win.icon}</span><span className="truncate">{win.label}</span>
-            </button>
-          ))}
+          {openWindows.map((win) => {
+            const isActive = activeWindow === win.key && !minimized[win.key as keyof typeof minimized];
+            const isMinimizedWin = minimized[win.key as keyof typeof minimized];
+
+            return (
+              <button
+                key={win.key}
+                className={`px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] max-w-[120px] ${isActive ? 'font-bold' : ''}`}
+                style={{
+                  background: isActive ? '#ffffff' : isMinimizedWin ? '#a0a0a0' : '#dfdfdf',
+                  border: '2px solid',
+                  borderColor: isActive ? '#000 #fff #fff #000' : '#fff #000 #000 #fff',
+                  boxShadow: isActive ? 'inset 1px 1px 2px rgba(0,0,0,0.3)' : 'none'
+                }}
+                onClick={() => {
+                  if (isMinimizedWin) {
+                    // Przywróć zminimalizowane okno
+                    setMinimized({ ...minimized, [win.key]: false });
+                  }
+                  // Ustaw jako aktywne
+                  setActiveWindow(win.key);
+                }}
+              >
+                <span>{win.icon}</span>
+                <span className="truncate">{win.label}</span>
+              </button>
+            );
+          })}
         </div>
-        <div className="text-xs px-2 border-2 border-t-black border-l-black h-6 flex items-center ml-1 bg-[#c0c0c0] shadow-inner">
+
+        {/* Clock */}
+        <div className="text-xs px-2 border-2 border-[#808080] border-t-black border-l-black h-6 flex items-center ml-1">
           {currentTime}
         </div>
-      </div>
 
-      {/* Desktop Icons */}
-      <div className="absolute top-12 left-4 right-4 grid grid-cols-4 sm:grid-cols-8 gap-6 z-10">
-        {mainIcons.map((item) => (
-          <div key={item.id} className="flex flex-col items-center cursor-pointer group" onClick={item.action} onDoubleClick={item.action}>
-            <div className={`w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white/10 rounded hover:bg-white/20 transition-colors ${["ai-studio", "vibe3d", "roblox"].includes(item.id) ? "ring-2 ring-yellow-400" : ""}`}>
-              <span className="text-3xl sm:text-4xl">{item.icon}</span>
+        {/* Start Menu - opens DOWNWARD */}
+        {showStartMenu && (
+          <div className="absolute top-10 sm:top-8 left-2 w-52 max-h-[50vh] overflow-y-auto bg-[#c0c0c0] border-2 border-t-white border-l-white border-r-black border-b-black shadow-lg z-50">
+            <div className="bg-gradient-to-b from-blue-800 to-blue-600 text-white font-bold p-2 text-lg">
+              KUPMAX Retro
             </div>
-            <span className="text-[10px] sm:text-xs text-white text-center mt-1 drop-shadow-md font-medium max-w-[80px] truncate">{item.label}</span>
+            <div className="p-1">
+              {desktopIcons.map((item) => (
+                <button
+                  key={item.id}
+                  className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm"
+                  onClick={() => {
+                    item.action();
+                    setShowStartMenu(false);
+                  }}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label.replace('.exe', '').replace('.lnk', '').replace('.htm', '').replace('.url', '').replace('.apk', '')}</span>
+                </button>
+              ))}
+              <hr className="my-1 border-gray-400" />
+              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
+                <span>⚙️</span>
+                <span>Settings</span>
+              </button>
+              <button className="w-full text-left px-2 py-1 hover:bg-blue-800 hover:text-white flex items-center gap-2 text-sm">
+                <span>⏻</span>
+                <span>Shut Down...</span>
+              </button>
+            </div>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Folder Window */}
-      {openFolder && (
-        <Window
-          title={`📁 Folder: ${openFolder}`}
-          icon="📁"
-          width="min(94vw, 500px)"
-          height="min(60vh, 400px)"
-          x={20}
-          y={100}
-          onClose={() => setOpenFolder(null)}
-          isActive={true}
-        >
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 p-4 bg-white h-full overflow-y-auto">
-            {folderIcons(openFolder).map((item) => (
-              <div key={item.id} className="flex flex-col items-center cursor-pointer hover:bg-blue-50 p-2 rounded" onClick={() => { item.action(); setOpenFolder(null); }}>
-                <span className="text-3xl">{item.icon}</span>
-                <span className="text-[10px] text-center mt-1 text-black font-medium truncate w-full">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </Window>
-      )}
+      {/* Desktop Icons - below taskbar */}
+      <div className="absolute top-12 sm:top-10 left-2 right-2 grid grid-cols-6 sm:grid-cols-8 gap-1 z-10">
+        {desktopIcons.map((item) => {
+          // Powiększone ikonki dla wybranych elementów
+          const isHighlighted = ['ai-studio', 'vibe3d', 'roblox'].includes(item.id);
 
-      {/* Pozostałe okna (uproszczone wywołania dla jasności) */}
+          return (
+            <div
+              key={item.id}
+              className={`desktop-icon cursor-pointer flex flex-col items-center p-1 ${isHighlighted ? 'transform hover:scale-110 transition-transform' : ''}`}
+              onDoubleClick={item.action}
+              onClick={item.action}
+              style={isHighlighted ? { gridColumn: 'span 1' } : {}}
+            >
+              <div
+                className={`bg-white/20 backdrop-blur rounded flex items-center justify-center ${
+                  isHighlighted
+                    ? 'w-14 h-14 sm:w-16 sm:h-16 text-2xl sm:text-3xl shadow-lg ring-2 ring-yellow-400/50'
+                    : 'w-9 h-9 sm:w-11 sm:h-11 text-lg sm:text-xl'
+                }`}
+              >
+                {item.icon}
+              </div>
+              <span
+                className={`text-center truncate text-white drop-shadow-[1px_1px_1px_rgba(0,0,0,0.8)] ${
+                  isHighlighted
+                    ? 'text-[10px] sm:text-xs font-bold max-w-[60px]'
+                    : 'text-[8px] sm:text-[10px] max-w-[50px]'
+                }`}
+              >
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Windows - positioned below icons */}
       {windows.reklama && (
         <Window
           title={`📷 Reklama - ${advertisement?.advertiser_name || 'Ładowanie...'}`}
@@ -758,8 +884,6 @@ export default function Home() {
       )}
 
       {/* Clippy Chat Window - Clippy icon is now on desktop */}
-      
-      
       <ClippyChat isOpen={showClippyChat} onClose={() => setShowClippyChat(false)} />
     </main>
   );
