@@ -20,8 +20,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "KUPMAX Retro - Portfolio & Showcase",
-  description: "Explore our retro-inspired portfolio showcasing creative projects, 3D models, and innovative designs.",
+  title: "KupMax - Transforming the pain of love, you build a bridge to the star.",
+  description: "Transforming the pain of love, you build a bridge to the star.",
   keywords: ["kupmax", "retro", "portfolio", "3D", "web design", "creative"],
   alternates: {
     canonical: 'https://www.kupmax.pl',
