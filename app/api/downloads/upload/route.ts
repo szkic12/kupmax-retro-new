@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import S3Service from '../../../../lib/aws-s3';
 import FileDatabase from '../../../../lib/file-database';
+import { randomUUID } from 'crypto';
 
 // Allowed MIME types
 const allowedMimeTypes = [
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
     });
 
     const uploadedFiles: any[] = [];
+    const filesToSave: any[] = [];
     const errors: string[] = [];
 
     // Process each file
@@ -130,9 +132,9 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Add file to database
+        // Prepare file data for batch save
         const fileData = {
-          id: `${Date.now()}-${i}`,
+          id: randomUUID(), // Unique UUID for each file
           name: file.name,
           s3Key: uploadResult.key,
           size: file.size,
@@ -142,11 +144,23 @@ export async function POST(req: NextRequest) {
           uploadedAt: new Date().toISOString(),
         };
 
-        const savedFile = FileDatabase.addFile(fileData);
-        uploadedFiles.push(savedFile);
+        filesToSave.push(fileData);
       } catch (error: any) {
         logger.error(`Error uploading file ${file.name}:`, error);
         errors.push(`${file.name}: ${error.message}`);
+      }
+    }
+
+    // Batch save all files to database at once (single write operation)
+    if (filesToSave.length > 0) {
+      logger.log(`Saving ${filesToSave.length} files to database...`);
+      try {
+        const savedFiles = FileDatabase.addFiles(filesToSave);
+        uploadedFiles.push(...savedFiles);
+        logger.log(`Successfully saved ${savedFiles.length} files to database`);
+      } catch (error: any) {
+        logger.error('Error saving files to database:', error);
+        errors.push(`Database error: ${error.message}`);
       }
     }
 
