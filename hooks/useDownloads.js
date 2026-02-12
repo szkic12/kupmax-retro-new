@@ -48,18 +48,31 @@ export const useDownloads = () => {
     }
   };
 
-  // Upload pliku - próbuje direct S3, fallback do Vercel dla małych plików
+  // Upload pliku - automatyczny fallback z S3 do Vercel
   const uploadFile = async (file, description = '', category = '', onProgress = null) => {
     setLoading(true);
     setError(null);
 
-    // FALLBACK: Dla plików < 4MB użyj starego Vercel upload
-    const maxVercelSize = 4 * 1024 * 1024; // 4MB
+    const maxVercelSize = 20 * 1024 * 1024; // 20MB - zwiększony limit dla Vercel fallback
+    const maxS3Size = 200 * 1024 * 1024; // 200MB - max rozmiar
+
+    // Walidacja rozmiaru
+    if (file.size > maxS3Size) {
+      setLoading(false);
+      const error = `File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size is 200MB.`;
+      setError(error);
+      return { success: false, error };
+    }
+
+    // Dla małych plików (< 20MB) użyj bezpośrednio Vercel
     if (file.size < maxVercelSize) {
+      console.log(`📤 Small file (${(file.size / 1024 / 1024).toFixed(2)}MB) - uploading via Vercel`);
       return uploadViaVercel(file, description, category, onProgress);
     }
 
-    // Dla plików >= 4MB spróbuj direct S3 upload
+    // Dla dużych plików (>= 20MB) spróbuj S3, z automatycznym fallback do Vercel
+    console.log(`📤 Large file (${(file.size / 1024 / 1024).toFixed(2)}MB) - trying S3 direct upload`);
+
     try {
       // Krok 1: Pobierz presigned URL z API
       const presignedResponse = await fetch('/api/downloads/presigned-url', {
@@ -95,6 +108,7 @@ export const useDownloads = () => {
         // Success - plik uploadowany do S3
         xhr.addEventListener('load', async () => {
           if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('✅ S3 upload successful');
             // Krok 3: Zapisz metadata do bazy danych
             try {
               const saveResponse = await fetch('/api/downloads/save-metadata', {
@@ -127,11 +141,19 @@ export const useDownloads = () => {
               resolve({ success: false, error: 'Failed to save file metadata' });
             }
           } else if (xhr.status === 403) {
-            // CORS error - fallback do Vercel jeśli plik jest mały
-            setLoading(false);
-            const error = 'S3 CORS not configured. Please apply CORS configuration in AWS (see S3_CORS_CONFIG.md)';
-            setError(error);
-            resolve({ success: false, error });
+            // CORS error - automatyczny fallback do Vercel jeśli plik < 20MB
+            console.warn('⚠️ S3 CORS error - falling back to Vercel upload');
+
+            if (file.size < maxVercelSize) {
+              console.log('🔄 Retrying via Vercel...');
+              // NIE resetuj loading - uploadViaVercel to zrobi
+              resolve(uploadViaVercel(file, description, category, onProgress));
+            } else {
+              setLoading(false);
+              const error = 'File too large for Vercel upload. Please configure S3 CORS (see S3_CORS_CONFIG.md)';
+              setError(error);
+              resolve({ success: false, error });
+            }
           } else {
             setLoading(false);
             const error = `S3 upload failed: ${xhr.status}`;
@@ -140,12 +162,20 @@ export const useDownloads = () => {
           }
         });
 
-        // Error - może być CORS
-        xhr.addEventListener('error', () => {
-          setLoading(false);
-          const error = 'S3 upload failed - CORS not configured. See S3_CORS_CONFIG.md for setup instructions.';
-          setError(error);
-          resolve({ success: false, error });
+        // Error - może być CORS, spróbuj fallback
+        xhr.addEventListener('error', async () => {
+          console.warn('⚠️ S3 upload error - trying Vercel fallback');
+
+          if (file.size < maxVercelSize) {
+            console.log('🔄 Retrying via Vercel...');
+            // NIE resetuj loading - uploadViaVercel to zrobi
+            resolve(uploadViaVercel(file, description, category, onProgress));
+          } else {
+            setLoading(false);
+            const error = 'S3 upload failed - CORS not configured. File too large for Vercel. See S3_CORS_CONFIG.md';
+            setError(error);
+            resolve({ success: false, error });
+          }
         });
 
         // Timeout
@@ -171,14 +201,24 @@ export const useDownloads = () => {
         xhr.send(file); // Send file directly (not FormData)
       });
     } catch (error) {
+      console.error('❌ Upload error:', error);
       setLoading(false);
+
+      // Ostatni fallback do Vercel
+      if (file.size < maxVercelSize) {
+        console.log('🔄 Exception caught - trying Vercel fallback');
+        return uploadViaVercel(file, description, category, onProgress);
+      }
+
       setError(error.message || 'Upload failed');
       return { success: false, error: error.message };
     }
   };
 
-  // FALLBACK: Upload przez Vercel API (dla małych plików < 4MB)
+  // FALLBACK: Upload przez Vercel API (dla plików < 20MB)
   const uploadViaVercel = async (file, description = '', category = '', onProgress = null) => {
+    console.log(`📤 Uploading via Vercel API: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
     return new Promise((resolve) => {
       const formData = new FormData();
       formData.append('file', file);
