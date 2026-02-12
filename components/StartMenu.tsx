@@ -9,6 +9,7 @@ interface DesktopIcon {
   type: "app" | "link" | "folder";
   action: () => void;
   folder?: string;
+  iconImage?: string;
 }
 
 interface StartMenuProps {
@@ -41,7 +42,11 @@ export default function StartMenu({ show, onClose, desktopIcons, session }: Star
                                 }}
                                 className="w-full text-left px-2 py-1 hover:bg-[#000080] hover:text-white flex items-center gap-2 text-sm"
                             >
-                                <span className="text-base">{item.icon}</span>
+                                {item.iconImage ? (
+                                    <img src={item.iconImage} alt="" className="w-4 h-4 object-contain" />
+                                ) : (
+                                    <span className="text-base">{item.icon}</span>
+                                )}
                                 <span>{item.label.replace('.exe', '')}</span>
                             </button>
                         ))}

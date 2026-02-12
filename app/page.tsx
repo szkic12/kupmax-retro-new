@@ -32,6 +32,7 @@ interface DesktopIcon {
   type: "app" | "link" | "folder";
   action: () => void;
   folder?: string;
+  iconImage?: string; // Opcjonalny obrazek zamiast emoji
 }
 
 export default function Home() {
@@ -201,6 +202,7 @@ export default function Home() {
       label: "AI Studio.lnk",
       type: "link",
       action: () => window.open("https://ai.kupmax.pl", "_blank"),
+      iconImage: "/icons/icon-48.png", // Logo KupMax
     },
     {
       id: "vibe3d",
@@ -208,6 +210,7 @@ export default function Home() {
       label: "Vibe3D.apk",
       type: "link",
       action: () => window.open("https://play.google.com/store/apps/details?id=com.kupmax.vibe3d", "_blank"),
+      iconImage: "/images/vibe3d_logo.png",
     },
     {
       id: "roblox",
@@ -354,6 +357,7 @@ export default function Home() {
       return {
         key,
         icon: iconDef?.icon || "📁",
+        iconImage: iconDef?.iconImage,
         label: iconDef?.label.replace('.exe', '') || key.charAt(0).toUpperCase() + key.slice(1),
       }
     });
@@ -363,6 +367,7 @@ export default function Home() {
     openWindowsList.push({
       key: `folder-${openFolder}`,
       icon: folderIconDef?.icon || "📁",
+      iconImage: folderIconDef?.iconImage,
       label: openFolder,
     });
   }
@@ -395,7 +400,12 @@ export default function Home() {
               aria-label={`Przełącz na okno ${win.label}`}
               aria-pressed={activeWindow === win.key}
             >
-              <span role="img" aria-hidden="true">{win.icon}</span><span className="truncate">{win.label}</span>
+              {win.iconImage ? (
+                <img src={win.iconImage} alt="" className="w-4 h-4 object-contain" />
+              ) : (
+                <span role="img" aria-hidden="true">{win.icon}</span>
+              )}
+              <span className="truncate">{win.label}</span>
             </button>
           ))}
         </div>
@@ -419,7 +429,11 @@ export default function Home() {
             aria-label={`Otwórz ${item.label}`}
           >
             <div className={`w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white/10 rounded hover:bg-white/20 transition-colors ${["ai-studio", "vibe3d", "roblox"].includes(item.id) ? "ring-2 ring-yellow-400" : ""}`}>
-              <span className="text-3xl sm:text-4xl" role="img" aria-hidden="true">{item.icon}</span>
+              {item.iconImage ? (
+                <img src={item.iconImage} alt={item.label} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+              ) : (
+                <span className="text-3xl sm:text-4xl" role="img" aria-hidden="true">{item.icon}</span>
+              )}
             </div>
             <span className="text-[10px] sm:text-xs text-white text-center mt-1 drop-shadow-md font-medium max-w-[80px] truncate">{item.label}</span>
           </button>
