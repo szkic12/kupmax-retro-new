@@ -151,11 +151,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Batch save all files to database at once (single write operation)
+    // Batch save all files to database at once (single write operation with lock)
     if (filesToSave.length > 0) {
       logger.log(`Saving ${filesToSave.length} files to database...`);
       try {
-        const savedFiles = FileDatabase.addFiles(filesToSave);
+        const savedFiles = await FileDatabase.addFiles(filesToSave);
         uploadedFiles.push(...savedFiles);
         logger.log(`Successfully saved ${savedFiles.length} files to database`);
       } catch (error: any) {
