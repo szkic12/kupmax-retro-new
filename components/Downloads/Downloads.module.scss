@@ -542,6 +542,20 @@
   color: #000080;
 }
 
+.progressHint {
+  text-align: center;
+  font-size: 11px;
+  color: #808080;
+  margin-top: 8px;
+  font-style: italic;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .formFields {
   display: flex;
   flex-direction: column;

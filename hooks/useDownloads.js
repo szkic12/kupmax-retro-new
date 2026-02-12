@@ -48,46 +48,94 @@ export const useDownloads = () => {
     }
   };
 
-  // Upload pliku
-  const uploadFile = async (file, description = '', category = '') => {
+  // Upload pliku z prawdziwym progress tracking
+  const uploadFile = async (file, description = '', category = '', onProgress = null) => {
     setLoading(true);
     setError(null);
 
-    try {
+    return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('description', description);
       formData.append('category', category);
 
-      const response = await fetch('/api/downloads/upload', {
-        method: 'POST',
-        body: formData,
+      const xhr = new XMLHttpRequest();
+
+      // Progress tracking
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          onProgress(percentComplete);
+        }
       });
 
-      const data = await response.json();
+      // Success
+      xhr.addEventListener('load', async () => {
+        setLoading(false);
 
-      if (data.success) {
-        // Odśwież listę plików
-        await fetchFiles();
-        return { success: true, file: data.file };
-      } else {
-        setError(data.error || 'Upload failed');
-        return { success: false, error: data.error };
-      }
-    } catch (err) {
-      setError('Upload error: ' + err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+              await fetchFiles();
+              resolve({ success: true, file: data.file });
+            } else {
+              setError(data.error || 'Upload failed');
+              resolve({ success: false, error: data.error });
+            }
+          } catch (err) {
+            setError('Failed to parse response');
+            resolve({ success: false, error: 'Failed to parse response' });
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            setError(data.error || 'Upload failed');
+            resolve({ success: false, error: data.error || 'Upload failed' });
+          } catch (err) {
+            setError(`Upload failed: ${xhr.status}`);
+            resolve({ success: false, error: `Upload failed: ${xhr.status}` });
+          }
+        }
+      });
+
+      // Error
+      xhr.addEventListener('error', () => {
+        setLoading(false);
+        const error = 'Network error during upload';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Timeout
+      xhr.addEventListener('timeout', () => {
+        setLoading(false);
+        const error = 'Upload timeout - file too large or connection too slow';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Abort
+      xhr.addEventListener('abort', () => {
+        setLoading(false);
+        const error = 'Upload cancelled';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Configure and send
+      xhr.open('POST', '/api/downloads/upload');
+      xhr.timeout = 600000; // 10 minutes timeout
+      xhr.send(formData);
+    });
   };
 
-  // Upload wielu plików
-  const uploadMultipleFiles = async (files, category = '') => {
+  // Upload wielu plików z prawdziwym progress tracking
+  const uploadMultipleFiles = async (files, category = '', onProgress = null) => {
     setLoading(true);
     setError(null);
 
-    try {
+    return new Promise((resolve, reject) => {
       const formData = new FormData();
 
       // Append all files
@@ -97,32 +145,80 @@ export const useDownloads = () => {
 
       formData.append('category', category);
 
-      const response = await fetch('/api/downloads/upload', {
-        method: 'POST',
-        body: formData,
+      const xhr = new XMLHttpRequest();
+
+      // Progress tracking
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          onProgress(percentComplete);
+        }
       });
 
-      const data = await response.json();
+      // Success
+      xhr.addEventListener('load', async () => {
+        setLoading(false);
 
-      if (data.success) {
-        // Odśwież listę plików
-        await fetchFiles();
-        return {
-          success: true,
-          files: data.files,
-          partialSuccess: data.partialSuccess,
-          errors: data.errors,
-        };
-      } else {
-        setError(data.error || 'Upload failed');
-        return { success: false, error: data.error };
-      }
-    } catch (err) {
-      setError('Upload error: ' + err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+              await fetchFiles();
+              resolve({
+                success: true,
+                files: data.files,
+                partialSuccess: data.partialSuccess,
+                errors: data.errors,
+              });
+            } else {
+              setError(data.error || 'Upload failed');
+              resolve({ success: false, error: data.error });
+            }
+          } catch (err) {
+            setError('Failed to parse response');
+            resolve({ success: false, error: 'Failed to parse response' });
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            setError(data.error || 'Upload failed');
+            resolve({ success: false, error: data.error || 'Upload failed' });
+          } catch (err) {
+            setError(`Upload failed: ${xhr.status}`);
+            resolve({ success: false, error: `Upload failed: ${xhr.status}` });
+          }
+        }
+      });
+
+      // Error
+      xhr.addEventListener('error', () => {
+        setLoading(false);
+        const error = 'Network error during upload';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Timeout
+      xhr.addEventListener('timeout', () => {
+        setLoading(false);
+        const error = 'Upload timeout - files too large or connection too slow';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Abort
+      xhr.addEventListener('abort', () => {
+        setLoading(false);
+        const error = 'Upload cancelled';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Configure and send
+      xhr.open('POST', '/api/downloads/upload');
+      xhr.timeout = 600000; // 10 minutes timeout
+      xhr.send(formData);
+    });
   };
 
   // Pobierz plik

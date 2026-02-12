@@ -4,5 +4,11 @@
       "maxDuration": 300,
       "memory": 3008
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/downloads/upload",
+      "destination": "/api/downloads/upload"
+    }
+  ]
 }

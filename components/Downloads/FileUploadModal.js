@@ -149,29 +149,20 @@ const FileUploadModal = ({ onClose }) => {
     setProgress(0);
 
     try {
-      // Symulacja progressu
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
-
       let result;
+
+      // Progress callback
+      const onProgress = (percent) => {
+        setProgress(percent);
+      };
 
       if (selectedFiles.length === 1) {
         // Single file upload (backwards compatibility)
-        result = await uploadFile(selectedFiles[0], description, category);
+        result = await uploadFile(selectedFiles[0], description, category, onProgress);
       } else {
         // Multiple files upload
-        result = await uploadMultipleFiles(selectedFiles, category);
+        result = await uploadMultipleFiles(selectedFiles, category, onProgress);
       }
-
-      clearInterval(progressInterval);
-      setProgress(100);
 
       if (result.success) {
         // Play success sound
@@ -194,10 +185,12 @@ const FileUploadModal = ({ onClose }) => {
         }, 2000);
       } else {
         showNotification('❌ Upload failed: ' + result.error, 'error');
+        setProgress(0);
       }
     } catch (error) {
       logger.error('Upload error:', error);
       showNotification('❌ Upload failed: ' + error.message, 'error');
+      setProgress(0);
     } finally {
       setUploading(false);
     }
@@ -329,7 +322,7 @@ const FileUploadModal = ({ onClose }) => {
           {uploading && (
             <div className={styles.progressContainer}>
               <div className={styles.progressBar}>
-                <div 
+                <div
                   className={styles.progressFill}
                   style={{ width: `${progress}%` }}
                 />
@@ -337,6 +330,11 @@ const FileUploadModal = ({ onClose }) => {
               <div className={styles.progressText}>
                 {progress < 100 ? `UPLOADING... ${progress}%` : 'COMPLETE!'}
               </div>
+              {progress > 85 && progress < 100 && (
+                <div className={styles.progressHint}>
+                  Processing large file... This may take a while. Please wait.
+                </div>
+              )}
             </div>
           )}
 
