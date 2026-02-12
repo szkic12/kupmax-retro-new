@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
       uploadedAt: new Date().toISOString(),
     };
 
-    // Save to database
-    const savedFile = FileDatabase.addFile(fileData);
+    // Save to database (now async with S3 storage)
+    const savedFile = await FileDatabase.addFile(fileData);
 
     logger.log(`File metadata saved: ${savedFile.id}`);
 

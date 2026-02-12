@@ -11,7 +11,7 @@ export async function GET(
     const { id } = await params;
 
     // Find file in database
-    const file = FileDatabase.getFileById(id);
+    const file = await FileDatabase.getFileById(id);
 
     if (!file) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function GET(
     }
 
     // Increment download count in database
-    const updatedFile = FileDatabase.incrementDownload(id);
+    const updatedFile = await FileDatabase.incrementDownload(id);
 
     // Return download URL
     return NextResponse.json({

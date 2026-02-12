@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
       sortOrder
     };
 
-    const result = FileDatabase.getPaginatedFiles(page, limit, filters);
-    const stats = FileDatabase.getStats();
+    const result = await FileDatabase.getPaginatedFiles(page, limit, filters);
+    const stats = await FileDatabase.getStats();
 
     return NextResponse.json({
       success: true,
