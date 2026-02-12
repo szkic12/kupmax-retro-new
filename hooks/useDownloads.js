@@ -48,11 +48,18 @@ export const useDownloads = () => {
     }
   };
 
-  // Upload pliku bezpośrednio do S3 (omija Vercel limit)
+  // Upload pliku - próbuje direct S3, fallback do Vercel dla małych plików
   const uploadFile = async (file, description = '', category = '', onProgress = null) => {
     setLoading(true);
     setError(null);
 
+    // FALLBACK: Dla plików < 4MB użyj starego Vercel upload
+    const maxVercelSize = 4 * 1024 * 1024; // 4MB
+    if (file.size < maxVercelSize) {
+      return uploadViaVercel(file, description, category, onProgress);
+    }
+
+    // Dla plików >= 4MB spróbuj direct S3 upload
     try {
       // Krok 1: Pobierz presigned URL z API
       const presignedResponse = await fetch('/api/downloads/presigned-url', {
@@ -74,7 +81,7 @@ export const useDownloads = () => {
       }
 
       // Krok 2: Upload bezpośrednio do S3
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const xhr = new XMLHttpRequest();
 
         // Progress tracking dla S3 upload
@@ -119,6 +126,12 @@ export const useDownloads = () => {
               setError('Failed to save file metadata');
               resolve({ success: false, error: 'Failed to save file metadata' });
             }
+          } else if (xhr.status === 403) {
+            // CORS error - fallback do Vercel jeśli plik jest mały
+            setLoading(false);
+            const error = 'S3 CORS not configured. Please apply CORS configuration in AWS (see S3_CORS_CONFIG.md)';
+            setError(error);
+            resolve({ success: false, error });
           } else {
             setLoading(false);
             const error = `S3 upload failed: ${xhr.status}`;
@@ -127,10 +140,10 @@ export const useDownloads = () => {
           }
         });
 
-        // Error
+        // Error - może być CORS
         xhr.addEventListener('error', () => {
           setLoading(false);
-          const error = 'Network error during S3 upload';
+          const error = 'S3 upload failed - CORS not configured. See S3_CORS_CONFIG.md for setup instructions.';
           setError(error);
           resolve({ success: false, error });
         });
@@ -164,7 +177,75 @@ export const useDownloads = () => {
     }
   };
 
-  // Upload wielu plików bezpośrednio do S3
+  // FALLBACK: Upload przez Vercel API (dla małych plików < 4MB)
+  const uploadViaVercel = async (file, description = '', category = '', onProgress = null) => {
+    return new Promise((resolve) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (description) formData.append('description', description);
+      if (category) formData.append('category', category);
+
+      const xhr = new XMLHttpRequest();
+
+      // Progress tracking
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          onProgress(percentComplete);
+        }
+      });
+
+      // Success
+      xhr.addEventListener('load', async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.success) {
+              setLoading(false);
+              await fetchFiles();
+              resolve({ success: true, file: result.file });
+            } else {
+              setLoading(false);
+              setError(result.error || 'Upload failed');
+              resolve({ success: false, error: result.error });
+            }
+          } catch (err) {
+            setLoading(false);
+            setError('Failed to parse response');
+            resolve({ success: false, error: 'Failed to parse response' });
+          }
+        } else {
+          setLoading(false);
+          const error = `Upload failed: ${xhr.status}`;
+          setError(error);
+          resolve({ success: false, error });
+        }
+      });
+
+      // Error
+      xhr.addEventListener('error', () => {
+        setLoading(false);
+        const error = 'Network error during upload';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Timeout
+      xhr.addEventListener('timeout', () => {
+        setLoading(false);
+        const error = 'Upload timeout';
+        setError(error);
+        resolve({ success: false, error });
+      });
+
+      // Send request
+      xhr.open('POST', '/api/downloads/upload');
+      xhr.timeout = 600000; // 10 minutes
+      xhr.send(formData);
+    });
+  };
+
+  // Upload wielu plików (używa odpowiedniej metody dla każdego)
   const uploadMultipleFiles = async (files, category = '', onProgress = null) => {
     setLoading(true);
     setError(null);
@@ -178,7 +259,7 @@ export const useDownloads = () => {
       // Calculate total size
       files.forEach(f => totalBytes += f.size);
 
-      // Upload each file sequentially
+      // Upload each file sequentially (używa uploadFile który sam wybiera metodę)
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
@@ -190,7 +271,7 @@ export const useDownloads = () => {
             if (onProgress) onProgress(totalPercent);
           };
 
-          // Upload single file
+          // Upload single file (auto-selects Vercel or S3 based on size)
           const result = await uploadFile(file, '', category, fileProgress);
 
           if (result.success) {
@@ -207,7 +288,7 @@ export const useDownloads = () => {
       setLoading(false);
 
       if (uploadedFiles.length === 0) {
-        setError('All uploads failed');
+        setError('All uploads failed. For large files (>4MB), please configure S3 CORS - see S3_CORS_CONFIG.md');
         return {
           success: false,
           error: 'All uploads failed',
