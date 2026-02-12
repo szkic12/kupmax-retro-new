@@ -92,16 +92,22 @@ export default function CookieConsent() {
             {!showSettings ? (
               <>
                 <div className={styles.message}>
-                  <h3>Ta strona używa plików cookie</h3>
+                  <h3>Witaj w kupmax.pl!</h3>
+                  <p>
+                    Korzystając z naszej strony, akceptujesz pliki cookie oraz nasz{' '}
+                    <a href="/bulletin" className="font-bold underline">
+                      Regulamin Serwisu (Terms of Service)
+                    </a>.
+                  </p>
                   <p>
                     Używamy plików cookie aby zapewnić prawidłowe działanie strony,
-                    zapamiętać Twoje preferencje oraz analizować ruch na stronie.
+                    zapamiętać Twoje preferencje oraz analizować ruch.
                     Możesz zaakceptować wszystkie cookies lub dostosować ustawienia.
                   </p>
                   <p className={styles.privacy}>
-                    Więcej informacji znajdziesz w naszej{' '}
-                    <a href="/legal/privacy-policy" target="_blank">
-                      Polityce Prywatności
+                    Szczegóły znajdziesz w{' '}
+                    <a href="/bulletin" target="_blank">
+                      Regulaminie i Polityce Cookies
                     </a>
                     .
                   </p>
