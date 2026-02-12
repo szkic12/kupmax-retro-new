@@ -18,7 +18,8 @@ export async function GET(
     'FAQ',
     'OBSLUGA_KLIENTA',
     'POLITYKA_DOSTEPNOSCI',
-    'REGULAMIN_VIBEHUB3D'
+    'REGULAMIN_VIBEHUB3D',
+    'privacy-policy'
   ];
 
   if (!allowedFiles.includes(file)) {
@@ -26,6 +27,20 @@ export async function GET(
   }
 
   try {
+    // Check for privacy-policy in public/legal first
+    if (file === 'privacy-policy') {
+      const publicPath = path.join(process.cwd(), 'public', 'legal', `${file}.txt`);
+      if (fs.existsSync(publicPath)) {
+        const content = fs.readFileSync(publicPath, 'utf-8');
+        return new NextResponse(content, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        });
+      }
+    }
+
+    // Fallback to documents/active
     const filePath = path.join(process.cwd(), 'documents', 'active', `${file}.md`);
     const content = fs.readFileSync(filePath, 'utf-8');
 

@@ -1,0 +1,247 @@
+// Cookie Consent Banner - Windows 95 Style
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+}
+
+.banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: 600px;
+  width: calc(100% - 40px);
+  font-family: 'Courier New', monospace;
+
+  @media (max-width: 768px) {
+    bottom: 0;
+    left: 0;
+    transform: none;
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+.window {
+  background: #c0c0c0;
+  border: 2px outset #ffffff;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+.titleBar {
+  background: linear-gradient(180deg, #000080 0%, #1084d0 100%);
+  padding: 4px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ffffff;
+}
+
+.titleText {
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.closeButton {
+  background: #c0c0c0;
+  border: 2px outset #ffffff;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #000;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    background: #d0d0d0;
+  }
+
+  &:active {
+    border: 2px inset #ffffff;
+  }
+}
+
+.content {
+  padding: 16px;
+}
+
+.message {
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #000080;
+    font-weight: bold;
+  }
+
+  p {
+    margin: 8px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #000;
+  }
+}
+
+.privacy {
+  font-size: 12px !important;
+  color: #666 !important;
+
+  a {
+    color: #000080;
+    text-decoration: underline;
+
+    &:hover {
+      color: #0000ff;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+}
+
+.button {
+  padding: 8px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  border: 2px outset #ffffff;
+  transition: none;
+
+  &:active {
+    border: 2px inset #ffffff;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+}
+
+.buttonPrimary {
+  background: #000080;
+  color: #ffffff;
+
+  &:hover {
+    background: #1084d0;
+  }
+}
+
+.buttonSecondary {
+  background: #c0c0c0;
+  color: #000;
+
+  &:hover {
+    background: #d0d0d0;
+  }
+}
+
+.buttonSettings {
+  background: #808080;
+  color: #ffffff;
+
+  &:hover {
+    background: #909090;
+  }
+}
+
+// Settings view
+
+.settings {
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #000080;
+    font-weight: bold;
+  }
+}
+
+.settingsDesc {
+  margin: 8px 0 16px 0;
+  font-size: 13px;
+  color: #000;
+}
+
+.cookieTypes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cookieType {
+  background: #ffffff;
+  border: 2px inset #c0c0c0;
+  padding: 10px;
+}
+
+.cookieHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.cookieLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+
+  strong {
+    color: #000;
+  }
+
+  input:disabled ~ & {
+    cursor: not-allowed;
+  }
+}
+
+.required {
+  font-size: 11px;
+  color: #808080;
+  font-weight: normal;
+}
+
+.cookieDesc {
+  margin: 4px 0 0 24px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}

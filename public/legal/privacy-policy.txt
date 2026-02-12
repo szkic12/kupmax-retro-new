@@ -1,0 +1,74 @@
+POLITYKA PRYWATNOŚCI - KUPMAX.PL
+==================================
+
+Ostatnia aktualizacja: 2026-02-12
+
+1. ADMINISTRATOR DANYCH
+------------------------
+Administratorem danych osobowych jest KupMax, dostępny pod adresem: kupmax.pl
+
+2. PLIKI COOKIE
+---------------
+Nasza strona wykorzystuje pliki cookie w następujących celach:
+
+2.1 NIEZBĘDNE (zawsze aktywne)
+- Zapewnienie prawidłowego działania strony
+- Sesje użytkownika
+- Bezpieczeństwo
+
+2.2 FUNKCJONALNE (opcjonalne)
+- Zapamiętywanie preferencji użytkownika
+- Ustawienia języka i motywu
+- Personalizacja interfejsu
+
+2.3 ANALITYCZNE (opcjonalne)
+- Anonimowe statystyki odwiedzin
+- Analiza zachowań użytkowników
+- Optymalizacja wydajności strony
+
+2.4 MARKETINGOWE (opcjonalne)
+- Wyświetlanie spersonalizowanych reklam
+- Śledzenie konwersji
+- Remarketing
+
+3. TWOJE PRAWA
+--------------
+Masz prawo do:
+- Dostępu do swoich danych osobowych
+- Sprostowania nieprawidłowych danych
+- Usunięcia danych ("prawo do bycia zapomnianym")
+- Ograniczenia przetwarzania
+- Przenoszenia danych
+- Wniesienia sprzeciwu wobec przetwarzania
+- Wycofania zgody w dowolnym momencie
+
+4. PRZECHOWYWANIE DANYCH
+-------------------------
+Dane osobowe przechowujemy tylko tak długo, jak jest to niezbędne do realizacji celów,
+dla których zostały zebrane, lub zgodnie z obowiązującymi przepisami prawa.
+
+5. BEZPIECZEŃSTWO
+-----------------
+Stosujemy odpowiednie środki techniczne i organizacyjne w celu ochrony danych osobowych:
+- Szyfrowanie połączeń (HTTPS)
+- Bezpieczne przechowywanie danych
+- Regularne audyty bezpieczeństwa
+- Ograniczony dostęp do danych
+
+6. KONTAKT
+----------
+W sprawach związanych z ochroną danych osobowych możesz się z nami skontaktować:
+- Email: kontakt@kupmax.pl
+- Strona: https://kupmax.pl
+
+7. ZMIANY W POLITYCE
+--------------------
+Zastrzegamy sobie prawo do wprowadzania zmian w niniejszej Polityce Prywatności.
+O wszelkich zmianach poinformujemy użytkowników za pośrednictwem strony internetowej.
+
+8. PODSTAWA PRAWNA
+------------------
+Przetwarzanie danych osobowych odbywa się na podstawie:
+- RODO (Rozporządzenie UE 2016/679)
+- Dyrektywa ePrivacy (2002/58/WE)
+- Ustawa o ochronie danych osobowych
