@@ -50,9 +50,9 @@ export async function GET(request: NextRequest) {
       .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       logger.error('Error fetching advertisement:', error);
       return NextResponse.json({ error: 'Failed to fetch advertisement' }, { status: 500 });
     }
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       .from('advertisements')
       .select('*')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (currentAd) {
       // Zapisz do historii
