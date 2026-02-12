@@ -403,22 +403,118 @@
 
 .fileSelected {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   background: #fff;
   padding: 12px;
   border: 2px inset #c0c0c0;
 }
 
-.removeFile {
-  background: none;
-  border: none;
-  cursor: pointer;
+.filesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  color: #000080;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #c0c0c0;
+}
+
+.filesList {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: #f0f0f0;
+  border: 1px solid #d0d0d0;
+  font-size: 12px;
+}
+
+.fileIcon {
   font-size: 16px;
-  margin-left: auto;
-  
+  flex-shrink: 0;
+}
+
+.fileName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  color: #808080;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.moreFiles {
+  text-align: center;
+  padding: 8px;
+  color: #808080;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.totalSize {
+  padding-top: 8px;
+  border-top: 1px solid #c0c0c0;
+  font-weight: bold;
+  text-align: right;
+  color: #000080;
+}
+
+.folderUpload {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.folderButton {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 10px 20px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover:not(:disabled) {
+    background: #d0d0d0;
+  }
+
+  &:active:not(:disabled) {
+    border: 2px inset #c0c0c0;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.removeFile {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+
   &:hover {
-    transform: scale(1.1);
+    background: #d0d0d0;
+  }
+
+  &:active {
+    border: 2px inset #c0c0c0;
   }
 }
 

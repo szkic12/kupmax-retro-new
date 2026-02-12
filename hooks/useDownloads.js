@@ -82,6 +82,49 @@ export const useDownloads = () => {
     }
   };
 
+  // Upload wielu plików
+  const uploadMultipleFiles = async (files, category = '') => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+
+      // Append all files
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      formData.append('category', category);
+
+      const response = await fetch('/api/downloads/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Odśwież listę plików
+        await fetchFiles();
+        return {
+          success: true,
+          files: data.files,
+          partialSuccess: data.partialSuccess,
+          errors: data.errors,
+        };
+      } else {
+        setError(data.error || 'Upload failed');
+        return { success: false, error: data.error };
+      }
+    } catch (err) {
+      setError('Upload error: ' + err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Pobierz plik
   const downloadFile = async (fileId) => {
     try {
@@ -136,6 +179,7 @@ export const useDownloads = () => {
     stats,
     fetchFiles,
     uploadFile,
+    uploadMultipleFiles,
     downloadFile,
     changePage,
     searchFiles,

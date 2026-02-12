@@ -60,67 +60,98 @@ function validateFile(file: File) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    const files = formData.getAll('files') as File[];
     const description = formData.get('description') as string || '';
     const category = formData.get('category') as string || '';
 
-    if (!file) {
+    // Support single file upload (backwards compatibility)
+    const singleFile = formData.get('file') as File | null;
+    if (singleFile && files.length === 0) {
+      files.push(singleFile);
+    }
+
+    if (files.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No file uploaded' },
+        { success: false, error: 'No files uploaded' },
         { status: 400 }
       );
     }
 
-    // Validate file
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      return NextResponse.json(
-        { success: false, error: validation.error },
-        { status: 400 }
-      );
+    const uploadedFiles: any[] = [];
+    const errors: string[] = [];
+
+    // Process each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Validate file
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        errors.push(`${file.name}: ${validation.error}`);
+        continue;
+      }
+
+      try {
+        // Convert file to buffer
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Upload to S3
+        const uploadResult = await S3Service.uploadFile(
+          buffer,
+          file.name,
+          file.type
+        );
+
+        if (!uploadResult.success) {
+          errors.push(`${file.name}: ${uploadResult.error}`);
+          continue;
+        }
+
+        // Add file to database
+        const fileData = {
+          id: `${Date.now()}-${i}`,
+          name: file.name,
+          s3Key: uploadResult.key,
+          size: file.size,
+          type: file.type,
+          description: files.length === 1 ? description : '',
+          category,
+          uploadedAt: new Date().toISOString(),
+        };
+
+        const savedFile = FileDatabase.addFile(fileData);
+        uploadedFiles.push(savedFile);
+      } catch (error: any) {
+        logger.error(`Error uploading file ${file.name}:`, error);
+        errors.push(`${file.name}: ${error.message}`);
+      }
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Upload to S3
-    const uploadResult = await S3Service.uploadFile(
-      buffer,
-      file.name,
-      file.type
-    );
-
-    if (!uploadResult.success) {
+    // Return results
+    if (uploadedFiles.length === 0) {
       return NextResponse.json(
-        { success: false, error: uploadResult.error },
+        { success: false, error: 'All uploads failed', errors },
         { status: 500 }
       );
     }
 
-    // Add file to database
-    const fileData = {
-      id: Date.now().toString(),
-      name: file.name,
-      s3Key: uploadResult.key,
-      size: file.size,
-      type: file.type,
-      description,
-      category,
-      uploadedAt: new Date().toISOString(),
-    };
-
-    const savedFile = FileDatabase.addFile(fileData);
-
     return NextResponse.json({
       success: true,
-      file: savedFile,
+      files: uploadedFiles,
+      file: uploadedFiles[0], // backwards compatibility
+      errors: errors.length > 0 ? errors : undefined,
+      partialSuccess: errors.length > 0,
     });
   } catch (error) {
-    logger.error('Error uploading file:', error);
+    logger.error('Error uploading files:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
+
+// Vercel configuration
+export const runtime = 'nodejs';
+export const maxDuration = 300;

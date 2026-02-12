@@ -105,30 +105,43 @@ const playSuccessSound = () => {
 };
 
 const FileUploadModal = ({ onClose }) => {
-  const { uploadFile } = useDownloads();
-  const [selectedFile, setSelectedFile] = useState(null);
+  const { uploadFile, uploadMultipleFiles } = useDownloads();
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 500 * 1024 * 1024) {
-        alert('File size exceeds 500MB limit');
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Check total size
+      const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+      const maxTotalSize = 500 * 1024 * 1024; // 500MB total
+
+      if (totalSize > maxTotalSize) {
+        showNotification(`Total size exceeds 500MB limit. Current: ${formatFileSize(totalSize)}`, 'error');
         return;
       }
-      setSelectedFile(file);
+
+      // Check individual file sizes
+      const oversized = files.filter(f => f.size > 200 * 1024 * 1024);
+      if (oversized.length > 0) {
+        showNotification(`Some files exceed 200MB limit: ${oversized.map(f => f.name).join(', ')}`, 'error');
+        return;
+      }
+
+      setSelectedFiles(files);
     }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    
-    if (!selectedFile) {
-      showNotification('Please select a file', 'error');
+
+    if (selectedFiles.length === 0) {
+      showNotification('Please select at least one file', 'error');
       return;
     }
 
@@ -136,7 +149,7 @@ const FileUploadModal = ({ onClose }) => {
     setProgress(0);
 
     try {
-      // Symulacja progressu (w prawdziwej aplikacji użyjemy XMLHttpRequest z progress event)
+      // Symulacja progressu
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
@@ -145,20 +158,37 @@ const FileUploadModal = ({ onClose }) => {
           }
           return prev + 10;
         });
-      }, 200);
+      }, 300);
 
-      const result = await uploadFile(selectedFile, description, category);
-      
+      let result;
+
+      if (selectedFiles.length === 1) {
+        // Single file upload (backwards compatibility)
+        result = await uploadFile(selectedFiles[0], description, category);
+      } else {
+        // Multiple files upload
+        result = await uploadMultipleFiles(selectedFiles, category);
+      }
+
       clearInterval(progressInterval);
       setProgress(100);
 
       if (result.success) {
         // Play success sound
         playSuccessSound();
-        
+
         // Show success notification
-        showNotification('✅ File uploaded successfully!', 'success');
-        
+        const fileCount = selectedFiles.length;
+        const message = fileCount === 1
+          ? '✅ File uploaded successfully!'
+          : `✅ ${fileCount} files uploaded successfully!`;
+
+        if (result.partialSuccess) {
+          showNotification(`⚠️ Uploaded ${result.files?.length || 0} of ${fileCount} files`, 'info');
+        } else {
+          showNotification(message, 'success');
+        }
+
         setTimeout(() => {
           onClose();
         }, 2000);
@@ -181,15 +211,26 @@ const FileUploadModal = ({ onClose }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    const files = e.dataTransfer.files;
+
+    const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      const file = files[0];
-      if (file.size > 500 * 1024 * 1024) {
-        alert('File size exceeds 500MB limit');
+      // Check total size
+      const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+      const maxTotalSize = 500 * 1024 * 1024;
+
+      if (totalSize > maxTotalSize) {
+        showNotification(`Total size exceeds 500MB limit. Current: ${formatFileSize(totalSize)}`, 'error');
         return;
       }
-      setSelectedFile(file);
+
+      // Check individual file sizes
+      const oversized = files.filter(f => f.size > 200 * 1024 * 1024);
+      if (oversized.length > 0) {
+        showNotification(`Some files exceed 200MB limit: ${oversized.map(f => f.name).join(', ')}`, 'error');
+        return;
+      }
+
+      setSelectedFiles(files);
     }
   };
 
@@ -203,49 +244,82 @@ const FileUploadModal = ({ onClose }) => {
 
         <div className={styles.modalContent}>
           {/* Drop Zone */}
-          <div 
+          <div
             className={styles.dropZone}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
           >
-            {selectedFile ? (
+            {selectedFiles.length > 0 ? (
               <div className={styles.fileSelected}>
-                <div className={styles.fileIcon}>
-                  {getFileIcon(selectedFile.type)}
+                <div className={styles.filesHeader}>
+                  <span>{selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFiles([]);
+                    }}
+                    className={styles.removeFile}
+                  >
+                    ❌ Clear All
+                  </button>
                 </div>
-                <div className={styles.fileInfo}>
-                  <div className={styles.fileName}>{selectedFile.name}</div>
-                  <div className={styles.fileSize}>
-                    {formatFileSize(selectedFile.size)}
-                  </div>
+                <div className={styles.filesList}>
+                  {selectedFiles.slice(0, 5).map((file, index) => (
+                    <div key={index} className={styles.fileItem}>
+                      <span className={styles.fileIcon}>{getFileIcon(file.type)}</span>
+                      <span className={styles.fileName}>{file.name}</span>
+                      <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                    </div>
+                  ))}
+                  {selectedFiles.length > 5 && (
+                    <div className={styles.moreFiles}>
+                      +{selectedFiles.length - 5} more file{selectedFiles.length - 5 !== 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFile(null);
-                  }}
-                  className={styles.removeFile}
-                >
-                  ❌
-                </button>
+                <div className={styles.totalSize}>
+                  Total: {formatFileSize(selectedFiles.reduce((sum, f) => sum + f.size, 0))}
+                </div>
               </div>
             ) : (
               <div className={styles.dropZoneContent}>
                 <div className={styles.dropZoneIcon}>📁</div>
                 <div className={styles.dropZoneText}>
-                  <p>CLICK TO SELECT FILE</p>
+                  <p>CLICK TO SELECT FILES</p>
                   <p>OR DRAG & DROP HERE</p>
                   <p className={styles.dropZoneHint}>
-                    Max file size: 500MB
+                    Max 500MB total • Multiple files supported
                   </p>
                 </div>
               </div>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
+              multiple
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+          </div>
+
+          {/* Folder upload button */}
+          <div className={styles.folderUpload}>
+            <button
+              type="button"
+              onClick={() => folderInputRef.current?.click()}
+              className={styles.folderButton}
+              disabled={uploading}
+            >
+              📂 SELECT FOLDER
+            </button>
+            <input
+              ref={folderInputRef}
+              type="file"
+              multiple
+              webkitdirectory="true"
+              directory="true"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -300,12 +374,16 @@ const FileUploadModal = ({ onClose }) => {
           >
             CANCEL
           </button>
-          <button 
+          <button
             onClick={handleUpload}
-            disabled={!selectedFile || uploading}
+            disabled={selectedFiles.length === 0 || uploading}
             className={styles.uploadButton}
           >
-            {uploading ? 'UPLOADING...' : 'UPLOAD FILE'}
+            {uploading
+              ? 'UPLOADING...'
+              : selectedFiles.length > 1
+              ? `UPLOAD ${selectedFiles.length} FILES`
+              : 'UPLOAD FILE'}
           </button>
         </div>
       </div>
