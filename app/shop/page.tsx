@@ -4,25 +4,57 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+interface Seller {
+  id: string;
+  name: string;
+  slug?: string;
+  logo?: string;
+}
+
 /**
  * /shop - Stary eBay/Allegro z 1999
  * Aukcje, animowane GIFy "HOT DEAL!", liczniki, marquee
+ * Tylko firmy które ukończyły Hive Sounds (9 planet) mają tu dostęp!
  */
 export default function ShopPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSeller, setSelectedSeller] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartCount, setCartCount] = useState(0);
-  const [showCartPopup, setShowCartPopup] = useState(false);
+
+  // Pobierz firmy które ukończyły Hive Sounds (9 planet)
+  useEffect(() => {
+    fetchSellers();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [selectedSeller]);
+
+  const fetchSellers = async () => {
+    try {
+      const response = await fetch('/api/sellers');
+      const data = await response.json();
+      if (data.sellers) {
+        setSellers(data.sellers);
+      }
+    } catch (error) {
+      logger.error('Error fetching sellers:', error);
+    }
+  };
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/products?perPage=20');
+      let url = '/api/products?perPage=50';
+      if (selectedSeller !== 'all') {
+        url += `&seller=${selectedSeller}`;
+      }
+      if (searchQuery.trim()) {
+        url += `&search=${encodeURIComponent(searchQuery.trim())}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
       if (data.products) {
         setProducts(data.products);
@@ -32,12 +64,6 @@ export default function ShopPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const addToCart = () => {
-    setCartCount(prev => prev + 1);
-    setShowCartPopup(true);
-    setTimeout(() => setShowCartPopup(false), 2000);
   };
 
   // Retro ikona na podstawie nazwy produktu
@@ -62,7 +88,16 @@ export default function ShopPage() {
     return '📦';
   };
 
-  const categories = ['all', 'Electronics', 'Clothing', 'Books', 'Games', 'Other'];
+  // Ikona dla firmy na podstawie nazwy
+  const getSellerIcon = (name: string): string => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('honey') || nameLower.includes('miód')) return '🍯';
+    if (nameLower.includes('boss') || nameLower.includes('game')) return '🎮';
+    if (nameLower.includes('tech')) return '💻';
+    if (nameLower.includes('food') || nameLower.includes('jedzenie')) return '🍕';
+    if (nameLower.includes('art') || nameLower.includes('sztuka')) return '🎨';
+    return '🏪';
+  };
 
   return (
     <div className="min-h-screen" style={{ background: '#f0f0f0' }}>
@@ -114,7 +149,13 @@ export default function ShopPage() {
 
             {/* Search */}
             <div className="flex-1 max-w-xl">
-              <div className="flex">
+              <form
+                className="flex"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  fetchProducts();
+                }}
+              >
                 <input
                   type="text"
                   placeholder="Szukaj produktów..."
@@ -124,6 +165,7 @@ export default function ShopPage() {
                   style={{ background: '#ffffcc' }}
                 />
                 <button
+                  type="submit"
                   className="px-6 py-2 font-bold text-black"
                   style={{
                     background: 'linear-gradient(180deg, #ffcc00 0%, #ff9900 100%)',
@@ -132,48 +174,84 @@ export default function ShopPage() {
                 >
                   🔍 SZUKAJ
                 </button>
-              </div>
+              </form>
             </div>
 
-            {/* Cart */}
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 px-4 py-2 text-white border-2 border-yellow-400 rounded"
-                style={{ background: '#006633' }}
-              >
-                <span className="text-2xl">🛒</span>
-                <span>Koszyk ({cartCount})</span>
-              </button>
-              {showCartPopup && (
-                <div
-                  className="absolute top-full right-0 mt-2 px-4 py-2 text-white rounded animate-bounce"
-                  style={{ background: '#00cc00', whiteSpace: 'nowrap' }}
-                >
-                  ✅ Dodano do koszyka!
-                </div>
-              )}
-            </div>
+            {/* Cart - redirects to ai.kupmax.pl */}
+            <a
+              href="https://ai.kupmax.pl/cart"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 text-white border-2 border-yellow-400 rounded hover:opacity-90 transition-opacity"
+              style={{ background: '#006633' }}
+            >
+              <span className="text-2xl">🛒</span>
+              <span>Koszyk</span>
+            </a>
           </div>
 
-          {/* Categories */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {categories.map((cat) => (
+          {/* Sellers / Firmy które ukończyły Hive Sounds */}
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <span className="text-xs text-gray-400 mr-2" title="Firmy które ukończyły 9 zadań Dźwięków Ula">
+              🐝 Zweryfikowani:
+            </span>
+            {/* Przycisk "Wszystkie" */}
+            <button
+              onClick={() => setSelectedSeller('all')}
+              className="px-4 py-1 text-sm font-bold rounded"
+              style={{
+                background: selectedSeller === 'all'
+                  ? 'linear-gradient(180deg, #ffcc00 0%, #ff9900 100%)'
+                  : '#ffffff',
+                border: '2px solid #003366',
+                color: selectedSeller === 'all' ? '#000' : '#003366',
+              }}
+            >
+              📦 Wszystkie
+            </button>
+            {/* Dynamiczne przyciski firm z 9 planetami */}
+            {sellers.map((seller) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={seller.id}
+                onClick={() => setSelectedSeller(seller.id)}
                 className="px-4 py-1 text-sm font-bold rounded"
                 style={{
-                  background: selectedCategory === cat
+                  background: selectedSeller === seller.id
                     ? 'linear-gradient(180deg, #ffcc00 0%, #ff9900 100%)'
                     : '#ffffff',
                   border: '2px solid #003366',
-                  color: selectedCategory === cat ? '#000' : '#003366',
+                  color: selectedSeller === seller.id ? '#000' : '#003366',
                 }}
               >
-                {cat === 'all' ? '📦 Wszystkie' : cat}
+                {getSellerIcon(seller.name)} {seller.name}
               </button>
             ))}
           </div>
+
+          {/* Info o Hive Sounds - jak zostać sprzedawcą */}
+          {sellers.length === 0 && (
+            <div
+              className="mt-4 p-3 rounded text-center"
+              style={{
+                background: 'linear-gradient(180deg, #1a0033 0%, #330066 100%)',
+                border: '2px solid #9933ff',
+              }}
+            >
+              <p className="text-purple-300 text-sm">
+                🐝 <strong className="text-yellow-400">Dźwięki Ula</strong> - Chcesz sprzedawać tutaj?
+                Ukończ 9 zadań na{' '}
+                <a
+                  href="https://ai.kupmax.pl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 underline hover:text-cyan-300"
+                >
+                  ai.kupmax.pl
+                </a>
+                {' '}i odblokuj dostęp do retro sklepu!
+              </p>
+            </div>
+          )}
         </div>
       </header>
 
@@ -279,6 +357,50 @@ export default function ShopPage() {
                     </span>
                   ))}
                 </div>
+              </div>
+
+              {/* AI KupMax link */}
+              <a
+                href="https://ai.kupmax.pl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center p-3 rounded transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(180deg, #6600cc 0%, #9933ff 100%)',
+                  border: '2px solid #cc99ff',
+                  boxShadow: '0 0 10px rgba(153, 51, 255, 0.5)',
+                }}
+              >
+                <p className="text-white font-bold" style={{ textShadow: '1px 1px 0 #000' }}>
+                  🤖 KupMax AI
+                </p>
+                <p className="text-purple-200 text-xs mt-1">
+                  Nowoczesna platforma!
+                </p>
+              </a>
+
+              {/* Hive Sounds info */}
+              <div
+                className="text-center p-3 rounded"
+                style={{
+                  background: 'linear-gradient(180deg, #1a1a00 0%, #333300 100%)',
+                  border: '2px solid #666600',
+                }}
+              >
+                <p className="text-yellow-400 font-bold text-sm" style={{ textShadow: '1px 1px 0 #000' }}>
+                  🐝 Dźwięki Ula
+                </p>
+                <p className="text-yellow-200 text-xs mt-1 leading-relaxed">
+                  Sprzedawcy w tym sklepie przeszli 9 zadań weryfikacyjnych.
+                </p>
+                <a
+                  href="https://ai.kupmax.pl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 text-xs underline hover:text-cyan-300 block mt-2"
+                >
+                  Chcesz dołączyć? →
+                </a>
               </div>
             </div>
           </aside>
@@ -415,10 +537,12 @@ export default function ShopPage() {
                         <span className="text-gray-500">({Math.floor(Math.random() * 100 + 10)})</span>
                       </div>
 
-                      {/* Buy button */}
-                      <button
-                        onClick={addToCart}
-                        className="w-full py-2 font-bold text-white rounded transition-all hover:scale-105"
+                      {/* Buy button - redirects to ai.kupmax.pl */}
+                      <a
+                        href={`https://ai.kupmax.pl/product/${product.slug || product.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full py-2 font-bold text-white rounded transition-all hover:scale-105 text-center"
                         style={{
                           background: 'linear-gradient(180deg, #ff9900 0%, #cc6600 100%)',
                           border: '2px solid #994d00',
@@ -426,7 +550,7 @@ export default function ShopPage() {
                         }}
                       >
                         🛒 KUP TERAZ!
-                      </button>
+                      </a>
                     </div>
 
                     {/* Auction timer for some items */}
@@ -516,8 +640,8 @@ export default function ShopPage() {
             <div>
               <h4 className="font-bold text-yellow-400 mb-2">📋 Informacje</h4>
               <Link href="/bulletin" className="block hover:text-yellow-400">Regulamin</Link>
-              <p>Polityka prywatności</p>
-              <p>Zwroty i reklamacje</p>
+              <Link href="/bulletin" className="block hover:text-yellow-400">Polityka prywatności</Link>
+              <Link href="/bulletin" className="block hover:text-yellow-400">Zwroty i reklamacje</Link>
             </div>
           </div>
 

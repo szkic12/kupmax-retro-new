@@ -8,8 +8,32 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Fallback produkty - pokazywane gdy brak prawdziwych produktów z showInRetro = true
-// Usunąć/zastąpić gdy KUPMAX PSA doda prawdziwe produkty (BossxD, Inception Honey)
+// Firmy muszą ukończyć 9 zadań Hive Sounds żeby mieć dostęp do retro shopu
+const REQUIRED_PLANETS = 9;
+
+// Funkcja pobierająca ID firm które ukończyły Hive Sounds (9 planet)
+async function getAllowedSellerIds(): Promise<string[]> {
+  try {
+    const { data: companies, error } = await supabase
+      .from('Company')
+      .select('id')
+      .eq('activePlanets', REQUIRED_PLANETS)
+      .eq('companyStatus', 'APPROVED')
+      .eq('verified', true);
+
+    if (error || !companies) {
+      logger.error('Error fetching allowed sellers:', error?.message);
+      return [];
+    }
+
+    return companies.map(c => c.id);
+  } catch (error) {
+    logger.error('Error in getAllowedSellerIds:', error);
+    return [];
+  }
+}
+
+// Fallback produkty - pokazywane gdy brak prawdziwych produktów
 const FALLBACK_PRODUCTS = [
   {
     id: 'fallback-1',
@@ -96,35 +120,66 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('perPage') || '12');
-    const category = searchParams.get('category');
+    const seller = searchParams.get('seller');
     const search = searchParams.get('search');
 
     let products: any[] = [];
     let total = 0;
 
-    // Pobierz produkty z Supabase gdzie showInRetro = true
-    // To są produkty które mają się pokazywać w Shop.exe (kupmax.pl)
-    const { data, error, count } = await supabase
+    // Pobierz dynamicznie firmy które ukończyły Hive Sounds (9 planet)
+    const allowedSellerIds = await getAllowedSellerIds();
+
+    if (allowedSellerIds.length === 0) {
+      // Brak firm z 9 planetami - użyj fallback
+      logger.log('No companies with 9 planets found, using fallback products');
+      let filtered = [...FALLBACK_PRODUCTS];
+
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filtered = filtered.filter(p =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description.toLowerCase().includes(searchLower)
+        );
+      }
+
+      const start = (page - 1) * perPage;
+      return NextResponse.json({
+        products: filtered.slice(start, start + perPage),
+        total: filtered.length,
+        page,
+        perPage,
+        hasMore: filtered.length > start + perPage,
+        source: 'fallback',
+        message: 'Żadna firma nie ukończyła jeszcze Hive Sounds (9 planet)',
+      });
+    }
+
+    // Pobierz produkty od firm z 9 planetami
+    let query = supabase
       .from('Product')
       .select('*', { count: 'exact' })
-      .eq('showInRetro', true)
+      .eq('status', 'ACTIVE')
       .eq('moderationStatus', 'APPROVED')
       .order('createdAt', { ascending: false });
+
+    // Filtruj po konkretnym sprzedawcy lub wszystkich dozwolonych
+    if (seller && allowedSellerIds.includes(seller)) {
+      query = query.eq('sellerId', seller);
+    } else {
+      query = query.in('sellerId', allowedSellerIds);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
       logger.error('Supabase error:', error.message);
     }
 
     if (!error && data && data.length > 0) {
-      // Mamy prawdziwe produkty z bazy!
-      logger.log(`Found ${data.length} products with showInRetro=true`);
+      // Mamy prawdziwe produkty od firm z 9 planetami!
+      logger.log(`Found ${data.length} products from Hive Sounds verified companies`);
       products = data;
       total = count || data.length;
-
-      // Filtruj po kategorii jeśli podana
-      if (category && category !== 'all') {
-        products = products.filter((p: any) => p.category === category);
-      }
 
       // Filtruj po wyszukiwaniu
       if (search) {
@@ -133,17 +188,13 @@ export async function GET(req: NextRequest) {
           p.name?.toLowerCase().includes(searchLower) ||
           p.description?.toLowerCase().includes(searchLower)
         );
+        total = products.length;
       }
-
-      total = products.length;
     } else {
-      // Brak produktów z showInRetro=true - użyj fallback
-      logger.log('No products with showInRetro=true, using fallback products');
+      // Brak produktów - użyj fallback
+      logger.log('No products from verified companies, using fallback products');
       let filtered = [...FALLBACK_PRODUCTS];
 
-      if (category && category !== 'all') {
-        filtered = filtered.filter(p => p.category === category);
-      }
       if (search) {
         const searchLower = search.toLowerCase();
         filtered = filtered.filter(p =>
