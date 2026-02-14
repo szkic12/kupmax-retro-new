@@ -10,6 +10,30 @@ export default function Downloads() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncMessage('');
+
+    try {
+      const response = await fetch('/api/downloads/sync');
+      const result = await response.json();
+
+      if (result.success) {
+        setSyncMessage(`✅ ${result.message}. Added ${result.addedFiles} files.`);
+        fetchFiles(); // Refresh list
+      } else {
+        setSyncMessage(`❌ Sync failed: ${result.error}`);
+      }
+    } catch (err) {
+      setSyncMessage(`❌ Network error: ${(err as Error).message}`);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncMessage(''), 5000); // Clear message after 5s
+    }
+  };
 
   useEffect(() => {
     fetchFiles();
@@ -91,20 +115,41 @@ export default function Downloads() {
 
   return (
     <div>
-      {/* Upload button */}
-      <div className="mb-4 flex justify-between items-center">
+      {/* Upload & Sync buttons */}
+      <div className="mb-4 flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-bold">📦 Available Downloads ({stats.totalFiles || files.length})</h3>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          className="px-4 py-2 font-bold text-white rounded transition-all hover:scale-105"
-          style={{
-            background: showUpload ? '#cc0000' : 'linear-gradient(180deg, #009900 0%, #006600 100%)',
-            border: '2px outset #00cc00',
-          }}
-        >
-          {showUpload ? '❌ Cancel' : '⬆️ Upload File'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="px-4 py-2 font-bold text-white rounded transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: syncing ? '#888' : 'linear-gradient(180deg, #0066cc 0%, #003399 100%)',
+              border: '2px outset #0099ff',
+            }}
+            title="Sync S3 files with database"
+          >
+            {syncing ? '⏳ Syncing...' : '🔄 Sync S3'}
+          </button>
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            className="px-4 py-2 font-bold text-white rounded transition-all hover:scale-105"
+            style={{
+              background: showUpload ? '#cc0000' : 'linear-gradient(180deg, #009900 0%, #006600 100%)',
+              border: '2px outset #00cc00',
+            }}
+          >
+            {showUpload ? '❌ Cancel' : '⬆️ Upload File'}
+          </button>
+        </div>
       </div>
+
+      {/* Sync message */}
+      {syncMessage && (
+        <div className="mb-4 p-3 rounded" style={{ background: syncMessage.includes('✅') ? '#90EE90' : '#FFB6C1', border: '2px solid #333' }}>
+          <p className="text-sm font-bold">{syncMessage}</p>
+        </div>
+      )}
 
       {/* Upload form */}
       {showUpload && (
@@ -221,7 +266,14 @@ export default function Downloads() {
           <p>No files uploaded yet. Be the first to upload!</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div
+          className="space-y-3"
+          style={{
+            maxHeight: '600px',
+            overflowY: 'auto',
+            paddingRight: '8px'
+          }}
+        >
           {files.map((file: any) => (
             <div
               key={file.id}
