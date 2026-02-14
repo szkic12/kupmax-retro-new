@@ -558,13 +558,39 @@ export default function DownloadsPage() {
       >
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-wrap justify-center gap-6 text-white text-sm mb-4">
-            <span>📧 Contact Us</span>
+            <Link href="/forum" className="hover:text-yellow-300 transition-colors">
+              📧 Contact Us
+            </Link>
             <span>|</span>
-            <span>📋 Submit Software</span>
+            <button
+              onClick={() => {
+                const uploadSection = document.querySelector('.downloads-component');
+                if (uploadSection) {
+                  uploadSection.scrollIntoView({ behavior: 'smooth' });
+                  // Click the upload button to show form
+                  const uploadBtn = document.querySelector('[data-upload-toggle]') as HTMLButtonElement;
+                  if (uploadBtn && !uploadBtn.textContent?.includes('❌')) {
+                    uploadBtn.click();
+                  }
+                }
+              }}
+              className="hover:text-yellow-300 transition-colors cursor-pointer bg-transparent border-0 p-0 font-inherit"
+            >
+              📋 Submit Software
+            </button>
             <span>|</span>
-            <span>⚠️ Report Bug</span>
+            <Link href="/forum" className="hover:text-yellow-300 transition-colors">
+              ⚠️ Report Bug
+            </Link>
             <span>|</span>
-            <span>📜 Terms of Use</span>
+            <a
+              href="https://ai.kupmax.pl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-yellow-300 transition-colors"
+            >
+              📜 Terms of Use
+            </a>
           </div>
 
           <div className="text-center">

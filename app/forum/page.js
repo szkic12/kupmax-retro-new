@@ -39,9 +39,9 @@ export default function ForumPage() {
         logger.error('Error verifying session:', err);
       });
 
-    // Cleanup: Przywróć overflow: hidden gdy użytkownik opuszcza stronę
+    // Cleanup: Przywróć overflow: auto gdy użytkownik opuszcza stronę
     return () => {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'auto';
     };
   }, [activeCategory, sortBy]);
 

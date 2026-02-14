@@ -25,7 +25,7 @@ export default function NewThreadPage() {
     document.body.style.overflow = 'auto';
     fetchCategories();
     return () => {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'auto';
     };
   }, []);
 

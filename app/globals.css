@@ -29,7 +29,7 @@ body {
   color: #000000;
   font-family: 'MS Sans Serif', 'Microsoft Sans Serif', 'Segoe UI', Tahoma, sans-serif;
   font-size: 11px;
-  overflow: hidden;
+  overflow: auto;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;

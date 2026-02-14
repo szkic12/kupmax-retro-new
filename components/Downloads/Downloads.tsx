@@ -114,7 +114,7 @@ export default function Downloads() {
   }
 
   return (
-    <div>
+    <div className="downloads-component">
       {/* Upload & Sync buttons */}
       <div className="mb-4 flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-bold">📦 Available Downloads ({stats.totalFiles || files.length})</h3>
@@ -133,6 +133,7 @@ export default function Downloads() {
           </button>
           <button
             onClick={() => setShowUpload(!showUpload)}
+            data-upload-toggle
             className="px-4 py-2 font-bold text-white rounded transition-all hover:scale-105"
             style={{
               background: showUpload ? '#cc0000' : 'linear-gradient(180deg, #009900 0%, #006600 100%)',
@@ -266,14 +267,7 @@ export default function Downloads() {
           <p>No files uploaded yet. Be the first to upload!</p>
         </div>
       ) : (
-        <div
-          className="space-y-3"
-          style={{
-            maxHeight: '600px',
-            overflowY: 'auto',
-            paddingRight: '8px'
-          }}
-        >
+        <div className="space-y-3">
           {files.map((file: any) => (
             <div
               key={file.id}

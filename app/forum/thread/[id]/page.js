@@ -31,7 +31,7 @@ export default function ThreadPage() {
     fetchThread();
     fetchCategories();
     return () => {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'auto';
     };
   }, [threadId]);
 
