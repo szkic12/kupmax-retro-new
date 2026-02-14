@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import RetroEmoji from '@/components/RetroEmoji/RetroEmoji';
 
 interface NewsItem {
   id: string;
@@ -29,11 +30,15 @@ const CATEGORIES = [
  */
 export default function NewsPage() {
   const [currentDate, setCurrentDate] = useState('');
-  const [weather, setWeather] = useState({ temp: 15, condition: '☀️ Słonecznie' });
+  const [weather, setWeather] = useState({ temp: 25, condition: 'cool Słonecznie' });
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedNews, setExpandedNews] = useState<string | null>(null);
+  const [poll, setPoll] = useState<any>(null);
+  const [selectedPollOption, setSelectedPollOption] = useState<string>('');
+  const [hasVoted, setHasVoted] = useState(false);
+  const [pollResults, setPollResults] = useState<any>(null);
 
   useEffect(() => {
     setCurrentDate(new Date().toLocaleDateString('pl-PL', {
@@ -43,6 +48,7 @@ export default function NewsPage() {
       day: 'numeric',
     }));
     fetchNews();
+    fetchPoll();
   }, []);
 
   const fetchNews = async () => {
@@ -54,6 +60,46 @@ export default function NewsPage() {
       logger.error('Error fetching news:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPoll = async () => {
+    try {
+      const res = await fetch('/api/poll');
+      const data = await res.json();
+      setPoll(data.poll || null);
+    } catch (error) {
+      logger.error('Error fetching poll:', error);
+    }
+  };
+
+  const handleVote = async () => {
+    if (!selectedPollOption || !poll) {
+      alert('Wybierz opcję!');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pollId: poll.id,
+          option: selectedPollOption,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.poll) {
+        setPollResults(data.votes);
+        setHasVoted(true);
+        setPoll(data.poll);
+        alert('✅ Głos zapisany!');
+      }
+    } catch (error) {
+      logger.error('Error voting:', error);
+      alert('❌ Błąd głosowania');
     }
   };
 
@@ -194,9 +240,11 @@ export default function NewsPage() {
                 border: '2px solid #000080',
               }}
             >
-              <div className="text-3xl">{weather.condition.split(' ')[0]}</div>
+              <div className="flex justify-center">
+                <RetroEmoji type="cool" size={48} />
+              </div>
               <div className="text-white font-bold">{weather.temp}°C</div>
-              <div className="text-xs text-white">Warszawa</div>
+              <div className="text-xs text-white">World</div>
             </div>
           </div>
 
@@ -278,15 +326,30 @@ export default function NewsPage() {
               📁 SERWISY
             </div>
             <div className="p-2 space-y-1">
-              {['🏠 Strona główna', '📧 Poczta', '💬 Czat', '🎮 Gry', '📻 Radio', '🛒 Sklep', '📖 Księga gości', '📸 Galeria'].map((item) => (
-                <div
-                  key={item}
-                  className="px-2 py-1 text-sm cursor-pointer hover:bg-blue-100"
-                  style={{ borderBottom: '1px dotted #ccc' }}
-                >
-                  {item}
-                </div>
-              ))}
+              <Link href="/" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                🏠 Strona główna
+              </Link>
+              <Link href="/forum" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                📧 Poczta
+              </Link>
+              <Link href="/chat" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                💬 Czat
+              </Link>
+              <Link href="/tetris" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                🎮 Gry
+              </Link>
+              <Link href="/radio" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                📻 Radio
+              </Link>
+              <Link href="/shop" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                🛒 Sklep
+              </Link>
+              <Link href="/guestbook" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                📖 Księga gości
+              </Link>
+              <Link href="/photos" className="block px-2 py-1 text-sm cursor-pointer hover:bg-blue-100" style={{ borderBottom: '1px dotted #ccc' }}>
+                📸 Galeria
+              </Link>
             </div>
 
             {/* Ad banner */}
@@ -466,19 +529,68 @@ export default function NewsPage() {
                 📊 SONDA DNIA
               </div>
               <div className="p-4">
-                <p className="font-bold mb-3 text-sm">Co najbardziej lubisz w KUPMAX?</p>
-                {['Sklep online', 'Czat retro', 'Forum dyskusyjne', 'Gry'].map((option, i) => (
-                  <label key={option} className="flex items-center gap-2 mb-2 text-sm cursor-pointer">
-                    <input type="radio" name="poll" className="accent-blue-600" />
-                    <span>{option}</span>
-                  </label>
-                ))}
-                <button
-                  className="w-full mt-2 py-1 font-bold text-white rounded"
-                  style={{ background: '#000080' }}
-                >
-                  GŁOSUJ
-                </button>
+                {poll ? (
+                  <>
+                    <p className="font-bold mb-3 text-sm">{poll.question}</p>
+                    {!hasVoted ? (
+                      <>
+                        {poll.options.map((option: string) => (
+                          <label key={option} className="flex items-center gap-2 mb-2 text-sm cursor-pointer">
+                            <input
+                              type="radio"
+                              name="poll"
+                              value={option}
+                              checked={selectedPollOption === option}
+                              onChange={(e) => setSelectedPollOption(e.target.value)}
+                              className="accent-blue-600"
+                            />
+                            <span>{option}</span>
+                          </label>
+                        ))}
+                        <button
+                          onClick={handleVote}
+                          className="w-full mt-2 py-1 font-bold text-white rounded hover:opacity-90"
+                          style={{ background: '#000080' }}
+                        >
+                          GŁOSUJ
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        {poll.options.map((option: string) => {
+                          const votes = poll.votes?.[option] || 0;
+                          const totalVotes = poll.total_votes || 1;
+                          const percentage = Math.round((votes / totalVotes) * 100);
+                          return (
+                            <div key={option} className="text-sm">
+                              <div className="flex justify-between mb-1">
+                                <span>{option}</span>
+                                <span className="font-bold">{percentage}%</span>
+                              </div>
+                              <div
+                                className="h-4 rounded overflow-hidden"
+                                style={{ background: '#e0e0e0' }}
+                              >
+                                <div
+                                  className="h-full transition-all"
+                                  style={{
+                                    width: `${percentage}%`,
+                                    background: 'linear-gradient(90deg, #000080 0%, #0000cc 100%)',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <p className="text-xs text-gray-500 text-center mt-3">
+                          Łącznie głosów: {poll.total_votes || 0}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center">Brak aktywnej sondy</p>
+                )}
               </div>
             </div>
 
@@ -560,11 +672,11 @@ export default function NewsPage() {
             <span>|</span>
             <Link href="/bulletin" className="hover:text-yellow-400">Regulamin</Link>
             <span>|</span>
-            <span>Reklama</span>
+            <Link href="/forum" className="hover:text-yellow-400">Reklama</Link>
             <span>|</span>
-            <span>Kontakt</span>
+            <a href="mailto:kontakt@kupmax.pl" className="hover:text-yellow-400">Kontakt</a>
             <span>|</span>
-            <span>Praca</span>
+            <Link href="/forum" className="hover:text-yellow-400">Praca</Link>
           </div>
 
           <div className="text-center">

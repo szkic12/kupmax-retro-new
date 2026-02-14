@@ -264,7 +264,7 @@ export default function WebringCatalog() {
           📊 Stron w webring: {sites.length} | Wyświetlono: {filteredSites.length}
         </p>
         <p style={{ color: '#00ffff', margin: '10px 0', fontSize: '12px' }}>
-          Chcesz dodać swoją stronę? Skontaktuj się z nami!
+          Chcesz dodać swoją stronę? Skontaktuj się z nami: <a href="mailto:kontakt@kupmax.pl" style={{ color: '#ffff00', textDecoration: 'underline' }}>kontakt@kupmax.pl</a>
         </p>
         <p style={{ color: '#00ff00', margin: 0, fontFamily: 'monospace' }}>
           ═══════════════════════════════════════

@@ -20,6 +20,7 @@ export default function SecureAdminPanel() {
   const [currentAd, setCurrentAd] = useState<any>(null);
   const [allAds, setAllAds] = useState<any[]>([]);
   const [newsList, setNewsList] = useState<any[]>([]);
+  const [pollData, setPollData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -185,6 +186,10 @@ export default function SecureAdminPanel() {
         const res = await fetch('/api/news?all=true');
         const data = await res.json();
         setNewsList(data.news || []);
+      } else if (activeTab === 'poll') {
+        const res = await fetch('/api/poll');
+        const data = await res.json();
+        setPollData(data.poll || null);
       } else if (activeTab === 'rss') {
         // Pobierz źródła RSS
         const resSources = await fetch('/api/news/rss?action=sources');
@@ -1134,6 +1139,9 @@ export default function SecureAdminPanel() {
             <button style={tabStyle(activeTab === 'news')} onClick={() => setActiveTab('news')}>
               📰 News
             </button>
+            <button style={tabStyle(activeTab === 'poll')} onClick={() => setActiveTab('poll')}>
+              📊 Sonda
+            </button>
             <button style={tabStyle(activeTab === 'rss')} onClick={() => setActiveTab('rss')}>
               📡 Inspiracje
             </button>
@@ -1670,6 +1678,82 @@ export default function SecureAdminPanel() {
                           <button onClick={() => handleDeleteThread(thread.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
                         </div>
                       ))
+                    )}
+                  </div>
+                )}
+
+                {/* POLL TAB */}
+                {activeTab === 'poll' && (
+                  <div>
+                    <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
+                      📊 Sonda - Wyniki głosowania
+                    </h3>
+
+                    {pollData ? (
+                      <div>
+                        <fieldset style={{ border: '2px groove #fff', padding: '15px', marginBottom: '15px', background: '#f0f8ff' }}>
+                          <legend style={{ fontWeight: 'bold', color: '#000080' }}>📋 Aktualna sonda</legend>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <p style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>
+                              {pollData.question}
+                            </p>
+                            <p style={{ fontSize: '11px', color: '#666' }}>
+                              ID: {pollData.id} | Utworzono: {new Date(pollData.created_at).toLocaleString('pl-PL')}
+                            </p>
+                          </div>
+
+                          <div style={{ background: '#fff', border: '2px inset #808080', padding: '15px', marginBottom: '15px' }}>
+                            <h4 style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold' }}>
+                              📈 Wyniki głosowania (łącznie: {pollData.total_votes || 0} głosów)
+                            </h4>
+
+                            {pollData.options && pollData.options.map((option: string) => {
+                              const votes = pollData.votes?.[option] || 0;
+                              const totalVotes = pollData.total_votes || 1;
+                              const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+
+                              return (
+                                <div key={option} style={{ marginBottom: '12px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px' }}>
+                                    <span style={{ fontWeight: 'bold' }}>{option}</span>
+                                    <span>{votes} głosów ({percentage}%)</span>
+                                  </div>
+                                  <div style={{
+                                    height: '20px',
+                                    background: '#e0e0e0',
+                                    border: '1px solid #808080',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <div style={{
+                                      height: '100%',
+                                      width: `${percentage}%`,
+                                      background: 'linear-gradient(90deg, #000080 0%, #0000cc 100%)',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div style={{ fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
+                            💡 Status: {pollData.is_active ? '✅ Aktywna' : '❌ Nieaktywna'}
+                          </div>
+                        </fieldset>
+
+                        <div style={{ textAlign: 'center', padding: '20px', background: '#fffacd', border: '2px solid #ffd700' }}>
+                          <p style={{ fontSize: '12px', margin: 0 }}>
+                            🔧 Funkcja tworzenia nowych sond będzie dostępna wkrótce!
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '40px', background: '#f5f5f5', border: '2px inset #808080' }}>
+                        <p style={{ fontSize: '14px', color: '#666', margin: '0 0 10px 0' }}>📊 Brak aktywnej sondy</p>
+                        <p style={{ fontSize: '11px', color: '#999' }}>Stwórz nową sondę aby wyświetlić wyniki</p>
+                      </div>
                     )}
                   </div>
                 )}
