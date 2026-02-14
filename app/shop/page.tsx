@@ -21,7 +21,16 @@ export default function ShopPage() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeller, setSelectedSeller] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Wyciągnij unikalne kategorie z produktów
+  const categories = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
+
+  // Filtruj produkty po kategorii
+  const filteredProducts = selectedCategory === 'all'
+    ? products
+    : products.filter(p => p.category === selectedCategory);
 
   // Pobierz firmy które ukończyły Hive Sounds (9 planet)
   useEffect(() => {
@@ -30,6 +39,7 @@ export default function ShopPage() {
 
   useEffect(() => {
     fetchProducts();
+    setSelectedCategory('all'); // Reset kategorii przy zmianie firmy
   }, [selectedSeller]);
 
   const fetchSellers = async () => {
@@ -228,6 +238,31 @@ export default function ShopPage() {
             ))}
           </div>
 
+          {/* Zakładki kategorii produktów - pokazuj tylko gdy wybrana firma i są produkty */}
+          {selectedSeller !== 'all' && categories.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className="text-xs text-gray-400 mr-2">
+                📁 Kategorie:
+              </span>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className="px-3 py-1 text-xs font-bold rounded"
+                  style={{
+                    background: selectedCategory === cat
+                      ? 'linear-gradient(180deg, #00cc66 0%, #009944 100%)'
+                      : '#e6e6e6',
+                    border: '2px solid #006633',
+                    color: selectedCategory === cat ? '#fff' : '#006633',
+                  }}
+                >
+                  {cat === 'all' ? '📦 Wszystkie' : cat}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Info o Hive Sounds - jak zostać sprzedawcą */}
           {sellers.length === 0 && (
             <div
@@ -413,7 +448,7 @@ export default function ShopPage() {
               style={{ background: '#e6e6e6', border: '2px solid #999999' }}
             >
               <p className="font-bold">
-                📦 Znaleziono: <span className="text-blue-600">{products.length}</span> produktów
+                📦 Znaleziono: <span className="text-blue-600">{filteredProducts.length}</span> produktów
               </p>
               <select
                 className="px-3 py-1 border-2 border-gray-400"
@@ -437,7 +472,7 @@ export default function ShopPage() {
                   />
                 </div>
               </div>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <div
                 className="text-center py-10 rounded"
                 style={{
@@ -446,12 +481,16 @@ export default function ShopPage() {
                 }}
               >
                 <p className="text-4xl mb-4">🛒</p>
-                <p className="text-xl font-bold">Brak produktów w bazie</p>
-                <p className="text-gray-600 mt-2">Sprawdź czy Supabase jest uruchomiony</p>
+                <p className="text-xl font-bold">
+                  {products.length === 0 ? 'Brak produktów w bazie' : 'Brak produktów w tej kategorii'}
+                </p>
+                <p className="text-gray-600 mt-2">
+                  {products.length === 0 ? 'Sprawdź czy Supabase jest uruchomiony' : 'Wybierz inną kategorię'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {products.map((product, index) => (
+                {filteredProducts.map((product, index) => (
                   <div
                     key={product.id}
                     className="relative rounded overflow-hidden transition-transform hover:-translate-y-1"
@@ -570,7 +609,7 @@ export default function ShopPage() {
             )}
 
             {/* Pagination */}
-            {products.length > 0 && (
+            {filteredProducts.length > 0 && (
               <div className="flex justify-center gap-2 mt-8">
                 <button
                   className="px-4 py-2 font-bold rounded"
