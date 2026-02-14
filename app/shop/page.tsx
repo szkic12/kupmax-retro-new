@@ -618,42 +618,80 @@ export default function ShopPage() {
         }}
       >
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-white text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-white text-sm">
             <div>
               <h4 className="font-bold text-yellow-400 mb-2">📞 Kontakt</h4>
-              <p>Tel: 0-801-XXX-XXX</p>
-              <p>Email: sklep@kupmax.pl</p>
-              <p>Pon-Pt: 8:00-18:00</p>
+              <p>
+                <a href="mailto:kontakt@kupmax.pl" className="hover:text-yellow-400">
+                  kontakt@kupmax.pl
+                </a>
+              </p>
+              <p className="text-gray-400 text-xs mt-1">Odpowiadamy w 24h</p>
             </div>
             <div>
               <h4 className="font-bold text-yellow-400 mb-2">🚚 Dostawa</h4>
               <p>Poczta Polska</p>
-              <p>Kurier DHL</p>
-              <p>Odbiór osobisty</p>
+              <p>Kurier DHL/InPost</p>
+              <p>Odbiór osobisty (Wrocław)</p>
             </div>
             <div>
               <h4 className="font-bold text-yellow-400 mb-2">💳 Płatności</h4>
+              <p>Stripe</p>
               <p>Przelew bankowy</p>
-              <p>Płatność przy odbiorze</p>
-              <p>PayU / DotPay</p>
+              <p>BLIK / PayU</p>
             </div>
             <div>
               <h4 className="font-bold text-yellow-400 mb-2">📋 Informacje</h4>
-              <Link href="/bulletin" className="block hover:text-yellow-400">Regulamin</Link>
-              <Link href="/bulletin" className="block hover:text-yellow-400">Polityka prywatności</Link>
-              <Link href="/bulletin" className="block hover:text-yellow-400">Zwroty i reklamacje</Link>
+              <a href="https://ai.kupmax.pl/terms" target="_blank" rel="noopener noreferrer" className="block hover:text-yellow-400">Regulamin</a>
+              <a href="https://ai.kupmax.pl/privacy" target="_blank" rel="noopener noreferrer" className="block hover:text-yellow-400">Polityka prywatności</a>
+              <a href="https://ai.kupmax.pl/faq" target="_blank" rel="noopener noreferrer" className="block hover:text-yellow-400">FAQ</a>
+            </div>
+            <div>
+              <h4 className="font-bold text-yellow-400 mb-2">🐝 Dla Firm</h4>
+              <p className="text-xs text-gray-300 mb-2">
+                Chcesz sprzedawać w retro stylu?
+              </p>
+              <a
+                href="https://ai.kupmax.pl/register-company"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-cyan-400 hover:text-cyan-300 text-xs"
+              >
+                → Zarejestruj firmę
+              </a>
+              <a
+                href="https://ai.kupmax.pl/my-company/hive-sounds"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-purple-400 hover:text-purple-300 text-xs mt-1"
+              >
+                → Ukończ 9 Dźwięków Ula
+              </a>
             </div>
           </div>
 
           <div className="text-center mt-6 pt-4 border-t border-gray-600">
-            <Link
-              href="/"
-              className="inline-block px-6 py-2 bg-yellow-500 text-black font-bold rounded hover:bg-yellow-400 transition-colors"
-            >
-              ← POWRÓT DO STRONY GŁÓWNEJ
-            </Link>
-            <p className="text-gray-400 text-sm mt-4">
-              © 1999-2026 KUPMAX Shop - Twój zaufany sklep internetowy
+            <div className="flex flex-wrap justify-center gap-4 mb-4">
+              <Link
+                href="/"
+                className="inline-block px-6 py-2 bg-yellow-500 text-black font-bold rounded hover:bg-yellow-400 transition-colors"
+              >
+                ← STRONA GŁÓWNA
+              </Link>
+              <a
+                href="https://ai.kupmax.pl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-2 bg-purple-600 text-white font-bold rounded hover:bg-purple-500 transition-colors"
+              >
+                🤖 KupMax AI →
+              </a>
+            </div>
+            <p className="text-gray-400 text-sm">
+              © 2024-2026 KUPMAX PSA - Retro Shop
+            </p>
+            <p className="text-gray-500 text-xs mt-1">
+              Produkty od zweryfikowanych sprzedawców (Dźwięki Ula 🐝)
             </p>
           </div>
         </div>
