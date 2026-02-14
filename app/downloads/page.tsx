@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useDownloads } from '../../hooks/useDownloads';
 
 const Downloads = dynamic(() => import('../../components/Downloads/Downloads'), {
   ssr: false,
@@ -13,44 +14,89 @@ const Downloads = dynamic(() => import('../../components/Downloads/Downloads'), 
  * Star ratings, download progress bars, file categories
  */
 export default function DownloadsPage() {
+  const { files, stats, fetchFiles, downloadFile } = useDownloads();
   const [downloading, setDownloading] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
-  const handleDownload = (fileName: string) => {
+  useEffect(() => {
+    fetchFiles({ limit: 6, sortBy: 'downloads' }); // Fetch top 6 most downloaded files
+  }, []);
+
+  const handleDownload = async (fileId: string, fileName: string) => {
     setDownloading(fileName);
     setProgress(0);
 
-    const interval = setInterval(() => {
+    // Simulate progress while downloading
+    const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setDownloading(null), 1000);
-          return 100;
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
         }
         return prev + Math.random() * 15;
       });
     }, 200);
+
+    // downloadFile automatically opens URL in new tab
+    const result = await downloadFile(fileId);
+
+    if (result.success) {
+      setProgress(100);
+      clearInterval(progressInterval);
+      setTimeout(() => setDownloading(null), 1000);
+    } else {
+      clearInterval(progressInterval);
+      setDownloading(null);
+      alert(`❌ Download failed: ${result.error}`);
+    }
   };
 
-  const featuredDownloads = [
-    { name: 'WinZip 8.0', size: '2.4 MB', rating: 5, downloads: '2,451,892', category: 'Utilities', icon: '📦' },
-    { name: 'Winamp 2.91', size: '1.2 MB', rating: 5, downloads: '5,892,341', category: 'Audio', icon: '🎵' },
-    { name: 'mIRC 6.03', size: '1.8 MB', rating: 4, downloads: '1,234,567', category: 'Internet', icon: '💬' },
-    { name: 'ICQ 2003b', size: '4.5 MB', rating: 4, downloads: '892,145', category: 'Internet', icon: '🌸' },
-    { name: 'Napster 2.0', size: '3.2 MB', rating: 5, downloads: '3,456,789', category: 'Audio', icon: '🎸' },
-    { name: 'RealPlayer 8', size: '5.1 MB', rating: 3, downloads: '456,123', category: 'Video', icon: '🎬' },
+  const featuredDownloads = files.slice(0, 6).map((file: any) => ({
+    id: file.id,
+    name: file.name,
+    size: formatFileSize(file.size),
+    rating: 5, // Could be added to database later
+    downloads: file.downloadCount || 0,
+    category: file.category || 'Other',
+    icon: getCategoryIcon(file.category),
+  }));
+
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function getCategoryIcon(category: string) {
+    const icons: Record<string, string> = {
+      Audio: '🎵',
+      Video: '🎬',
+      Utilities: '🔧',
+      Games: '🎮',
+      Graphics: '🎨',
+      Internet: '🌐',
+      Development: '💻',
+    };
+    return icons[category] || '📦';
+  }
+
+  // Categories będą z API, ale na razie pokazujemy statyczne z ikonkami
+  const allCategories = [
+    { name: 'Audio', icon: '🎵' },
+    { name: 'Video', icon: '🎬' },
+    { name: 'Internet', icon: '🌐' },
+    { name: 'Games', icon: '🎮' },
+    { name: 'Utilities', icon: '🔧' },
+    { name: 'Graphics', icon: '🎨' },
+    { name: 'Development', icon: '💻' },
+    { name: 'Other', icon: '📦' },
   ];
 
-  const categories = [
-    { name: 'Audio & Video', icon: '🎵', count: 1234 },
-    { name: 'Internet Tools', icon: '🌐', count: 892 },
-    { name: 'Games', icon: '🎮', count: 2341 },
-    { name: 'Utilities', icon: '🔧', count: 1567 },
-    { name: 'Graphics', icon: '🎨', count: 456 },
-    { name: 'Development', icon: '💻', count: 234 },
-    { name: 'Education', icon: '📚', count: 189 },
-    { name: 'Business', icon: '💼', count: 312 },
-  ];
+  // Policz pliki w każdej kategorii
+  const categoriesWithCount = allCategories.map(cat => ({
+    ...cat,
+    count: files.filter((f: any) => f.category === cat.name).length,
+  }));
 
   return (
     <div className="min-h-screen" style={{ background: '#e8e8e8' }}>
@@ -170,9 +216,9 @@ export default function DownloadsPage() {
           borderBottom: '2px solid #cccc00',
         }}
       >
-        <span className="mx-4">📊 <strong>45,892</strong> Programs</span>
-        <span className="mx-4">⬇️ <strong>12,456,789</strong> Downloads Today</span>
-        <span className="mx-4">⭐ <strong>98%</strong> Virus Free Guarantee</span>
+        <span className="mx-4">📊 <strong>{stats.totalFiles || 0}</strong> Programs</span>
+        <span className="mx-4">⬇️ <strong>{stats.totalDownloads || 0}</strong> Downloads Total</span>
+        <span className="mx-4">💾 <strong>{formatFileSize(stats.totalSize || 0)}</strong> Total Storage</span>
       </div>
 
       {/* Main content */}
@@ -194,7 +240,7 @@ export default function DownloadsPage() {
                 📁 CATEGORIES
               </div>
               <div className="p-2">
-                {categories.map((cat) => (
+                {categoriesWithCount.map((cat) => (
                   <div
                     key={cat.name}
                     className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-blue-50 text-sm"
@@ -211,33 +257,37 @@ export default function DownloadsPage() {
             </div>
 
             {/* Today's Pick */}
-            <div
-              className="mt-4 rounded overflow-hidden"
-              style={{
-                background: '#fffff0',
-                border: '3px solid #ffcc00',
-              }}
-            >
+            {featuredDownloads.length > 0 && (
               <div
-                className="py-2 px-4 font-bold text-center"
-                style={{ background: '#ffcc00' }}
+                className="mt-4 rounded overflow-hidden"
+                style={{
+                  background: '#fffff0',
+                  border: '3px solid #ffcc00',
+                }}
               >
-                ⭐ TODAY'S PICK ⭐
-              </div>
-              <div className="p-4 text-center">
-                <div className="text-5xl mb-2">🎵</div>
-                <h3 className="font-bold text-blue-800">Winamp 2.91</h3>
-                <div className="text-yellow-500 text-xl my-1">★★★★★</div>
-                <p className="text-sm text-gray-600 mb-2">The best MP3 player!</p>
-                <button
-                  onClick={() => handleDownload('Winamp 2.91')}
-                  className="px-4 py-1 font-bold text-white rounded"
-                  style={{ background: '#009900' }}
+                <div
+                  className="py-2 px-4 font-bold text-center"
+                  style={{ background: '#ffcc00' }}
                 >
-                  ⬇️ Download Now!
-                </button>
+                  ⭐ TODAY'S PICK ⭐
+                </div>
+                <div className="p-4 text-center">
+                  <div className="text-5xl mb-2">{featuredDownloads[0].icon}</div>
+                  <h3 className="font-bold text-blue-800">{featuredDownloads[0].name}</h3>
+                  <div className="text-yellow-500 text-xl my-1">★★★★★</div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {featuredDownloads[0].size} • {featuredDownloads[0].downloads} downloads
+                  </p>
+                  <button
+                    onClick={() => handleDownload(featuredDownloads[0].id, featuredDownloads[0].name)}
+                    className="px-4 py-1 font-bold text-white rounded"
+                    style={{ background: '#009900' }}
+                  >
+                    ⬇️ Download Now!
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Cow rating */}
             <div
@@ -305,7 +355,7 @@ export default function DownloadsPage() {
                       </div>
 
                       <button
-                        onClick={() => handleDownload(item.name)}
+                        onClick={() => handleDownload(item.id, item.name)}
                         className="w-full mt-2 py-1 font-bold text-white text-sm rounded transition-all hover:scale-105"
                         style={{
                           background: 'linear-gradient(180deg, #009900 0%, #006600 100%)',
