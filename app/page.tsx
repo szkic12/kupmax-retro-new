@@ -218,9 +218,9 @@ export default function Home() {
     {
       id: "roblox",
       icon: "🎪",
-      label: "Roblox.url",
+      label: "VibeHub3D.url",
       type: "link",
-      action: () => window.open("https://www.roblox.com", "_blank"),
+      action: () => window.open("https://www.roblox.com/pl/games/95847270410338/shop", "_blank"),
     },
     // FOLDERY
     {
