@@ -107,10 +107,10 @@ export default function ClippyChat({ isOpen, onClose }: ClippyChatProps) {
     <Window
       title="Clippy Assistant - Microsoft Agent"
       icon="📎"
-      width="500px"
-      height="600px"
-      x={window.innerWidth - 550}
-      y={100}
+      width="min(96vw, 500px)"
+      height="min(70vh, 600px)"
+      x={4}
+      y={210}
       onClose={onClose}
     >
       <div className="flex flex-col h-full bg-white">
