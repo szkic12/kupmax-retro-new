@@ -349,6 +349,14 @@ export default function Home() {
       folder: "SYSTEM"
     },
     {
+      id: "mentor",
+      icon: "🎓",
+      label: "Mentor IDE.exe",
+      type: "link",
+      action: () => window.open('/mentor', '_blank'),
+      folder: "SYSTEM"
+    },
+    {
       id: "bulletin",
       icon: "📜",
       label: "Regulamin.exe",
