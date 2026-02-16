@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import Window from "@/components/Window";
 import HeroSlider from "@/components/HeroSlider";
 import RollupImage from "@/components/RollupImage";
@@ -37,6 +38,7 @@ interface DesktopIcon {
 
 export default function Home() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showClippyChat, setShowClippyChat] = useState(false);
@@ -162,7 +164,7 @@ export default function Home() {
     width: "min(96vw, 700px)",
     height: "min(60vh, 450px)", // Zmniejszona wysokość
     x: 4,
-    y: 200, // Przesunięte niżej
+    y: 80, // Przesunięte niżej żeby nie pod navbar
   };
 
   // Funkcja przełączania okien (Taskbar)
@@ -308,7 +310,7 @@ export default function Home() {
     {
       id: "tetris",
       icon: "🕹️",
-      label: "BlockBlitz.exe",
+      label: "PentominoTetris.exe",
       type: "app",
       action: () => setWindows(prev => ({ ...prev, tetris: true })),
       folder: "ROZRYWKA"
@@ -388,46 +390,9 @@ export default function Home() {
 
   return (
     <main className="w-screen h-screen relative overflow-hidden bg-[#008080]">
-      {/* Taskbar */}
-      <div className="absolute left-0 right-0 top-0 h-10 sm:h-8 bg-[#c0c0c0] border-t-2 border-t-white border-b-2 border-b-black flex items-center px-1 gap-1 z-[110]">
-        <button
-          className="win95-button px-3 h-6 font-bold flex items-center gap-2"
-          onClick={() => setShowStartMenu(!showStartMenu)}
-          aria-label="Otwórz menu Start"
-          aria-expanded={showStartMenu}
-        >
-          <span className="text-lg" role="img" aria-label="Okno">🪟</span><span>Start</span>
-        </button>
-        <StartMenu show={showStartMenu} onClose={() => setShowStartMenu(false)} desktopIcons={desktopIcons} session={session} />
-        <div className="flex gap-1 flex-1 overflow-x-auto">
-          {openWindowsList.map((win) => (
-            <button
-              key={win.key}
-              onClick={() => handleTaskbarClick(win.key)}
-              className={`px-2 h-6 text-xs flex items-center gap-1 min-w-[80px] border-2 ${activeWindow === win.key ? 'bg-[#c0c0c0] font-bold' : 'bg-[#dfdfdf]'} border-t-white border-l-white border-r-black border-b-black`}
-              aria-label={`Przełącz na okno ${win.label}`}
-              aria-pressed={activeWindow === win.key}
-            >
-              {win.iconImage ? (
-                <img src={win.iconImage} alt="" className="w-4 h-4 object-contain" />
-              ) : (
-                <span role="img" aria-hidden="true">{win.icon}</span>
-              )}
-              <span className="truncate">{win.label}</span>
-            </button>
-          ))}
-        </div>
-        <div
-          className="text-xs px-2 border-2 border-t-black border-l-black h-6 flex items-center ml-1 bg-[#c0c0c0] shadow-inner"
-          role="status"
-          aria-label={`Aktualny czas: ${currentTime}`}
-        >
-          {currentTime}
-        </div>
-      </div>
-
+      {/* Local Taskbar is now hidden because we have a global one in layout.tsx */}
       {/* Desktop Icons */}
-      <div className="absolute top-12 left-4 right-4 grid grid-cols-4 sm:grid-cols-8 gap-6 z-10">
+      <div className="absolute top-16 left-4 right-4 grid grid-cols-4 sm:grid-cols-8 gap-6 z-10">
         {mainIcons.map((item) => (
           <button
             key={item.id}
@@ -808,7 +773,7 @@ export default function Home() {
 
       {windows.tetris && (
         <Window
-          title="Block Blitz - Extreme Puzzle"
+          title="Pentomino Tetris - Extreme Puzzle"
           icon="🕹️"
           width={windowConfig.width} height={windowConfig.height} x={windowConfig.x} y={windowConfig.y}
           minimized={minimized.tetris}

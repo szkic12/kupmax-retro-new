@@ -242,6 +242,12 @@ const TetrisGame = ({ onGameComplete }) => {
     }
   }, [score, discountCode, onGameComplete]);
 
+  const goToStudio = () => {
+    if (discountCode) {
+      window.open(`https://ai.kupmax.pl?coupon=${discountCode}`, '_blank');
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!gameStarted || gameOver) return;
@@ -381,13 +387,28 @@ const TetrisGame = ({ onGameComplete }) => {
           
           <div className={styles.mobileControls}>
             <div className={styles.dPad}>
-              <button onTouchStart={() => move(-1)} className={`${styles.dPadButton} ${styles.left}`}>◀</button>
-              <button onTouchStart={() => move(1)} className={`${styles.dPadButton} ${styles.right}`}>▶</button>
-              <button onTouchStart={moveDown} className={`${styles.dPadButton} ${styles.down}`}>▼</button>
+              <button 
+                onPointerDown={(e) => { e.preventDefault(); move(-1); }} 
+                className={`${styles.dPadButton} ${styles.left}`}
+              >◀</button>
+              <button 
+                onPointerDown={(e) => { e.preventDefault(); move(1); }} 
+                className={`${styles.dPadButton} ${styles.right}`}
+              >▶</button>
+              <button 
+                onPointerDown={(e) => { e.preventDefault(); moveDown(); }} 
+                className={`${styles.dPadButton} ${styles.down}`}
+              >▼</button>
             </div>
             <div className={styles.actionButtons}>
-              <button onTouchStart={rotate} className={styles.actionButton}>ROTATE ↻</button>
-              <button onTouchStart={drop} className={styles.actionButton}>DROP ⇩</button>
+              <button 
+                onPointerDown={(e) => { e.preventDefault(); rotate(); }} 
+                className={styles.actionButton}
+              >ROTATE ↻</button>
+              <button 
+                onPointerDown={(e) => { e.preventDefault(); drop(); }} 
+                className={styles.actionButton}
+              >DROP ⇩</button>
             </div>
           </div>
 
@@ -421,8 +442,26 @@ const TetrisGame = ({ onGameComplete }) => {
                  <p>Your score has been submitted!</p>
               ) : null}
 
-              <button onClick={initGame}>RESTART</button>
-              {discountCode && <p className={styles.finalDiscount}>DISCOUNT CODE: {discountCode}</p>}
+              {discountCode && (
+                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                   <p className={styles.finalDiscount}>CODE: {discountCode}</p>
+                   <button 
+                    onClick={goToStudio}
+                    style={{ 
+                      background: 'linear-gradient(45deg, #ffd700, #ff8c00)',
+                      color: '#000',
+                      padding: '10px 20px',
+                      marginTop: '10px',
+                      width: '100%',
+                      fontSize: '14px'
+                    }}
+                   >
+                     🚀 REDEEM AT AI.KUPMAX.PL
+                   </button>
+                </div>
+              )}
+
+              <button onClick={initGame}>RESTART GAME</button>
             </div>
           )}
         </>

@@ -91,7 +91,7 @@ export default function TetrisPage() {
             animation: 'neonFlicker 2s infinite',
           }}
         >
-          BLOCK BLITZ
+          PENTOMINO TETRIS
         </h1>
 
         <p
