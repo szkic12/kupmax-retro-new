@@ -164,7 +164,7 @@ export default function Home() {
     width: "min(96vw, 700px)",
     height: "min(60vh, 450px)", // Zmniejszona wysokość
     x: 4,
-    y: 80, // Przesunięte niżej żeby nie pod navbar
+    y: 160, // Przesunięte jeszcze niżej żeby nie zasłaniało ikon (80px niżej niż wcześniej)
   };
 
   // Funkcja przełączania okien (Taskbar)
