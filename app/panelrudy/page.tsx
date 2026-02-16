@@ -407,9 +407,15 @@ export default function SecureAdminPanel() {
         }
 
         // Dodaj/aktualizuj slajdy
+        // Jeśli edytowaliśmy domyślną reklamę, wszystkie slajdy są nowe
+        const isFromDefaultAd = editingAd?.id === 'default';
+
         for (let i = 0; i < adSlides.length; i++) {
           const slide = adSlides[i];
-          if (slide.isNew || slide.id?.startsWith('temp_')) {
+          // Slajd jest nowy jeśli: ma flagę isNew, zaczyna się od temp_, lub pochodzi z domyślnej reklamy
+          const isNewSlide = slide.isNew || slide.id?.startsWith('temp_') || isFromDefaultAd || !slide.id?.includes('-');
+
+          if (isNewSlide) {
             // Nowy slajd
             await fetch('/api/advertisement/slides', {
               method: 'POST',
