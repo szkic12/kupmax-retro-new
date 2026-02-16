@@ -9,6 +9,7 @@ import Window from "@/components/Window";
 import HeroSlider from "@/components/HeroSlider";
 import RollupImage from "@/components/RollupImage";
 import RollupVideo from "@/components/RollupVideo";
+import RetroNavbar from "@/components/RetroNavbar";
 import StartMenu from "@/components/StartMenu";
 
 const Rollup3D = dynamic(() => import("@/components/Rollup3D"), { ssr: false });
@@ -390,7 +391,15 @@ export default function Home() {
 
   return (
     <main className="w-screen h-screen relative overflow-hidden bg-[#008080]">
-      {/* Local Taskbar is now hidden because we have a global one in layout.tsx */}
+      {/* Global Retro Taskbar (Windows 95 Style) */}
+      <RetroNavbar 
+        desktopIcons={desktopIcons}
+        openWindowsList={openWindowsList}
+        activeWindow={activeWindow}
+        onTaskbarClick={handleTaskbarClick}
+        session={session}
+      />
+      
       {/* Desktop Icons */}
       <div className="absolute top-16 left-4 right-4 grid grid-cols-4 sm:grid-cols-8 gap-6 z-10">
         {mainIcons.map((item) => (

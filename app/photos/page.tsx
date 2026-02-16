@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
+import RetroNavbar from '../../components/RetroNavbar';
 
 const allEmojis: EmojiType[] = ['smile', 'laugh', 'sad', 'wink', 'tongue', 'love', 'cool', 'angry', 'surprise', 'think'];
 
@@ -107,6 +108,7 @@ export default function PhotosPage() {
         `,
       }}
     >
+      <RetroNavbar />
       {/* Star field background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {[...Array(100)].map((_, i) => (

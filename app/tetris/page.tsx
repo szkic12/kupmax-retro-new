@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import RetroNavbar from '../../components/RetroNavbar';
 
 const TetrisGame = dynamic(() => import('../../components/TetrisGame/TetrisGame'), {
   ssr: false,
@@ -41,6 +42,7 @@ export default function TetrisPage() {
         background: 'radial-gradient(ellipse at center, #1a0a2e 0%, #0a0015 100%)',
       }}
     >
+      <RetroNavbar />
       {/* Animated background effects */}
       <div className="fixed inset-0 pointer-events-none">
         {/* Grid lines */}
