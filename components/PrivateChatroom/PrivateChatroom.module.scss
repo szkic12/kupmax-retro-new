@@ -237,8 +237,10 @@ $win95-title: #000080;
   background: $win95-gray;
   @include win95-bevel();
   height: 600px;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .chatContent {
@@ -498,7 +500,8 @@ $win95-title: #000080;
   justify-content: space-between;
   align-items: center;
   font-size: 10px;
-  
+  flex-shrink: 0; // Don't shrink status bar
+
   .connectionStatus, .roomInfo, .userInfo {
     color: $win95-dark;
   }
