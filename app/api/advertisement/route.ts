@@ -56,55 +56,62 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Domyślnie: pobierz tylko aktywną reklamę ze slajdami
-    const { data, error } = await supabase
-      .from('advertisements')
-      .select('*, slides:advertisement_slides(*)')
-      .eq('is_active', true)
-      .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      logger.error('Error fetching advertisement:', error);
-      return NextResponse.json({ error: 'Failed to fetch advertisement' }, { status: 500 });
-    }
-
-    // Jeśli nie ma reklamy, zwróć domyślną z przykładowymi slajdami
-    if (!data) {
-      return NextResponse.json({
-        advertisement: {
-          id: 'default',
-          title: 'Anna Juszczak Fotografia',
-          description: 'Profesjonalna fotografia - sesje zdjęciowe, eventy, portrety.',
-          link_url: 'https://www.facebook.com/annajuszczakfotografia/',
-          advertiser_name: 'Anna Juszczak',
-          is_active: true,
-          slides: [
-            { id: '1', image_url: '/images/slider-1.jpg', title: 'Sesje ślubne', order_index: 0 },
-            { id: '2', image_url: '/images/slider-2.jpg', title: 'Portrety', order_index: 1 },
-            { id: '3', image_url: '/images/slider-3.jpg', title: 'Eventy', order_index: 2 },
-          ]
-        }
-      }, {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-        }
-      });
-    }
-
-    // Sortuj slajdy
-    const adWithSortedSlides = {
-      ...data,
-      slides: (data.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
+    // Default fallback advertisement
+    const defaultAd = {
+      id: 'default',
+      title: 'Anna Juszczak Fotografia',
+      description: 'Profesjonalna fotografia - sesje zdjęciowe, eventy, portrety.',
+      link_url: 'https://www.facebook.com/annajuszczakfotografia/',
+      advertiser_name: 'Anna Juszczak',
+      is_active: true,
+      slides: [
+        { id: '1', image_url: '/images/slider-1.jpg', title: 'Sesje slubne', order_index: 0 },
+        { id: '2', image_url: '/images/slider-2.jpg', title: 'Portrety', order_index: 1 },
+        { id: '3', image_url: '/images/slider-3.jpg', title: 'Eventy', order_index: 2 },
+      ]
     };
 
-    return NextResponse.json({ advertisement: adWithSortedSlides }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
+    // Domyślnie: pobierz tylko aktywną reklamę ze slajdami
+    try {
+      const { data, error } = await supabase
+        .from('advertisements')
+        .select('*, slides:advertisement_slides(*)')
+        .eq('is_active', true)
+        .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        logger.error('Error fetching advertisement:', error);
+        // Return default ad instead of 500
+        return NextResponse.json({ advertisement: defaultAd }, {
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+        });
       }
-    });
+
+      // Jeśli nie ma reklamy, zwróć domyślną z przykładowymi slajdami
+      if (!data) {
+        return NextResponse.json({ advertisement: defaultAd }, {
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+        });
+      }
+
+      // Sortuj slajdy
+      const adWithSortedSlides = {
+        ...data,
+        slides: (data.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
+      };
+
+      return NextResponse.json({ advertisement: adWithSortedSlides }, {
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+      });
+    } catch (dbError) {
+      logger.error('Database error fetching advertisement:', dbError);
+      return NextResponse.json({ advertisement: defaultAd }, {
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+      });
+    }
   } catch (error) {
     logger.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

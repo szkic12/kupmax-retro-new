@@ -298,6 +298,14 @@ export default function Home() {
       folder: "SPOŁECZNOŚĆ"
     },
     {
+      id: "privateChat",
+      icon: "🔒",
+      label: "PrivateChat.exe",
+      type: "app",
+      action: () => setWindows(prev => ({ ...prev, privateChat: true })),
+      folder: "SPOŁECZNOŚĆ"
+    },
+    {
       id: "tetris",
       icon: "🕹️",
       label: "BlockBlitz.exe",
