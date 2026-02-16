@@ -1,33 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { usePhotos } from '../../hooks/usePhotos';
 import PhotoModal from './PhotoModal';
 import styles from './PhotoGallery.module.scss';
 
-// Funkcje pomocnicze do tworzenia placeholdera typu "shimmer"
-const shimmer = (w, h) => `
-<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <defs>
-    <linearGradient id="g">
-      <stop stop-color="#f0f0f0" offset="20%" />
-      <stop stop-color="#e0e0e0" offset="50%" />
-      <stop stop-color="#f0f0f0" offset="70%" />
-    </linearGradient>
-  </defs>
-  <rect width="${w}" height="${h}" fill="#f0f0f0" />
-  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
-</svg>`;
-
-const toBase64 = (str) =>
-  typeof window === 'undefined'
-    ? Buffer.from(str).toString('base64')
-    : window.btoa(str);
-
-const PhotoGallery = ({ category = null }) => {
-  const { photos, loading, error, hasNextPage, infiniteRef } = usePhotos(category);
+const PhotoGallery = () => {
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'moje' | 'reklamy'
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      setLoading(true);
+      setError(null);
+      setPhotos([]);
+
+      try {
+        let url = '';
+        if (activeTab === 'products') {
+          url = '/api/photos?source=products&per_page=40';
+        } else if (activeTab === 'moje') {
+          url = '/api/gallery-photos';
+        } else if (activeTab === 'reklamy') {
+          url = '/api/advertisement?all=true';
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (activeTab === 'products') {
+          if (data.success && data.photos) {
+            setPhotos(data.photos);
+          }
+        } else if (activeTab === 'moje') {
+          if (data.photos) {
+            setPhotos(data.photos.map(p => ({
+              ...p,
+              imageUrl: p.image_url || p.imageUrl,
+              productName: p.title || p.name || 'Moje Zdjęcie'
+            })));
+          }
+        } else if (activeTab === 'reklamy') {
+          if (data.advertisements) {
+            const allSlides = [];
+            data.advertisements.forEach((ad) => {
+              if (ad.slides) {
+                ad.slides.forEach((slide, index) => {
+                  allSlides.push({
+                    id: `${ad.id}-${index}`,
+                    imageUrl: slide.image_url,
+                    productName: slide.title || ad.title,
+                  });
+                });
+              }
+            });
+            setPhotos(allSlides);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching photos:', err);
+        setError('Błąd ładowania zdjęć');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPhotos();
+  }, [activeTab]);
 
   const handlePhotoClick = (photo) => {
     setSelectedPhoto(photo);
@@ -40,22 +81,26 @@ const PhotoGallery = ({ category = null }) => {
   };
 
   const handleViewProduct = () => {
-    if (selectedPhoto) {
+    if (selectedPhoto && selectedPhoto.productSlug) {
       window.location.href = `/retro-portal?view=gallery&product=${selectedPhoto.productSlug}`;
+    } else {
+        alert("To zdjęcie nie jest przypisane do konkretnego produktu.");
     }
   };
 
+  const tabs = [
+    { id: 'products', label: 'Produkty', icon: '🛒' },
+    { id: 'moje', label: 'Moje Zdjęcia', icon: '📷' },
+    { id: 'reklamy', label: 'Reklamy', icon: '📺' },
+  ];
+
   if (error) {
     return (
-      <div className={styles.container}>
+      <div className={styles.container} style={{ minHeight: 'auto' }}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>Błąd ładowania zdjęć</h3>
-          <p>{error}</p>
-          <button 
-            className={styles.retryButton}
-            onClick={() => window.location.reload()}
-          >
+          <h3>{error}</h3>
+          <button className={styles.retryButton} onClick={() => window.location.reload()}>
             SPRÓBUJ PONOWNIE
           </button>
         </div>
@@ -64,70 +109,55 @@ const PhotoGallery = ({ category = null }) => {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.title}>
+    <div className={styles.container} style={{ minHeight: 'auto', background: 'transparent', padding: '10px' }}>
+      <div className={styles.header} style={{ marginBottom: '20px', paddingBottom: '10px' }}>
+        <div className={styles.title} style={{ fontSize: '1.5rem' }}>
           <span className={styles.icon}>📸</span>
-          PHOTO GALLERY v2.0
+          PHOTO GALLERY
         </div>
-        <div className={styles.subtitle}>
-          Szybkie przeglądanie zdjęć produktów z infinite scroll
+        <div className={styles.tabsContainer}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`${styles.tabButton} ${activeTab === tab.id ? styles.active : ''}`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className={styles.photosGrid}>
-        {photos.map((photo, index) => (
+      <div className={styles.photosGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '15px' }}>
+        {photos.map((photo) => (
           <div
-            key={`${photo.id}-${index}`}
+            key={photo.id}
             className={styles.photoCard}
             onClick={() => handlePhotoClick(photo)}
           >
-            <div className={styles.photoContainer}>
-              <Image
+            <div className={styles.photoContainer} style={{ height: '120px' }}>
+              <img
                 src={photo.imageUrl}
-                alt={photo.altText}
-                width={photo.width || 800}
-                height={photo.height || 800}
+                alt={photo.productName}
                 className={styles.photo}
-                placeholder="blur"
-                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(photo.width || 800, photo.height || 800))}`}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 loading="lazy"
-                quality={75}
               />
-              {photo.isMainImage && (
-                <div className={styles.mainImageBadge}>GŁÓWNE</div>
-              )}
             </div>
-            <div className={styles.photoInfo}>
-              <div className={styles.productName}>
+            <div className={styles.photoInfo} style={{ padding: '8px' }}>
+              <div className={styles.productName} style={{ fontSize: '0.8rem' }}>
                 {photo.productName}
-              </div>
-              <div className={styles.viewProduct}>
-                ▶ KLIKNIJ ABY ZOBACZYĆ PRODUKT
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {(loading || hasNextPage) && (
-        <div ref={infiniteRef} className={styles.loadingContainer}>
+      {loading && (
+        <div className={styles.loadingContainer}>
           <div className={styles.loading}>
             <div className={styles.loadingSpinner}>⟳</div>
-            <div className={styles.loadingText}>
-              {loading ? 'ŁADOWANIE ZDJĘĆ...' : 'PRZYGOTOWYWANIE KOLEJNYCH ZDJĘĆ'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!hasNextPage && photos.length > 0 && (
-        <div className={styles.endMessage}>
-          <div className={styles.endIcon}>🏁</div>
-          <div className={styles.endText}>
-            TO JUŻ WSZYSTKIE ZDJĘCIA!<br />
-            Przejdź do Product Gallery aby zobaczyć więcej produktów.
+            <div className={styles.loadingText}>ŁADOWANIE...</div>
           </div>
         </div>
       )}
@@ -136,8 +166,7 @@ const PhotoGallery = ({ category = null }) => {
         <div className={styles.noPhotos}>
           <div className={styles.noPhotosIcon}>📷</div>
           <div className={styles.noPhotosText}>
-            BRAK ZDJĘĆ DO WYŚWIETLENIA<br />
-            Sprawdź czy produkty mają przypisane zdjęcia w WordPress.
+            BRAK ZDJĘĆ W TEJ KATEGORII
           </div>
         </div>
       )}
