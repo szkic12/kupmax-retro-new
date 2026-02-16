@@ -41,6 +41,12 @@ export function useSimpleChat() {
 
   // Dołącz do czatu
   const joinChat = async (userData) => {
+    // Prevent double join
+    if (currentUser) {
+      console.log('Already joined, skipping...');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const user = {

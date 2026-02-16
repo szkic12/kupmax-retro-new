@@ -247,6 +247,7 @@ $win95-title: #000080;
   display: grid;
   grid-template-columns: 200px 1fr;
   flex: 1;
+  min-height: 0; // Critical for grid inside flex to shrink properly
   overflow: hidden;
 }
 
@@ -302,6 +303,8 @@ $win95-title: #000080;
   display: flex;
   flex-direction: column;
   background: $win95-light;
+  min-height: 0; // Important for flex children to shrink
+  overflow: hidden;
 }
 
 .messagesContainer {
@@ -311,6 +314,7 @@ $win95-title: #000080;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0; // Important for flex to work properly
 }
 
 .emptyChat {
@@ -436,6 +440,7 @@ $win95-title: #000080;
   padding: 8px;
   border-top: 1px solid $win95-dark;
   background: $win95-gray;
+  flex-shrink: 0; // Don't shrink the form
 }
 
 .inputContainer {

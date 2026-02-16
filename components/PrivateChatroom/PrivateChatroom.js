@@ -46,6 +46,7 @@ export default function PrivateChatroom() {
   const createWindowRef = useRef(null);
   const joinWindowRef = useRef(null);
   const chatWindowRef = useRef(null);
+  const hasJoinedRef = useRef(false);
 
   // Sprawdź czy zalogowany jako admin
   useEffect(() => {
@@ -102,6 +103,13 @@ export default function PrivateChatroom() {
     e.preventDefault();
     if (!nickname.trim() || !roomIdInput.trim() || !passwordInput.trim()) return;
 
+    // Prevent double join
+    if (hasJoinedRef.current || currentUser) {
+      console.log('Already joined, preventing duplicate join');
+      return;
+    }
+    hasJoinedRef.current = true;
+
     setError('');
     try {
       const result = await joinRoom(
@@ -109,13 +117,15 @@ export default function PrivateChatroom() {
         roomIdInput.trim().toUpperCase(),
         passwordInput.trim()
       );
-      
+
       if (result.success) {
         setMode('chat');
       } else {
+        hasJoinedRef.current = false; // Reset on error
         setError(result.error || 'Błąd podczas dołączania do pokoju');
       }
     } catch (error) {
+      hasJoinedRef.current = false; // Reset on error
       setError(error.message || 'Nieznany błąd');
     }
   };

@@ -36,6 +36,7 @@ export default function Chatroom() {
   const messagesEndRef = useRef(null);
   const loginWindowRef = useRef(null);
   const chatWindowRef = useRef(null);
+  const hasJoinedRef = useRef(false);
 
   // Sprawdź czy zalogowany jako admin (ma JWT cookie)
   useEffect(() => {
@@ -71,6 +72,13 @@ export default function Chatroom() {
   const handleLogin = (e) => {
     e.preventDefault();
     if (!nickname.trim()) return;
+
+    // Prevent double join
+    if (hasJoinedRef.current || currentUser) {
+      console.log('Already joined, preventing duplicate join');
+      return;
+    }
+    hasJoinedRef.current = true;
 
     joinChat({ nickname: nickname.trim() });
     setShowLogin(false);
