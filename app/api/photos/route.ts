@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { createClient } from '@supabase/supabase-js';
 
 // AI Kupmax API URL
 const AI_KUPMAX_API = process.env.AI_KUPMAX_API_URL || 'https://ai.kupmax.pl';
+
+// Supabase for checking activePlanets
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +22,18 @@ export async function GET(req: NextRequest) {
     // If source=products, fetch from ai.kupmax.pl
     if (source === 'products') {
       try {
+        // First, get companies with activePlanets >= 3
+        const { data: verifiedCompanies } = await supabase
+          .from('Company')
+          .select('id, name, activePlanets')
+          .gte('activePlanets', 3);
+
+        const verifiedCompanyIds = new Set((verifiedCompanies || []).map(c => c.id));
+        const companyNames: Record<string, string> = {};
+        (verifiedCompanies || []).forEach(c => {
+          companyNames[c.id] = c.name;
+        });
+
         // Fetch products from ai.kupmax.pl API
         const response = await fetch(`${AI_KUPMAX_API}/api/products?limit=100`, {
           headers: {
@@ -31,25 +49,24 @@ export async function GET(req: NextRequest) {
         const data = await response.json();
 
         // Filter products - only from companies with activePlanets >= 3
-        // and only products with images
+        // seller.id in API = Company.id (sellerId in Product table)
         const photos: any[] = [];
 
         if (data.products && Array.isArray(data.products)) {
           data.products.forEach((product: any) => {
-            // Check if company has activePlanets >= 3
-            const activePlanets = product.company?.activePlanets || 0;
-            if (activePlanets >= 3 && product.images && product.images.length > 0) {
+            const sellerId = product.seller?.id;
+            // Check if seller (company) has activePlanets >= 3
+            if (sellerId && verifiedCompanyIds.has(sellerId) && product.images && product.images.length > 0) {
               // Add each product image as a photo
               product.images.forEach((image: any, index: number) => {
                 photos.push({
                   id: `${product.id}-${index}`,
-                  image_url: image.url || image,
-                  imageUrl: image.url || image,
+                  image_url: typeof image === 'string' ? image : image.url,
+                  imageUrl: typeof image === 'string' ? image : image.url,
                   title: product.name,
                   productName: product.name,
                   productSlug: product.slug,
-                  companyName: product.company?.name,
-                  activePlanets: activePlanets,
+                  companyName: companyNames[sellerId] || product.seller?.name,
                 });
               });
             }
