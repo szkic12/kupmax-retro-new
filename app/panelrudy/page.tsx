@@ -355,21 +355,43 @@ export default function SecureAdminPanel() {
         const data = await res.json();
         adId = data.advertisement.id;
       } else if (editingAd) {
-        // Aktualizujemy istniejącą
-        const res = await fetch('/api/advertisement', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: editingAd.id,
-            ...newAd,
-            image_url: adSlides[0]?.image_url || editingAd.image_url,
-            end_date: newAd.end_date || null,
-          }),
-        });
+        // Jeśli edytujemy "default" reklamę - utwórz nową zamiast aktualizować
+        if (editingAd.id === 'default') {
+          const res = await fetch('/api/advertisement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...newAd,
+              image_url: adSlides[0]?.image_url || '',
+              end_date: newAd.end_date || null,
+            }),
+          });
 
-        if (!res.ok) {
-          setMessage('Błąd aktualizacji reklamy');
-          return;
+          if (!res.ok) {
+            setMessage('Błąd tworzenia reklamy');
+            return;
+          }
+
+          const data = await res.json();
+          adId = data.advertisement.id;
+        } else {
+          // Aktualizujemy istniejącą reklamę
+          const res = await fetch('/api/advertisement', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: editingAd.id,
+              ...newAd,
+              image_url: adSlides[0]?.image_url || editingAd.image_url,
+              end_date: newAd.end_date || null,
+            }),
+          });
+
+          if (!res.ok) {
+            setMessage('Błąd aktualizacji reklamy');
+            return;
+          }
+          adId = editingAd.id;
         }
       }
 
