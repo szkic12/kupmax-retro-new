@@ -4,6 +4,21 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1 year for images
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'kxsgfuppoliuvprhxwyc.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+      },
+    ],
   },
   compress: true,
   poweredByHeader: false,
