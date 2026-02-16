@@ -1,8 +1,25 @@
 'use client';
 import { logger } from '@/lib/logger';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+
+interface Slide {
+  id: string;
+  image_url: string;
+  title?: string;
+  order_index: number;
+}
+
+interface Advertisement {
+  id: string;
+  title: string;
+  description?: string;
+  link_url?: string;
+  advertiser_name: string;
+  image_url?: string;
+  slides?: Slide[];
+}
 
 /**
  * /reklama - Flash Intro Style
@@ -14,8 +31,10 @@ export default function ReklamaPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [visitCount, setVisitCount] = useState(13847);
-  const [advertisement, setAdvertisement] = useState<any>(null);
+  const [advertisement, setAdvertisement] = useState<Advertisement | null>(null);
   const [loadingAd, setLoadingAd] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slideIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch advertisement from API
   useEffect(() => {
@@ -63,12 +82,47 @@ export default function ReklamaPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Get slides from advertisement (or create single slide from image_url)
+  const slides: Slide[] = advertisement?.slides?.length
+    ? advertisement.slides
+    : advertisement?.image_url
+    ? [{ id: '1', image_url: advertisement.image_url, title: advertisement.title, order_index: 0 }]
+    : [
+        { id: '1', image_url: '/images/slider-1.jpg', title: 'Sesje ślubne', order_index: 0 },
+        { id: '2', image_url: '/images/slider-2.jpg', title: 'Portrety', order_index: 1 },
+        { id: '3', image_url: '/images/slider-3.jpg', title: 'Eventy', order_index: 2 },
+      ];
+
   // Get display data from advertisement or fallback
   const adTitle = advertisement?.title || 'Reklama';
   const adDescription = advertisement?.description || '';
   const adAdvertiser = advertisement?.advertiser_name || 'Reklamodawca';
-  const adImageUrl = advertisement?.image_url || '/images/slider-1.jpg';
   const adLinkUrl = ensureHttps(advertisement?.link_url);
+
+  // Auto-advance slider
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentSlide(index);
+  }, []);
+
+  // Start/stop auto-slide
+  useEffect(() => {
+    if (showContent && slides.length > 1) {
+      slideIntervalRef.current = setInterval(nextSlide, 4000);
+      return () => {
+        if (slideIntervalRef.current) {
+          clearInterval(slideIntervalRef.current);
+        }
+      };
+    }
+  }, [showContent, slides.length, nextSlide]);
 
   // Loading screen - Flash style
   if (isLoading || loadingAd) {
@@ -188,7 +242,7 @@ export default function ReklamaPage() {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-4">
 
-        {/* Single image container */}
+        {/* Image slider container */}
         <div className="relative w-full max-w-4xl mx-auto">
           {/* Decorative frame */}
           <div
@@ -201,23 +255,60 @@ export default function ReklamaPage() {
             }}
           />
 
-          {/* Image container */}
+          {/* Slider container */}
           <div className="relative bg-black rounded-lg overflow-hidden border-4 border-white shadow-2xl">
-            <a href={adLinkUrl} target="_blank" rel="noopener noreferrer">
-              <img
-                src={adImageUrl}
-                alt={adTitle}
-                className="w-full h-[50vh] object-cover hover:scale-105 transition-transform duration-500"
-              />
-            </a>
+            {/* Slides */}
+            <div className="relative h-[50vh] overflow-hidden">
+              {slides.map((slide, index) => (
+                <a
+                  key={slide.id}
+                  href={adLinkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                    index === currentSlide
+                      ? 'opacity-100 translate-x-0'
+                      : index < currentSlide
+                      ? 'opacity-0 -translate-x-full'
+                      : 'opacity-0 translate-x-full'
+                  }`}
+                >
+                  <img
+                    src={slide.image_url}
+                    alt={slide.title || `Slide ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </a>
+              ))}
+
+              {/* Navigation arrows (show only if multiple slides) */}
+              {slides.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => { e.preventDefault(); prevSlide(); }}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all border-2 border-cyan-400"
+                    style={{ boxShadow: '0 0 10px rgba(0,255,255,0.5)' }}
+                  >
+                    ◀
+                  </button>
+                  <button
+                    onClick={(e) => { e.preventDefault(); nextSlide(); }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all border-2 border-cyan-400"
+                    style={{ boxShadow: '0 0 10px rgba(0,255,255,0.5)' }}
+                  >
+                    ▶
+                  </button>
+                </>
+              )}
+            </div>
 
             {/* Caption */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 z-10">
               <h2
                 className="text-3xl md:text-4xl font-bold text-white mb-2"
                 style={{ textShadow: '2px 2px 4px #ff00ff, -2px -2px 4px #00ffff' }}
               >
-                {adTitle}
+                {slides[currentSlide]?.title || adTitle}
               </h2>
               {adDescription && (
                 <p className="text-xl text-cyan-300">{adDescription}</p>
@@ -226,6 +317,24 @@ export default function ReklamaPage() {
                 Reklamodawca: {adAdvertiser}
               </p>
             </div>
+
+            {/* Slide indicators (dots) */}
+            {slides.length > 1 && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`w-3 h-3 rounded-full border-2 transition-all ${
+                      index === currentSlide
+                        ? 'bg-cyan-400 border-cyan-400'
+                        : 'bg-transparent border-white/70 hover:border-cyan-400'
+                    }`}
+                    style={{ boxShadow: index === currentSlide ? '0 0 10px rgba(0,255,255,0.8)' : 'none' }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
