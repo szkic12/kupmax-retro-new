@@ -19,27 +19,41 @@ export async function GET(request: NextRequest) {
 
     // Jeśli all=true, zwróć wszystkie reklamy ze slajdami (dla admina)
     if (all) {
-      const { data, error } = await supabase
-        .from('advertisements')
-        .select('*, slides:advertisement_slides(*)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('advertisements')
+          .select('*, slides:advertisement_slides(*)')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        logger.error('Error fetching all advertisements:', error);
-        return NextResponse.json({ error: 'Failed to fetch advertisements' }, { status: 500 });
-      }
-
-      // Sortuj slajdy każdej reklamy
-      const adsWithSortedSlides = (data || []).map(ad => ({
-        ...ad,
-        slides: (ad.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
-      }));
-
-      return NextResponse.json({ advertisements: adsWithSortedSlides }, {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        if (error) {
+          logger.error('Error fetching all advertisements:', error);
+          // Return empty array instead of 500
+          return NextResponse.json({ advertisements: [] }, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            }
+          });
         }
-      });
+
+        // Sortuj slajdy każdej reklamy
+        const adsWithSortedSlides = (data || []).map(ad => ({
+          ...ad,
+          slides: (ad.slides || []).sort((a: any, b: any) => a.order_index - b.order_index)
+        }));
+
+        return NextResponse.json({ advertisements: adsWithSortedSlides }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          }
+        });
+      } catch (err) {
+        logger.error('Error in all advertisements:', err);
+        return NextResponse.json({ advertisements: [] }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          }
+        });
+      }
     }
 
     // Domyślnie: pobierz tylko aktywną reklamę ze slajdami
