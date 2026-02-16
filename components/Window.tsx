@@ -26,7 +26,7 @@ export default function Window({
   width = '600px',
   height = '400px',
   x = 50,
-  y = 160,
+  y = 210,
   minimized = false,
   onClose,
   onMinimize,
