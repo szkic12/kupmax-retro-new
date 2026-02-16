@@ -301,6 +301,56 @@ export default function SecureAdminPanel() {
     setAdSlides(adSlides.filter((_, i) => i !== index));
   };
 
+  const handleReplaceSlideImage = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage('Nieprawidłowy typ pliku! Dozwolone: JPG, PNG, WebP, GIF');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Plik za duży! Maksymalny rozmiar: 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    setMessage('Wysyłanie nowego obrazka...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/advertisement/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        // Podmień obrazek w slajdzie
+        const updated = [...adSlides];
+        updated[index] = {
+          ...updated[index],
+          image_url: data.url,
+          isNew: true, // Oznacz jako nowy żeby zapisać do bazy
+        };
+        setAdSlides(updated);
+        setMessage('Obrazek podmieniony!');
+      } else {
+        setMessage('Błąd uploadu: ' + (data.error || 'Nieznany błąd'));
+      }
+    } catch (error) {
+      setMessage('Błąd sieci podczas uploadu');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
   const handleUpdateSlideTitle = (index: number, title: string) => {
     const updated = [...adSlides];
     updated[index].title = title;
@@ -1275,12 +1325,34 @@ export default function SecureAdminPanel() {
                                       height: '80px',
                                       overflow: 'hidden',
                                       marginBottom: '5px',
+                                      position: 'relative',
                                     }}>
                                       <img
                                         src={slide.image_url}
                                         alt={slide.title || `Slajd ${index + 1}`}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                       />
+                                      {/* Przycisk podmiany obrazka */}
+                                      <label style={{
+                                        position: 'absolute',
+                                        bottom: '2px',
+                                        right: '2px',
+                                        background: '#4444ff',
+                                        color: '#fff',
+                                        padding: '2px 5px',
+                                        fontSize: '9px',
+                                        cursor: 'pointer',
+                                        borderRadius: '3px',
+                                      }}>
+                                        🔄
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => handleReplaceSlideImage(index, e)}
+                                          disabled={uploadingImage}
+                                          style={{ display: 'none' }}
+                                        />
+                                      </label>
                                     </div>
                                     <input
                                       type="text"
