@@ -53,14 +53,15 @@ export default function PhotosPage() {
             setPhotos(data.photos);
           }
         } else if (activeTab === 'reklamy') {
-          // Fetch advertisement slides
+          // Fetch advertisement slides - try all first, then fallback to active ad
           const res = await fetch('/api/advertisement?all=true');
           const data = await res.json();
-          if (data.advertisements) {
+          const allSlides: Photo[] = [];
+
+          if (data.advertisements && data.advertisements.length > 0) {
             // Flatten all slides from all advertisements
-            const allSlides: Photo[] = [];
             data.advertisements.forEach((ad: any) => {
-              if (ad.slides) {
+              if (ad.slides && ad.slides.length > 0) {
                 ad.slides.forEach((slide: any) => {
                   allSlides.push({
                     id: slide.id,
@@ -70,8 +71,24 @@ export default function PhotosPage() {
                 });
               }
             });
-            setPhotos(allSlides);
           }
+
+          // If no slides found, try getting the active advertisement (includes default fallback)
+          if (allSlides.length === 0) {
+            const resSingle = await fetch('/api/advertisement');
+            const dataSingle = await resSingle.json();
+            if (dataSingle.advertisement?.slides) {
+              dataSingle.advertisement.slides.forEach((slide: any) => {
+                allSlides.push({
+                  id: slide.id,
+                  image_url: slide.image_url,
+                  title: slide.title || dataSingle.advertisement.title,
+                });
+              });
+            }
+          }
+
+          setPhotos(allSlides);
         }
       } catch (error) {
         console.error('Error fetching photos:', error);
