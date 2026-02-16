@@ -24,8 +24,8 @@ const toBase64 = (str) =>
     ? Buffer.from(str).toString('base64')
     : window.btoa(str);
 
-const PhotoGallery = () => {
-  const { photos, loading, error, hasNextPage, infiniteRef } = usePhotos();
+const PhotoGallery = ({ category = null }) => {
+  const { photos, loading, error, hasNextPage, infiniteRef } = usePhotos(category);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

@@ -1,28 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
 
-const PhotoGallery = dynamic(() => import('../../components/PhotoGallery/PhotoGallery'), {
-  ssr: false,
-});
+const allEmojis: EmojiType[] = ['smile', 'laugh', 'sad', 'wink', 'tongue', 'love', 'cool', 'angry', 'surprise', 'think'];
+
+type TabType = 'products' | 'moje' | 'reklamy';
+
+interface Photo {
+  id: string;
+  image_url?: string;
+  imageUrl?: string;
+  title?: string;
+  name?: string;
+  productName?: string;
+}
 
 /**
- * /photos - GeoCities Style Gallery
- * Under construction GIFs, star backgrounds, frames, hit counter
+ * /photos - GeoCities Style Gallery z 3 zakładkami
+ * 1. Produkty - zdjęcia z ai.kupmax.pl (firmy z activePlanets >= 3)
+ * 2. Moje zdjęcia - prywatny magazynek admina (S3 linki)
+ * 3. Reklamy - zdjęcia z systemu reklam
  */
 export default function PhotosPage() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('products');
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
-  const albums = [
-    { name: 'Vacation 1999', icon: '🏖️', count: 24 },
-    { name: 'Family Photos', icon: '👨‍👩‍👧‍👦', count: 42 },
-    { name: 'My Pets', icon: '🐕', count: 18 },
-    { name: 'Cool Cars', icon: '🚗', count: 31 },
-    { name: 'Nature', icon: '🌲', count: 56 },
-    { name: 'Random Stuff', icon: '📦', count: 89 },
+  // Fetch photos based on active tab
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      setLoading(true);
+      setPhotos([]);
+
+      try {
+        if (activeTab === 'products') {
+          // Fetch products from ai.kupmax.pl with activePlanets >= 3
+          const res = await fetch('/api/photos?source=products');
+          const data = await res.json();
+          if (data.success && data.photos) {
+            setPhotos(data.photos);
+          }
+        } else if (activeTab === 'moje') {
+          // Fetch admin's gallery photos
+          const res = await fetch('/api/gallery-photos');
+          const data = await res.json();
+          if (data.photos) {
+            setPhotos(data.photos);
+          }
+        } else if (activeTab === 'reklamy') {
+          // Fetch advertisement slides
+          const res = await fetch('/api/advertisement?all=true');
+          const data = await res.json();
+          if (data.advertisements) {
+            // Flatten all slides from all advertisements
+            const allSlides: Photo[] = [];
+            data.advertisements.forEach((ad: any) => {
+              if (ad.slides) {
+                ad.slides.forEach((slide: any) => {
+                  allSlides.push({
+                    id: slide.id,
+                    image_url: slide.image_url,
+                    title: slide.title || ad.title,
+                  });
+                });
+              }
+            });
+            setPhotos(allSlides);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPhotos();
+  }, [activeTab]);
+
+  const tabs = [
+    { id: 'products' as TabType, label: 'Produkty', icon: '🛒', color: '#00ff66' },
+    { id: 'moje' as TabType, label: 'Moje Zdjecia', icon: '📷', color: '#ff00ff' },
+    { id: 'reklamy' as TabType, label: 'Reklamy', icon: '📺', color: '#ffff00' },
   ];
+
+  const getImageUrl = (photo: Photo) => {
+    return photo.image_url || photo.imageUrl || '';
+  };
+
+  const getPhotoTitle = (photo: Photo) => {
+    return photo.title || photo.name || photo.productName || 'Zdjecie';
+  };
 
   return (
     <div
@@ -55,7 +127,6 @@ export default function PhotosPage() {
 
       {/* Header */}
       <header className="relative py-8 text-center">
-        {/* Animated title */}
         <h1
           className="text-5xl md:text-6xl font-bold mb-4"
           style={{
@@ -68,27 +139,12 @@ export default function PhotosPage() {
             textShadow: '3px 3px 6px rgba(0,0,0,0.5)',
           }}
         >
-          ★ My Photo Gallery ★
+          * My Photo Gallery *
         </h1>
 
         <p className="text-cyan-300 text-xl mb-4" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
           ~ Welcome to my corner of the web! ~
         </p>
-
-        {/* Under construction GIF placeholder */}
-        <div className="flex justify-center gap-4 mb-4">
-          <div className="text-4xl animate-bounce">🚧</div>
-          <div
-            className="px-4 py-2 text-yellow-300 font-bold rounded animate-pulse"
-            style={{
-              background: 'repeating-linear-gradient(45deg, #000 0px, #000 10px, #ffff00 10px, #ffff00 20px)',
-              border: '3px solid #ffff00',
-            }}
-          >
-            ⚠️ UNDER CONSTRUCTION ⚠️
-          </div>
-          <div className="text-4xl animate-bounce" style={{ animationDelay: '0.5s' }}>🚧</div>
-        </div>
 
         {/* Hit counter */}
         <div className="inline-block px-4 py-2 bg-black rounded border-2 border-cyan-400">
@@ -116,9 +172,17 @@ export default function PhotosPage() {
         }}
       >
         <div className="flex flex-wrap justify-center gap-4">
-          {['🏠 Home', '📸 Photos', '👤 About Me', '✉️ Email Me', '🔗 Links', '📖 Guestbook'].map((item) => (
-            <span
-              key={item}
+          {[
+            { label: 'Home', href: '/' },
+            { label: 'Photos', href: '/photos' },
+            { label: 'Shop', href: '/shop' },
+            { label: 'Kontakt', href: 'mailto:kontakt@kupmax.pl' },
+            { label: 'News', href: '/news' },
+            { label: 'Guestbook', href: '/guestbook' },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
               className="px-4 py-2 cursor-pointer transition-all hover:scale-110"
               style={{
                 background: 'linear-gradient(180deg, #ff00ff 0%, #aa00aa 100%)',
@@ -128,83 +192,69 @@ export default function PhotosPage() {
                 textShadow: '1px 1px 2px #000',
               }}
             >
-              {item}
-            </span>
+              {item.label}
+            </Link>
           ))}
         </div>
       </nav>
 
       {/* Main content */}
       <main className="relative container mx-auto px-4 pb-8">
-        {/* Intro section */}
-        <section
-          className="mb-8 p-6 rounded-lg text-center"
-          style={{
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,50,0.8) 100%)',
-            border: '4px double #00ffff',
-          }}
-        >
-          <div className="text-6xl mb-4">📷</div>
-          <h2
-            className="text-2xl font-bold text-yellow-300 mb-4"
-            style={{ fontFamily: 'Comic Sans MS, cursive' }}
-          >
-            Welcome to my Photo Collection!!!
-          </h2>
-          <p className="text-cyan-200 max-w-2xl mx-auto" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-            Here you will find all my favorite photos from trips, family events, and random cool stuff I found on the internet!
-            Feel free to browse around and don't forget to sign my <Link href="/guestbook" className="text-pink-400 underline animate-pulse">guestbook</Link>!
-          </p>
-
-          {/* Animated divider */}
-          <div className="flex justify-center gap-2 mt-4">
-            {['⭐', '✨', '🌟', '✨', '⭐', '✨', '🌟', '✨', '⭐'].map((star, i) => (
-              <span
-                key={i}
-                className="text-xl animate-pulse"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                {star}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* Albums section */}
+        {/* Emoticons section */}
         <section className="mb-8">
-          <h3
-            className="text-2xl font-bold text-center mb-6"
+          <div
+            className="rounded-lg overflow-hidden max-w-2xl mx-auto"
             style={{
-              color: '#ffff00',
-              fontFamily: 'Comic Sans MS, cursive',
-              textShadow: '2px 2px 4px #ff00ff',
+              background: '#fff8dc',
+              border: '4px ridge #8B4513',
             }}
           >
-            ~ Photo Albums ~
-          </h3>
+            <div
+              className="py-2 px-4 text-center font-bold text-white"
+              style={{ background: '#cc6600' }}
+            >
+              EMOTICONS
+            </div>
+            <div className="p-4 flex flex-wrap justify-center gap-4">
+              {allEmojis.map((type) => (
+                <div
+                  key={type}
+                  className="cursor-pointer hover:scale-125 transition-transform"
+                  title={emojiToCode[type]}
+                >
+                  <RetroEmoji type={type} size={48} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {albums.map((album, i) => (
-              <div
-                key={album.name}
-                className="p-4 rounded-lg text-center cursor-pointer transition-all hover:scale-110 hover:-rotate-3"
+        {/* TABS */}
+        <section className="mb-6">
+          <div className="flex justify-center gap-2 flex-wrap">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="px-6 py-3 font-bold text-lg transition-all hover:scale-105"
                 style={{
-                  background: `linear-gradient(180deg, ${['#ff0066', '#00ff66', '#6600ff', '#ff6600', '#00ffff', '#ffff00'][i]} 0%, #000 100%)`,
-                  border: '3px ridge silver',
-                  boxShadow: '5px 5px 15px rgba(0,0,0,0.5)',
+                  background: activeTab === tab.id
+                    ? `linear-gradient(180deg, ${tab.color} 0%, ${tab.color}88 100%)`
+                    : 'linear-gradient(180deg, #333 0%, #111 100%)',
+                  border: activeTab === tab.id ? `3px ridge ${tab.color}` : '3px ridge #666',
+                  color: activeTab === tab.id ? '#000' : '#fff',
+                  textShadow: activeTab === tab.id ? 'none' : '1px 1px 2px #000',
+                  boxShadow: activeTab === tab.id ? `0 0 20px ${tab.color}66` : 'none',
                 }}
               >
-                <div className="text-5xl mb-2">{album.icon}</div>
-                <p className="text-white font-bold text-sm" style={{ textShadow: '1px 1px 2px #000' }}>
-                  {album.name}
-                </p>
-                <p className="text-xs text-gray-300">({album.count} pics)</p>
-              </div>
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
             ))}
           </div>
         </section>
 
-        {/* Actual gallery component */}
+        {/* Gallery section */}
         <section
           className="rounded-lg overflow-hidden"
           style={{
@@ -215,19 +265,85 @@ export default function PhotosPage() {
           <div
             className="py-3 px-4 text-center"
             style={{
-              background: 'linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff)',
+              background: `linear-gradient(90deg, ${tabs.find(t => t.id === activeTab)?.color || '#ff00ff'}, #000, ${tabs.find(t => t.id === activeTab)?.color || '#ff00ff'})`,
             }}
           >
             <h3
               className="text-xl font-bold text-white"
               style={{ textShadow: '2px 2px 4px #000' }}
             >
-              🖼️ LATEST PHOTOS 🖼️
+              {tabs.find(t => t.id === activeTab)?.icon} {tabs.find(t => t.id === activeTab)?.label.toUpperCase()} {tabs.find(t => t.id === activeTab)?.icon}
             </h3>
           </div>
 
           <div className="p-4">
-            <PhotoGallery />
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="text-4xl animate-spin inline-block mb-4">⟳</div>
+                <p className="text-cyan-400" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                  Ladowanie zdjec...
+                </p>
+              </div>
+            ) : photos.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📷</div>
+                <p className="text-yellow-400" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                  {activeTab === 'products' && 'Brak zdjec produktow. Firmy musza miec min. 3 planety w Hive Sounds!'}
+                  {activeTab === 'moje' && 'Brak zdjec. Dodaj zdjecia przez Panel Rudy!'}
+                  {activeTab === 'reklamy' && 'Brak zdjec reklamowych.'}
+                </p>
+                {activeTab === 'moje' && (
+                  <Link
+                    href="/panelrudy"
+                    className="inline-block mt-4 px-6 py-2 font-bold"
+                    style={{
+                      background: 'linear-gradient(180deg, #ff00ff 0%, #aa00aa 100%)',
+                      border: '2px outset #ff66ff',
+                      color: 'white',
+                    }}
+                  >
+                    Przejdz do Panel Rudy
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="relative group cursor-pointer transition-all hover:scale-105 hover:z-10"
+                    onClick={() => setSelectedPhoto(photo)}
+                    style={{
+                      border: '3px ridge silver',
+                      background: '#000',
+                    }}
+                  >
+                    <div className="aspect-square relative overflow-hidden">
+                      {getImageUrl(photo) ? (
+                        <Image
+                          src={getImageUrl(photo)}
+                          alt={getPhotoTitle(photo)}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                          <span className="text-4xl">📷</span>
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <p className="text-white text-center px-2 text-sm" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
+                        {getPhotoTitle(photo)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -242,7 +358,7 @@ export default function PhotosPage() {
                 border: '3px ridge gold',
               }}
             >
-              🏆 Best Gallery Award 1999
+              Best Gallery Award 1999
             </div>
             <div
               className="px-4 py-2 rounded animate-pulse"
@@ -252,47 +368,71 @@ export default function PhotosPage() {
                 animationDelay: '0.5s',
               }}
             >
-              ⭐ Cool Site of the Day
-            </div>
-            <div
-              className="px-4 py-2 rounded animate-pulse"
-              style={{
-                background: 'linear-gradient(45deg, #cd7f32, #8b4513)',
-                border: '3px ridge #cd7f32',
-                color: 'white',
-                animationDelay: '1s',
-              }}
-            >
-              📸 Featured on GeoCities
-            </div>
-          </div>
-
-          {/* Links */}
-          <div
-            className="inline-block p-4 rounded-lg"
-            style={{
-              background: 'rgba(0,0,0,0.8)',
-              border: '2px dashed #ff00ff',
-            }}
-          >
-            <p className="text-pink-400 mb-2" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-              Link to me!!!
-            </p>
-            <div
-              className="px-4 py-2 bg-white text-black font-mono text-xs rounded"
-            >
-              &lt;a href="https://kupmax.pl/photos"&gt;&lt;img src="banner.gif"&gt;&lt;/a&gt;
+              Cool Site of the Day
             </div>
           </div>
 
           {/* Webrings */}
           <div className="flex justify-center gap-4 flex-wrap text-sm">
-            <span className="text-cyan-400">[◀ Previous]</span>
+            <span className="text-cyan-400">[&lt; Previous]</span>
             <span className="text-pink-400">~ Photo Lovers Webring ~</span>
-            <span className="text-cyan-400">[Next ▶]</span>
+            <span className="text-cyan-400">[Next &gt;]</span>
           </div>
         </section>
       </main>
+
+      {/* Photo Modal */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.9)' }}
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] overflow-hidden"
+            style={{
+              border: '4px ridge gold',
+              background: '#000',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-2 right-2 z-10 w-10 h-10 flex items-center justify-center text-2xl font-bold"
+              style={{
+                background: 'linear-gradient(180deg, #ff0000 0%, #990000 100%)',
+                border: '2px outset #ff6666',
+                color: 'white',
+              }}
+            >
+              X
+            </button>
+
+            <div className="relative">
+              {getImageUrl(selectedPhoto) && (
+                <Image
+                  src={getImageUrl(selectedPhoto)}
+                  alt={getPhotoTitle(selectedPhoto)}
+                  width={800}
+                  height={600}
+                  className="max-h-[80vh] w-auto object-contain"
+                />
+              )}
+            </div>
+
+            <div
+              className="py-2 px-4 text-center"
+              style={{
+                background: 'linear-gradient(90deg, #ff00ff, #00ffff)',
+              }}
+            >
+              <p className="text-white font-bold" style={{ textShadow: '1px 1px 2px #000' }}>
+                {getPhotoTitle(selectedPhoto)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer
@@ -303,7 +443,7 @@ export default function PhotosPage() {
         }}
       >
         <div className="flex justify-center gap-2 mb-4">
-          {['💖', '📸', '🌟', '✨', '🌈', '✨', '🌟', '📸', '💖'].map((emoji, i) => (
+          {['<3', '📸', '*', '~', '📷', '~', '*', '📸', '<3'].map((emoji, i) => (
             <span
               key={i}
               className="text-2xl animate-bounce"
@@ -315,7 +455,7 @@ export default function PhotosPage() {
         </div>
 
         <p className="text-gray-400 text-sm mb-4" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
-          Made with ❤️ and lots of ☕
+          Made with love and lots of coffee
           <br />
           Best viewed in 800x600 with Netscape Navigator
         </p>
@@ -330,7 +470,7 @@ export default function PhotosPage() {
             textShadow: '2px 2px 4px #000',
           }}
         >
-          ← Back to KUPMAX Retro ←
+          &lt;- Back to KUPMAX Retro &lt;-
         </Link>
 
         <p className="text-gray-500 text-xs mt-4">

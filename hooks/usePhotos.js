@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export const usePhotos = () => {
+export const usePhotos = (category = null) => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,7 +14,11 @@ export const usePhotos = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/photos?page=${pageNum}&per_page=8`);
+      let url = `/api/photos?page=${pageNum}&per_page=8`;
+      if (category) {
+        url += `&category=${category}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
 
       if (!data.success) {
@@ -54,10 +58,10 @@ export const usePhotos = () => {
     loadPhotos(1, false);
   }, [loadPhotos]);
 
-  // Load initial photos on mount
+  // Load initial photos on mount and when category changes
   useEffect(() => {
     resetPhotos();
-  }, [resetPhotos]);
+  }, [resetPhotos, category]);
 
   // Custom infinite scroll with Intersection Observer
   useEffect(() => {

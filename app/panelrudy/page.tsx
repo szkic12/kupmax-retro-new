@@ -87,6 +87,10 @@ export default function SecureAdminPanel() {
   const [loadingTrends, setLoadingTrends] = useState(false);
   const [trendCategory, setTrendCategory] = useState('general');
 
+  // Gallery (Moje Zdjecia)
+  const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
+  const [newGalleryPhoto, setNewGalleryPhoto] = useState({ title: '', image_url: '', description: '' });
+
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
   // Simple formatting helpers for news content
@@ -195,6 +199,11 @@ export default function SecureAdminPanel() {
         const resSources = await fetch('/api/news/rss?action=sources');
         const dataSources = await resSources.json();
         setRssSources(dataSources.sources || []);
+      } else if (activeTab === 'gallery') {
+        // Pobierz zdjęcia z galerii
+        const resGallery = await fetch('/api/gallery-photos');
+        const dataGallery = await resGallery.json();
+        setGalleryPhotos(dataGallery.photos || []);
       }
     } catch (error) {
       logger.error('Error fetching data:', error);
@@ -1144,6 +1153,9 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === 'rss')} onClick={() => setActiveTab('rss')}>
               📡 Inspiracje
+            </button>
+            <button style={tabStyle(activeTab === 'gallery')} onClick={() => setActiveTab('gallery')}>
+              📷 Moje Zdjecia
             </button>
           </div>
 
@@ -2174,6 +2186,115 @@ export default function SecureAdminPanel() {
                 )}
               </>
             )}
+
+                {/* ============= GALLERY TAB ============= */}
+                {activeTab === 'gallery' && (
+                  <>
+                    <h3 style={{ margin: '0 0 15px', fontWeight: 'bold', fontSize: '16px' }}>📷 Moje Zdjecia (dla /photos)</h3>
+
+                    {/* Add new photo form */}
+                    <div style={{ background: '#f0f0f0', padding: '15px', borderRadius: '4px', marginBottom: '15px', border: '2px inset #808080' }}>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '14px' }}>Dodaj nowe zdjecie (wklej link z S3):</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <input
+                          type="text"
+                          placeholder="Tytul zdjecia"
+                          value={newGalleryPhoto.title}
+                          onChange={(e) => setNewGalleryPhoto({ ...newGalleryPhoto, title: e.target.value })}
+                          style={{ padding: '8px', border: '2px inset #808080', fontFamily: 'Tahoma, sans-serif' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="URL zdjecia (np. https://s3.amazonaws.com/...)"
+                          value={newGalleryPhoto.image_url}
+                          onChange={(e) => setNewGalleryPhoto({ ...newGalleryPhoto, image_url: e.target.value })}
+                          style={{ padding: '8px', border: '2px inset #808080', fontFamily: 'Tahoma, sans-serif' }}
+                        />
+                        <textarea
+                          placeholder="Opis (opcjonalnie)"
+                          value={newGalleryPhoto.description}
+                          onChange={(e) => setNewGalleryPhoto({ ...newGalleryPhoto, description: e.target.value })}
+                          style={{ padding: '8px', border: '2px inset #808080', fontFamily: 'Tahoma, sans-serif', minHeight: '60px' }}
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!newGalleryPhoto.image_url) {
+                              setMessage('Podaj URL zdjecia!');
+                              return;
+                            }
+                            try {
+                              const res = await fetch('/api/gallery-photos', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newGalleryPhoto),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setMessage('Zdjecie dodane!');
+                                setNewGalleryPhoto({ title: '', image_url: '', description: '' });
+                                // Refresh list
+                                const resGallery = await fetch('/api/gallery-photos');
+                                const dataGallery = await resGallery.json();
+                                setGalleryPhotos(dataGallery.photos || []);
+                              } else {
+                                setMessage('Blad: ' + (data.error || 'Nieznany blad'));
+                              }
+                            } catch (err) {
+                              setMessage('Blad dodawania zdjecia');
+                            }
+                          }}
+                          style={{ ...buttonStyle, background: '#90EE90' }}
+                        >
+                          ➕ Dodaj Zdjecie
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Photo list */}
+                    <div style={{ background: '#fff', padding: '10px', border: '2px inset #808080' }}>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '14px' }}>Twoje zdjecia ({galleryPhotos.length}):</h4>
+                      {galleryPhotos.length === 0 ? (
+                        <p style={{ color: '#666', fontStyle: 'italic' }}>Brak zdjec. Dodaj swoje pierwsze zdjecie!</p>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+                          {galleryPhotos.map((photo: any) => (
+                            <div key={photo.id} style={{ border: '2px outset #808080', padding: '5px', background: '#f0f0f0' }}>
+                              <div style={{ width: '100%', height: '100px', background: '#ddd', overflow: 'hidden', marginBottom: '5px' }}>
+                                {photo.image_url && (
+                                  <img
+                                    src={photo.image_url}
+                                    alt={photo.title || 'Photo'}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                )}
+                              </div>
+                              <p style={{ fontSize: '11px', margin: '0 0 5px', fontWeight: 'bold' }}>{photo.title || 'Bez tytulu'}</p>
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Na pewno usunac?')) {
+                                    try {
+                                      await fetch(`/api/gallery-photos?id=${photo.id}`, { method: 'DELETE' });
+                                      setMessage('Zdjecie usuniete!');
+                                      // Refresh
+                                      const resGallery = await fetch('/api/gallery-photos');
+                                      const dataGallery = await resGallery.json();
+                                      setGalleryPhotos(dataGallery.photos || []);
+                                    } catch (err) {
+                                      setMessage('Blad usuwania');
+                                    }
+                                  }
+                                }}
+                                style={{ ...buttonStyle, background: '#ff6666', fontSize: '10px', padding: '3px 6px' }}
+                              >
+                                🗑️ Usun
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
           </div>
         </div>
       </div>
