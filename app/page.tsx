@@ -205,7 +205,7 @@ export default function Home() {
       label: "AI Studio.lnk",
       type: "link",
       action: () => window.open("https://ai.kupmax.pl", "_blank"),
-      iconImage: "/images/icons-app/kupmax_icon.png",
+      iconImage: "/icons/icon-48.png", // Logo KupMax
     },
     {
       id: "vibe3d",
@@ -213,7 +213,7 @@ export default function Home() {
       label: "Vibe3D.apk",
       type: "link",
       action: () => window.open("https://play.google.com/store/apps/details?id=com.kupmax.vibe3d", "_blank"),
-      iconImage: "/images/icons-app/vibe3d_logo.png",
+      iconImage: "/images/vibe3d_logo.png",
     },
     {
       id: "roblox",
@@ -221,7 +221,7 @@ export default function Home() {
       label: "VibeHub3D.url",
       type: "link",
       action: () => window.open("https://www.roblox.com/pl/games/95847270410338/shop", "_blank"),
-      iconImage: "/images/icons-app/vibehub3d_icon.svg",
+      iconImage: "/images/icons-app/P48.jpg",
     },
     // FOLDERY
     {
