@@ -49,6 +49,9 @@ export const metadata: Metadata = {
       { rel: 'icon', url: '/favicon.ico' },
     ],
   },
+  verification: {
+    google: 'QjcM9YqBRavR9jvZnvY7hdcVB_elerqZuXiMcXnFS8k',
+  },
 };
 
 export default function RootLayout({
