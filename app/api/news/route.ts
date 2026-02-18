@@ -20,6 +20,16 @@ const CATEGORY_MAP: Record<string, string> = {
   'AKTUALNOSCI': 'Nowoczesne Technologie',
 };
 
+// Mapowanie kategorii news -> BlogPost format
+const CATEGORY_REVERSE_MAP: Record<string, string> = {
+  'Eksperckie Poradniki': 'PORADNIK',
+  'Niesamowite Historie': 'HISTORIA',
+  'Nowoczesne Technologie': 'TECHNOLOGIA',
+};
+
+// ID admina dla postów z panelrudy (kontakt@kupmax.pl)
+const ADMIN_AUTHOR_ID = 'cm6i9zjn40000v8rk7wexuvlw';
+
 // GET - pobierz newsy z tabeli BlogPost
 export async function GET(request: NextRequest) {
   try {
@@ -89,25 +99,142 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST/PUT/DELETE - przekieruj do ai.kupmax.pl/admin/blog
-// Edycja postów odbywa się tylko przez panel ai.kupmax.pl
-export async function POST() {
-  return NextResponse.json(
-    { error: 'Dodawanie postów możliwe tylko przez ai.kupmax.pl/admin/blog' },
-    { status: 403 }
-  );
+// POST - dodaj nowy post do BlogPost (z panelrudy)
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { title, content, excerpt, image_url, category, is_published } = body;
+
+    if (!title || !content) {
+      return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
+    }
+
+    // Mapuj kategorię na format BlogPost
+    const blogCategory = CATEGORY_REVERSE_MAP[category] || 'HISTORIA';
+
+    const { data, error } = await supabase
+      .from('BlogPost')
+      .insert({
+        title,
+        content,
+        excerpt: excerpt || content.substring(0, 150) + '...',
+        coverImage: image_url || null,
+        category: blogCategory,
+        status: is_published !== false ? 'PUBLISHED' : 'DRAFT',
+        authorId: ADMIN_AUTHOR_ID,
+        views: 0,
+        likes: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error creating BlogPost:', error);
+      return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
+    }
+
+    // Zwróć w formacie news
+    const news = {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      excerpt: data.excerpt,
+      image_url: data.coverImage,
+      author: 'Admin',
+      category: CATEGORY_MAP[data.category] || category,
+      is_published: data.status === 'PUBLISHED',
+      views: data.views,
+      likes: data.likes,
+      created_at: data.createdAt,
+      updated_at: data.updatedAt,
+    };
+
+    return NextResponse.json({ news, success: true }, { status: 201 });
+  } catch (error) {
+    logger.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-export async function PUT() {
-  return NextResponse.json(
-    { error: 'Edycja postów możliwa tylko przez ai.kupmax.pl/admin/blog' },
-    { status: 403 }
-  );
+// PUT - aktualizuj post w BlogPost
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, title, content, excerpt, image_url, category, is_published } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    // Mapuj kategorię na format BlogPost
+    const blogCategory = category ? (CATEGORY_REVERSE_MAP[category] || 'HISTORIA') : undefined;
+
+    const updateData: Record<string, unknown> = {};
+    if (title) updateData.title = title;
+    if (content) updateData.content = content;
+    if (excerpt) updateData.excerpt = excerpt;
+    if (image_url !== undefined) updateData.coverImage = image_url;
+    if (blogCategory) updateData.category = blogCategory;
+    if (is_published !== undefined) updateData.status = is_published ? 'PUBLISHED' : 'DRAFT';
+
+    const { data, error } = await supabase
+      .from('BlogPost')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error updating BlogPost:', error);
+      return NextResponse.json({ error: 'Failed to update post' }, { status: 500 });
+    }
+
+    // Zwróć w formacie news
+    const news = {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      excerpt: data.excerpt,
+      image_url: data.coverImage,
+      author: 'Admin',
+      category: CATEGORY_MAP[data.category] || 'Niesamowite Historie',
+      is_published: data.status === 'PUBLISHED',
+      views: data.views,
+      likes: data.likes,
+      created_at: data.createdAt,
+      updated_at: data.updatedAt,
+    };
+
+    return NextResponse.json({ news, success: true });
+  } catch (error) {
+    logger.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-export async function DELETE() {
-  return NextResponse.json(
-    { error: 'Usuwanie postów możliwe tylko przez ai.kupmax.pl/admin/blog' },
-    { status: 403 }
-  );
+// DELETE - usuń post z BlogPost
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from('BlogPost')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      logger.error('Error deleting BlogPost:', error);
+      return NextResponse.json({ error: 'Failed to delete post' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    logger.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
