@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import S3Service from '../../../../lib/aws-s3';
 import FileDatabase from '../../../../lib/file-database';
 import { randomUUID } from 'crypto';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Allowed MIME types
 const allowedMimeTypes = [
@@ -71,6 +72,15 @@ function validateFile(file: File) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Admin auth required for uploading files
+    const isAdmin = await verifyAdminToken(req);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
+
     logger.log('Upload request received');
 
     const formData = await req.formData();

@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import S3Service from '../../../../lib/aws-s3';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Generate presigned URL for direct S3 upload
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Admin auth required for getting presigned upload URLs
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
     const { fileName, fileType, fileSize } = body;
 
     if (!fileName || !fileType) {

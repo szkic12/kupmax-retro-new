@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -274,6 +275,21 @@ Odpowiadaj zwięźle ale pomocnie. Jeśli nie wiesz czegoś, przyznaj się do te
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting: 20 requests per minute per IP (AI costs money)
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`clippy-chat:${clientIP}`, 20, 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          message: '⏳ Zbyt wiele wiadomości! Poczekaj chwilę przed następną.',
+          source: 'ratelimit',
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+        },
+        { status: 429 }
+      );
+    }
+
     const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {

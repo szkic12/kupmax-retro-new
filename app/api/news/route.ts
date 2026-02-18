@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -103,6 +104,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required for creating posts
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { title, content, excerpt, image_url, category, is_published } = body;
 
     if (!title || !content) {
@@ -160,6 +168,13 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required for updating posts
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { id, title, content, excerpt, image_url, category, is_published } = body;
 
     if (!id) {
@@ -215,6 +230,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - usuń post z BlogPost
 export async function DELETE(request: NextRequest) {
   try {
+    // Admin auth required for deleting posts
+    const isAdmin = await verifyAdminToken(request);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

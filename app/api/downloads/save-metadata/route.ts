@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import FileDatabase from '../../../../lib/file-database';
 import { randomUUID } from 'crypto';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Save file metadata after direct S3 upload
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Admin auth required for saving file metadata
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
     const { s3Key, fileName, fileSize, fileType, description, category } = body;
 
     if (!s3Key || !fileName || !fileSize) {

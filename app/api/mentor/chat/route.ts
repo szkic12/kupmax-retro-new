@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,6 +101,18 @@ function buildFileContext(fileContext?: { name: string; content: string; languag
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 15 requests per minute per IP (AI costs money, Mentor uses more tokens)
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(`mentor-chat:${clientIP}`, 15, 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json({
+        response: '⏳ Zbyt wiele zapytań! Poczekaj chwilę przed następnym.',
+        source: 'ratelimit',
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+      }, { status: 429 });
+    }
+
     const body = await request.json();
     const { message, fileContext } = body;
 
