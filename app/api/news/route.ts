@@ -27,8 +27,8 @@ const CATEGORY_REVERSE_MAP: Record<string, string> = {
   'Nowoczesne Technologie': 'TECHNOLOGIA',
 };
 
-// ID admina dla postów z panelrudy (kontakt@kupmax.pl)
-const ADMIN_AUTHOR_ID = 'cm6i9zjn40000v8rk7wexuvlw';
+// ID admina dla postów z panelrudy (z .env)
+const ADMIN_AUTHOR_ID = process.env.PANELRUDY_AUTHOR_ID || '';
 
 // GET - pobierz newsy z tabeli BlogPost
 export async function GET(request: NextRequest) {
