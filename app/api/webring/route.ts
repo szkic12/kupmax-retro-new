@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../lib/aws-s3.js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Wyłącz cache dla tego route
 export const dynamic = 'force-dynamic';
@@ -138,7 +139,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, url, description, category, icon } = await req.json();
+    const body = await req.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
+    const { name, url, description, category, icon } = body;
 
     if (!name || !url) {
       return NextResponse.json(
@@ -195,6 +204,13 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { id, name, url, description, category, icon } = body;
 
     if (!id) {
@@ -257,6 +273,12 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(req);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { title, image_url, description, category } = body;
 
     if (!image_url) {
@@ -73,6 +81,12 @@ export async function POST(request: NextRequest) {
 // DELETE - usuń zdjęcie
 export async function DELETE(request: NextRequest) {
   try {
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

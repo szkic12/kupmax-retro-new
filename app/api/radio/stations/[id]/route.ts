@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../../lib/aws-s3.js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Domyślne stacje
 const DEFAULT_STATIONS = [
@@ -33,6 +34,12 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Admin auth required
+  const isAdmin = await verifyAdminToken(req);
+  if (!isAdmin) {
+    return NextResponse.json({ message: 'Unauthorized - Admin access required' }, { status: 401 });
+  }
+
   const { id } = await params;
 
   try {
@@ -62,7 +69,15 @@ export async function PUT(
   const { id } = await params;
 
   try {
-    const { name, url, genre } = await req.json();
+    const body = await req.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
+    const { name, url, genre } = body;
 
     if (!name || !url || !genre) {
       return NextResponse.json({ message: 'Wszystkie pola są wymagane.' }, { status: 400 });

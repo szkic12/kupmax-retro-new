@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 // Domyślne stacje (używane gdy S3 jest puste)
 const DEFAULT_STATIONS = [
@@ -44,7 +45,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, url, genre } = await req.json();
+    const body = await req.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(req, body);
+    if (!isAdmin) {
+      return NextResponse.json({ message: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
+    const { name, url, genre } = body;
 
     if (!name || !url || !genre) {
       return NextResponse.json(

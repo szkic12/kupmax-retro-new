@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -40,6 +41,17 @@ export async function GET(request: NextRequest) {
 // POST - zagłosuj
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 votes per minute per IP
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(`poll-vote:${clientIP}`, 5, 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Zbyt wiele głosów. Poczekaj chwilę.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { pollId, option } = body;
 
@@ -96,6 +108,13 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { question, options } = body;
 
     if (!question || !options || !Array.isArray(options)) {

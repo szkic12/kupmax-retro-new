@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
 
 // In-memory storage for high scores (temporary)
 // In production, use Supabase or database
@@ -35,6 +36,17 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting: 10 scores per minute per IP (prevent spam)
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`tetris-score:${clientIP}`, 10, 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Zbyt wiele wyników. Poczekaj chwilę.' },
+        { status: 429 }
+      );
+    }
+
     const { name, score, level, lines } = await req.json();
 
     if (!name || typeof score !== 'number') {

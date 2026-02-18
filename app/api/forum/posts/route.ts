@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
+import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -88,6 +89,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting: 5 posts per minute per IP
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(`forum-post:${clientIP}`, 5, 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Zbyt wiele postów. Poczekaj chwilę.' },
+        { status: 429 }
+      );
+    }
+
     const { threadId, message, author } = await req.json();
 
     // Walidacja
@@ -173,6 +185,15 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    // Admin auth required for deleting posts
+    const isAdmin = await verifyAdminToken(req);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const postId = searchParams.get('id');
 

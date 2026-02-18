@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -122,6 +123,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { image_url, title, description, link_url, advertiser_name, advertiser_email, end_date } = body;
 
     if (!image_url || !title || !advertiser_name) {
@@ -190,6 +198,13 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { id, image_url, title, description, link_url, advertiser_name, advertiser_email, end_date, is_active } = body;
 
     if (!id) {
@@ -229,6 +244,13 @@ export async function PUT(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request, body);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { id } = body;
 
     if (!id) {
@@ -268,6 +290,12 @@ export async function PATCH(request: NextRequest) {
 // DELETE - usuń reklamę
 export async function DELETE(request: NextRequest) {
   try {
+    // Admin auth required
+    const isAdmin = await verifyAdminToken(request);
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
