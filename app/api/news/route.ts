@@ -10,21 +10,45 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// GET - pobierz newsy
+// Mapowanie kategorii BlogPost -> news format
+const CATEGORY_MAP: Record<string, string> = {
+  'PORADNIK': 'Eksperckie Poradniki',
+  'HISTORIA': 'Niesamowite Historie',
+  'TECHNOLOGIA': 'Nowoczesne Technologie',
+  'BIZNES': 'Eksperckie Poradniki',
+  'INSPIRACJA': 'Niesamowite Historie',
+  'AKTUALNOSCI': 'Nowoczesne Technologie',
+};
+
+// GET - pobierz newsy z tabeli BlogPost
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const all = searchParams.get('all') === 'true';
     const limit = parseInt(searchParams.get('limit') || '10');
 
+    // Pobierz z BlogPost zamiast news
     let query = supabase
-      .from('news')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from('BlogPost')
+      .select(`
+        id,
+        title,
+        content,
+        excerpt,
+        "coverImage",
+        category,
+        status,
+        views,
+        likes,
+        "createdAt",
+        "updatedAt",
+        author:User!authorId(name)
+      `)
+      .order('createdAt', { ascending: false });
 
     // Jeśli nie all, pokaż tylko opublikowane
     if (!all) {
-      query = query.eq('is_published', true);
+      query = query.eq('status', 'PUBLISHED');
     }
 
     if (limit > 0) {
@@ -34,11 +58,27 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      logger.error('Error fetching news:', error);
+      logger.error('Error fetching news from BlogPost:', error);
       return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 });
     }
 
-    return NextResponse.json({ news: data || [] }, {
+    // Mapuj BlogPost na format oczekiwany przez stronę /news
+    const news = (data || []).map((post: Record<string, unknown>) => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt || (typeof post.content === 'string' ? post.content.substring(0, 150) + '...' : ''),
+      image_url: post.coverImage,
+      author: (post.author as { name?: string })?.name || 'Admin',
+      category: CATEGORY_MAP[post.category as string] || 'Niesamowite Historie',
+      is_published: post.status === 'PUBLISHED',
+      views: post.views || 0,
+      likes: post.likes || 0,
+      created_at: post.createdAt,
+      updated_at: post.updatedAt,
+    }));
+
+    return NextResponse.json({ news }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       }
@@ -49,106 +89,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - dodaj nowy news
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { title, content, excerpt, image_url, author, is_published } = body;
-
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: 'Tytuł i treść są wymagane' },
-        { status: 400 }
-      );
-    }
-
-    const { data, error } = await supabase
-      .from('news')
-      .insert({
-        title,
-        content,
-        excerpt: excerpt || content.substring(0, 150) + '...',
-        image_url: image_url || null,
-        author: author || 'Admin',
-        is_published: is_published !== false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Error creating news:', error);
-      return NextResponse.json({ error: 'Failed to create news' }, { status: 500 });
-    }
-
-    return NextResponse.json({ news: data, message: 'News dodany!' });
-  } catch (error) {
-    logger.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+// POST/PUT/DELETE - przekieruj do ai.kupmax.pl/admin/blog
+// Edycja postów odbywa się tylko przez panel ai.kupmax.pl
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Dodawanie postów możliwe tylko przez ai.kupmax.pl/admin/blog' },
+    { status: 403 }
+  );
 }
 
-// PUT - aktualizuj news
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { id, title, content, excerpt, image_url, author, is_published } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID newsa jest wymagane' }, { status: 400 });
-    }
-
-    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (title !== undefined) updateData.title = title;
-    if (content !== undefined) updateData.content = content;
-    if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (image_url !== undefined) updateData.image_url = image_url;
-    if (author !== undefined) updateData.author = author;
-    if (is_published !== undefined) updateData.is_published = is_published;
-
-    const { data, error } = await supabase
-      .from('news')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error('Error updating news:', error);
-      return NextResponse.json({ error: 'Failed to update news' }, { status: 500 });
-    }
-
-    return NextResponse.json({ news: data, message: 'News zaktualizowany!' });
-  } catch (error) {
-    logger.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+export async function PUT() {
+  return NextResponse.json(
+    { error: 'Edycja postów możliwa tylko przez ai.kupmax.pl/admin/blog' },
+    { status: 403 }
+  );
 }
 
-// DELETE - usuń news
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID newsa jest wymagane' }, { status: 400 });
-    }
-
-    const { error } = await supabase
-      .from('news')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      logger.error('Error deleting news:', error);
-      return NextResponse.json({ error: 'Failed to delete news' }, { status: 500 });
-    }
-
-    return NextResponse.json({ message: 'News usunięty!' });
-  } catch (error) {
-    logger.error('Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+export async function DELETE() {
+  return NextResponse.json(
+    { error: 'Usuwanie postów możliwe tylko przez ai.kupmax.pl/admin/blog' },
+    { status: 403 }
+  );
 }
