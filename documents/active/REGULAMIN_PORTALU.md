@@ -26,11 +26,34 @@
 2. Dla funkcjonalności **e-commerce** (sklep) obowiązuje osobny [**Regulamin Sklepu**](./REGULAMIN_SKLEPU.md).
 3. Korzystanie z Portalu oznacza **akceptację niniejszego Regulaminu**.
 
-### 1.3. Kontakt
+### 1.3. Dane Administratora
+
+**Nazwa:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Forma prawna:** Prosta Spółka Akcyjna
+**Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**KRS:** 0001224803
+**NIP:** 8971967476
+**REGON:** 54404302800000
+
+### 1.4. Kontakt
 
 **Email:** kontakt@kupmax.pl
 **Formularz:** https://kupmax.pl/kontakt
-**Zgłoszenie naruszeń:** moderacja@kupmax.pl
+**Zgłoszenie naruszeń:** kontakt@kupmax.pl (temat: Moderacja)
+
+### 1.5. Usługi świadczone drogą elektroniczną
+
+Administrator świadczy nieodpłatnie drogą elektroniczną następujące usługi:
+1. **Chatroom** - czat publiczny i prywatny w czasie rzeczywistym
+2. **Guestbook** - księga gości
+3. **Forum** - forum dyskusyjne
+4. **Galeria** - przesyłanie i przeglądanie zdjęć
+5. **Downloads** - pobieranie plików
+6. **Radio** - strumieniowanie stacji radiowych
+7. **Gry** - gry przeglądarkowe z systemem nagród (kody rabatowe)
+8. **Webring** - sieć powiązanych stron
+
+Reklamacje dotyczące usług elektronicznych można składać na adres: kontakt@kupmax.pl. Administrator rozpatrzy reklamację w terminie 14 dni.
 
 ---
 

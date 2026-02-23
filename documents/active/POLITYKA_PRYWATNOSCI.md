@@ -275,9 +275,11 @@ Możesz zarządzać cookies w ustawieniach swojej przeglądarki. Pamiętaj, że 
 
 ## 11. AUTOMATYCZNE PODEJMOWANIE DECYZJI I PROFILOWANIE
 
-**NIE STOSUJEMY** automatycznego podejmowania decyzji ani profilowania w rozumieniu art. 22 RODO.
+**NIE STOSUJEMY** zautomatyzowanego podejmowania decyzji, w tym profilowania, o którym mowa w art. 22 ust. 1 i 4 RODO, które wywoływałoby wobec Użytkownika skutki prawne lub w podobny sposób istotnie na niego wpływało.
 
 Wszelkie decyzje dotyczące zamówień, zwrotów i reklamacji podejmowane są przez człowieka.
+
+**Uwaga:** System gier w Retro Portalu (np. Pentomino Tetris) automatycznie generuje kody rabatowe po osiągnięciu określonego wyniku. Jest to zautomatyzowany proces techniczny, który nie stanowi profilowania w rozumieniu RODO, ponieważ nie opiera się na danych osobowych użytkownika.
 
 ---
 
@@ -295,13 +297,28 @@ Skontaktuj się z nami niezwłocznie pod adresem **kontakt@kupmax.pl**, a my pod
 
 ---
 
-## 13. INSPEKTOR OCHRONY DANYCH (IOD)
+## 13. WYMÓG PODANIA DANYCH
+
+Podanie danych osobowych jest:
+- **Wymogiem umownym** w przypadku składania zamówienia (imię, nazwisko, adres dostawy, email, telefon) - bez tych danych nie jest możliwa realizacja zamówienia
+- **Wymogiem ustawowym** w przypadku danych na fakturze VAT (NIP, nazwa firmy, adres) - na podstawie przepisów podatkowych
+- **Dobrowolne** w przypadku korzystania z funkcji społecznościowych Portalu (chatroom, guestbook, galeria)
+- **Dobrowolne** w przypadku newsletter i marketingu
+
+Konsekwencje niepodania danych:
+- Brak możliwości realizacji zamówienia (dane do dostawy)
+- Brak możliwości wystawienia faktury VAT (dane firmowe)
+- Ograniczona funkcjonalność (np. brak możliwości śledzenia zamówienia bez emaila)
+
+---
+
+## 14. INSPEKTOR OCHRONY DANYCH (IOD)
 
 Administrator nie powołał Inspektora Ochrony Danych (IOD). W sprawach dotyczących przetwarzania danych osobowych prosimy kontaktować się bezpośrednio z administratorem pod adresem **kontakt@kupmax.pl**.
 
 ---
 
-## 14. ZMIANY W POLITYCE PRYWATNOŚCI
+## 15. ZMIANY W POLITYCE PRYWATNOŚCI
 
 Zastrzegamy sobie prawo do aktualizacji niniejszej Polityki Prywatności.
 
@@ -313,7 +330,7 @@ O wszelkich istotnych zmianach poinformujemy Cię poprzez:
 
 ---
 
-## 15. KONTAKT W SPRAWACH PRYWATNOŚCI
+## 16. KONTAKT W SPRAWACH PRYWATNOŚCI
 
 Jeśli masz pytania dotyczące przetwarzania Twoich danych osobowych lub chcesz skorzystać ze swoich praw wynikających z RODO, skontaktuj się z nami:
 
@@ -326,7 +343,7 @@ Jeśli masz pytania dotyczące przetwarzania Twoich danych osobowych lub chcesz 
 
 ---
 
-## 16. SŁOWNICZEK
+## 17. SŁOWNICZEK
 
 - **RODO (GDPR)** - Rozporządzenie o Ochronie Danych Osobowych (UE 2016/679)
 - **Administrator danych** - podmiot decydujący o celach i sposobach przetwarzania danych (KupMax)
@@ -337,7 +354,6 @@ Jeśli masz pytania dotyczące przetwarzania Twoich danych osobowych lub chcesz 
 - **Cookies** - małe pliki tekstowe przechowywane w przeglądarce
 - **Firebase** - platforma Google do tworzenia aplikacji mobilnych (backend, baza danych, uwierzytelnianie)
 - **Dane biometryczne** - dane o cechach fizycznych człowieka (np. skany twarzy, odciski palców) - szczególna kategoria danych (art. 9 RODO)
-- **EOG** - Europejski Obszar Gospodarczy (UE + Islandia, Liechtenstein, Norwegia)
 - **AdMob** - platforma Google do wyświetlania reklam w aplikacjach mobilnych
 
 ---

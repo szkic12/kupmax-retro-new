@@ -24,11 +24,11 @@ Nasza Polityka Cookies została opracowana zgodnie z:
 - **Rozporządzeniem ePrivacy** (Dyrektywa 2002/58/WE)
 - **RODO** (Rozporządzenie UE 2016/679)
 - **Ustawą z dnia 18 lipca 2002 r. o świadczeniu usług drogą elektroniczną**
-- **Ustawą z dnia 16 lipca 2004 r. Prawo telekomunikacyjne**
+- **Ustawą z dnia 16 lipca 2004 r. Prawo telekomunikacyjne** (art. 173 - obowiązek informowania o cookies i uzyskania zgody)
 
 ---
 
-## 2a. ADMINISTRATOR
+## 3. ADMINISTRATOR
 
 Administratorem plików cookies na stronie jest:
 
@@ -41,7 +41,7 @@ Administratorem plików cookies na stronie jest:
 
 ---
 
-## 3. JAKIE COOKIES UŻYWAMY?
+## 4. JAKIE COOKIES UŻYWAMY?
 
 ### 3.1. COOKIES NIEZBĘDNE (Strictly Necessary Cookies)
 
@@ -107,7 +107,7 @@ Administratorem plików cookies na stronie jest:
 
 ---
 
-## 4. COOKIES THIRD-PARTY (STRON TRZECICH)
+## 5. COOKIES THIRD-PARTY (STRON TRZECICH)
 
 ### 4.1. Stripe (procesor płatności)
 
@@ -153,7 +153,7 @@ Administratorem plików cookies na stronie jest:
 
 ---
 
-## 5. JAK ZARZĄDZAĆ COOKIES?
+## 6. JAK ZARZĄDZAĆ COOKIES?
 
 ### 5.1. USTAWIENIA NA STRONIE
 
@@ -193,7 +193,7 @@ Wszystkie przeglądarki oferują **tryb prywatny**, w którym cookies są automa
 
 ---
 
-## 6. LOCAL STORAGE I SESSION STORAGE
+## 7. LOCAL STORAGE I SESSION STORAGE
 
 Oprócz cookies, korzystamy również z **Web Storage API** (Local Storage, Session Storage):
 
@@ -212,7 +212,7 @@ Oprócz cookies, korzystamy również z **Web Storage API** (Local Storage, Sess
 
 ---
 
-## 7. COOKIES A PRYWATNOŚĆ
+## 8. COOKIES A PRYWATNOŚĆ
 
 ### 7.1. Czy cookies zawierają dane osobowe?
 
@@ -232,7 +232,7 @@ Nasza strona **respektuje** nagłówek **DNT** (Do Not Track) przeglądarki. Je�
 
 ---
 
-## 8. PRAWA UŻYTKOWNIKA
+## 9. PRAWA UŻYTKOWNIKA
 
 Zgodnie z RODO, masz prawo do:
 
@@ -247,7 +247,7 @@ Formularz: https://kupmax.pl/kontakt
 
 ---
 
-## 9. COOKIES NA URZĄDZENIACH MOBILNYCH
+## 10. COOKIES NA URZĄDZENIACH MOBILNYCH
 
 ### 9.1. Mobilne przeglądarki
 
@@ -264,7 +264,7 @@ Podczas aktualizacji aplikacji poinformujemy o zmianach w przetwarzaniu danych.
 
 ---
 
-## 10. ZMIANY W POLITYCE COOKIES
+## 11. ZMIANY W POLITYCE COOKIES
 
 Zastrzegamy sobie prawo do **aktualizacji** Polityki Cookies w przypadku:
 - Zmian w przepisach prawnych
@@ -279,7 +279,7 @@ O istotnych zmianach poinformujemy poprzez:
 
 ---
 
-## 11. LISTA COOKIES - PODSUMOWANIE
+## 12. LISTA COOKIES - PODSUMOWANIE
 
 ### NIEZBĘDNE (zawsze aktywne):
 ✅ `sb-*-auth-token` - sesja Supabase
@@ -302,7 +302,7 @@ O istotnych zmianach poinformujemy poprzez:
 
 ---
 
-## 12. PRZYDATNE LINKI
+## 13. PRZYDATNE LINKI
 
 - **Polityka Prywatności KupMax:** [POLITYKA_PRYWATNOSCI.md](./POLITYKA_PRYWATNOSCI.md)
 - **Regulamin Sklepu:** [REGULAMIN_SKLEPU.md](./REGULAMIN_SKLEPU.md)

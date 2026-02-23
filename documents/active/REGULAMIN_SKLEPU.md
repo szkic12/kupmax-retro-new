@@ -10,9 +10,10 @@
 ### 1.1. Definicje
 
 - **Sklep** - sklep internetowy KupMax działający pod adresem https://kupmax.pl
-- **Sprzedawca** - KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA), prowadzący działalność gospodarczą
+- **Sprzedawca** - KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA) z siedzibą we Wrocławiu, wpisana do rejestru przedsiębiorców KRS pod numerem 0001224803
 - **Kupujący** - osoba fizyczna, osoba prawna lub jednostka organizacyjna nieposiadająca osobowości prawnej, która dokonuje zakupu w Sklepie
 - **Konsument** - Kupujący będący osobą fizyczną dokonującą zakupu niezwiązanego bezpośrednio z jej działalnością gospodarczą lub zawodową (art. 22¹ Kodeksu cywilnego)
+- **Przedsiębiorca na prawach konsumenta** - osoba fizyczna prowadząca jednoosobową działalność gospodarczą, dokonująca zakupu bezpośrednio związanego z jej działalnością gospodarczą, gdy z treści Umowy wynika, że nie posiada ona dla tej osoby charakteru zawodowego (art. 385⁵ Kodeksu cywilnego). Do takiego Kupującego stosuje się przepisy dotyczące Konsumenta w zakresie odstąpienia od umowy, rękojmi i klauzul abuzywnych.
 - **Produkt** - rzecz ruchoma oferowana w Sklepie (materiały budowlane, akcesoria, farby, narzędzia, modele 3D, itp.)
 - **Zamówienie** - oświadczenie woli Kupującego zmierzające do zawarcia Umowy sprzedaży
 - **Umowa sprzedaży** - umowa sprzedaży Produktu zawarta między Sprzedawcą a Kupującym na odległość za pośrednictwem Sklepu
@@ -36,9 +37,24 @@
 
 Niniejszy Regulamin został opracowany zgodnie z:
 - Ustawą z dnia 23 kwietnia 1964 r. - Kodeks cywilny
-- Ustawą z dnia 30 maja 2014 r. o prawach konsumenta
+- Ustawą z dnia 30 maja 2014 r. o prawach konsumenta (z uwzględnieniem zmian implementujących Dyrektywę 2019/771 - Rozdział 5a)
 - Ustawą z dnia 18 lipca 2002 r. o świadczeniu usług drogą elektroniczną
 - Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO)
+
+### 1.4. Usługi świadczone drogą elektroniczną
+
+Sprzedawca świadczy drogą elektroniczną następujące usługi:
+1. **Konto użytkownika** - rejestracja i utrzymanie konta w Sklepie (jeśli dostępne)
+2. **Koszyk** - umożliwienie dodawania Produktów do koszyka i składania zamówień
+3. **Formularz zamówienia** - umożliwienie wypełnienia danych dostawy i finalizacji zamówienia
+4. **Newsletter** - przesyłanie informacji handlowych (za zgodą Kupującego)
+5. **Formularz kontaktowy** - umożliwienie kontaktu ze Sprzedawcą
+
+Reklamacje dotyczące usług elektronicznych można składać na adres: kontakt@kupmax.pl. Sprzedawca rozpatrzy reklamację w terminie 14 dni.
+
+### 1.5. Kodeks dobrych praktyk
+
+Sprzedawca nie stosuje kodeksu dobrych praktyk, o którym mowa w art. 2 pkt 5 ustawy z dnia 23 sierpnia 2007 r. o przeciwdziałaniu nieuczciwym praktykom rynkowym.
 
 ---
 
@@ -246,17 +262,18 @@ Szacunkowy koszt zwrotu przesyłki krajowej: **9,99 - 15,99 zł** (w zależnośc
 
 ### 5.7. Wyjątki - brak prawa odstąpienia
 
-Zgodnie z **art. 38 Ustawy o prawach konsumenta**, prawo odstąpienia **nie przysługuje** w przypadku:
+Zgodnie z **art. 38 Ustawy o prawach konsumenta**, prawo odstąpienia **nie przysługuje** m.in. w przypadku:
 
-- Produktów wykonanych **na zamówienie** (personalizowanych)
-- Produktów, które mogą **ulec szybkiemu zepsuciu** lub mają krótki termin przydatności
-- **Produktów w zapieczętowanym opakowaniu**, które po otwarciu nie nadają się do zwrotu ze względów higienicznych lub ochrony zdrowia:
-  - ❌ **Farby** (puszki, wiaderka) - po otwarciu
-  - ❌ **Silikony, kleje, uszczelniacze** - po otwarciu
-  - ❌ **Lakiery, impregnaty** - po otwarciu
-  - ✅ **Zamknięte opakowania** - można zwrócić (jeśli nie były otwierane)
-- Produktów **niezdatnych do ponownej sprzedaży** ze względu na ich charakter
-- **Treści cyfrowych** (np. modele 3D w aplikacji vibe3d), jeśli spełnienie świadczenia rozpoczęło się za wyraźną zgodą Konsumenta z jednoczesnym pouczeniem o utracie prawa odstąpienia
+1. Produktów wykonanych **na zamówienie** (personalizowanych) - art. 38 pkt 3
+2. Produktów, które mogą **ulec szybkiemu zepsuciu** lub mają krótki termin przydatności - art. 38 pkt 4
+3. **Produktów w zapieczętowanym opakowaniu**, które po otwarciu nie nadają się do zwrotu ze względów higienicznych lub ochrony zdrowia - art. 38 pkt 5:
+   - ❌ **Farby** (puszki, wiaderka) - po otwarciu
+   - ❌ **Silikony, kleje, uszczelniacze** - po otwarciu
+   - ❌ **Lakiery, impregnaty** - po otwarciu
+   - ✅ **Zamknięte opakowania** - można zwrócić (jeśli nie były otwierane)
+4. Produktów, które po dostarczeniu, ze względu na swój charakter, zostają **nierozłącznie połączone z innymi rzeczami** - art. 38 pkt 6
+5. **Nagrań dźwiękowych lub wizualnych** albo programów komputerowych dostarczonych w zapieczętowanym opakowaniu, jeśli opakowanie zostało otwarte po dostarczeniu - art. 38 pkt 9
+6. **Treści cyfrowych** (np. modele 3D w aplikacji vibe3d), jeśli spełnienie świadczenia rozpoczęło się za wyraźną zgodą Konsumenta z jednoczesnym pouczeniem o utracie prawa odstąpienia - art. 38 pkt 13
 
 **WAŻNE:** Jeśli produkt ma **wadę** (niezgodność z umową), prawo odstąpienia **NIE MA ZASTOSOWANIA** - skorzystaj z **rękojmi** (patrz § 6).
 
@@ -290,31 +307,37 @@ Podpis: ___________________ (tylko w przypadku wysyłki pocztowej)
 
 ---
 
-## § 6. REKLAMACJE (RĘKOJMIA I GWARANCJA)
+## § 6. REKLAMACJE (NIEZGODNOŚĆ TOWARU Z UMOWĄ I GWARANCJA)
 
 ### 6.1. Podstawa prawna
 
-Sprzedawca odpowiada wobec Kupującego z tytułu:
-- **Rękojmi za wady** (zgodnie z Kodeksem cywilnym)
-- **Gwarancji** (jeśli producent/Sprzedawca udzielił gwarancji)
+Sprzedawca odpowiada wobec Konsumenta za **niezgodność towaru z umową** zgodnie z **Rozdziałem 5a Ustawy o prawach konsumenta** (art. 43a–43e), implementującym Dyrektywę 2019/771.
 
-### 6.2. Rękojmia za wady (Konsumenci)
+Wobec Kupujących niebędących Konsumentami stosuje się przepisy o rękojmi z Kodeksu cywilnego.
 
-1. **Termin zgłoszenia wad fizycznych:** w ciągu **2 lat** od wydania Produktu (dla Konsumentów).
+### 6.2. Niezgodność towaru z umową (Konsumenci i Przedsiębiorcy na prawach konsumenta)
 
-2. **Domniemanie istnienia wady:** Jeśli wada fizyczna zostanie stwierdzona **przed upływem roku** od wydania Produktu, domniemywa się, że wada lub jej przyczyna istniała w chwili wydania.
+1. **Odpowiedzialność Sprzedawcy:** Sprzedawca ponosi odpowiedzialność za niezgodność towaru z umową istniejącą w chwili dostarczenia i ujawnioną w ciągu **2 lat** od dostarczenia towaru.
 
-3. **Uprawnienia Konsumenta z tytułu rękojmi:**
-   - **Obniżenie ceny** albo
-   - **Odstąpienie od umowy** (chyba że wada jest nieistotna)
-   - **Może żądać wymiany** Produktu na wolny od wad albo
-   - **Usunięcia wady** (naprawy)
+2. **Domniemanie istnienia niezgodności:** Jeśli niezgodność zostanie stwierdzona **przed upływem 2 lat** od dostarczenia towaru, domniemywa się, że istniała ona w chwili dostarczenia (art. 43c ust. 1).
 
-### 6.3. Rękojmia za wady (Przedsiębiorcy)
+3. **Uprawnienia Konsumenta - KOLEJNOŚĆ:**
 
-Dla Kupujących niebędących Konsumentami:
-- **Termin zgłoszenia wad:** **1 rok** od wydania Produktu (art. 558 § 1 k.c.)
-- Brak domniemania istnienia wady
+   **W pierwszej kolejności** Konsument może żądać:
+   - **Naprawy** towaru albo
+   - **Wymiany** towaru na zgodny z umową
+
+   **Dopiero gdy naprawa/wymiana jest niemożliwa lub nadmiernie kosztowna**, Konsument może:
+   - **Żądać obniżenia ceny** albo
+   - **Odstąpić od umowy** (chyba że niezgodność jest nieistotna)
+
+4. Sprzedawca dokonuje naprawy lub wymiany w **rozsądnym czasie**, nie powodując nadmiernych niedogodności dla Konsumenta, ponosząc koszty naprawy/wymiany.
+
+### 6.3. Rękojmia za wady (Przedsiębiorcy - B2B)
+
+Dla Kupujących niebędących Konsumentami ani Przedsiębiorcami na prawach konsumenta:
+- Stosuje się przepisy o rękojmi z **Kodeksu cywilnego** (art. 556–576 k.c.)
+- **Termin:** 1 rok od wydania Produktu
 - Uprawnienia mogą być ograniczone umową
 
 ### 6.4. Gwarancja
