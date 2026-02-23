@@ -1,7 +1,7 @@
 # REGULAMIN SKLEPU INTERNETOWEGO
 ## KUPMAX.PL
 
-**Ostatnia aktualizacja:** 5 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
@@ -9,8 +9,8 @@
 
 ### 1.1. Definicje
 
-- **Sklep** - sklep internetowy KupMax działający pod adresem https://kupmax.pl oraz https://api.kupmax.pl
-- **Sprzedawca** - KupMax, prowadzący działalność gospodarczą
+- **Sklep** - sklep internetowy KupMax działający pod adresem https://kupmax.pl
+- **Sprzedawca** - KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA), prowadzący działalność gospodarczą
 - **Kupujący** - osoba fizyczna, osoba prawna lub jednostka organizacyjna nieposiadająca osobowości prawnej, która dokonuje zakupu w Sklepie
 - **Konsument** - Kupujący będący osobą fizyczną dokonującą zakupu niezwiązanego bezpośrednio z jej działalnością gospodarczą lub zawodową (art. 22¹ Kodeksu cywilnego)
 - **Produkt** - rzecz ruchoma oferowana w Sklepie (materiały budowlane, akcesoria, farby, narzędzia, modele 3D, itp.)
@@ -21,15 +21,15 @@
 
 ### 1.2. Kontakt ze Sklepem
 
-**Właściciel:** BossxD Mateusz Pietrow  
-**Forma prawna:** Indywidualna działalność gospodarcza  
-**Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra  
-**NIP:** 7393625722  
-**REGON:** 526689520  
-**Telefon:** +48 539 977 433  
-**Adres strony:** https://kupmax.pl, https://bossxd.pl  
-**Adres API/backend:** https://api.kupmax.pl  
-**Email:** kontakt@kupmax.pl, bossxdnft@gmail.com  
+**Właściciel:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Forma prawna:** Prosta Spółka Akcyjna
+**Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
+**Telefon:** +48 539 977 433
+**Adres strony:** https://kupmax.pl
+**Email:** kontakt@kupmax.pl
 **Formularz kontaktowy:** https://kupmax.pl/kontakt
 
 ### 1.3. Podstawy prawne
@@ -134,7 +134,7 @@ Sklep akceptuje następujące formy płatności:
 
 ### 4.1. Metody dostawy
 
-Sklep oferuje następujące opcje dostawy:
+Sklep oferuje następujące opcje dostawy za pośrednictwem **Apaczka.pl** - pośrednika wysyłkowego koordynującego dostawy poprzez InPost, DPD, DHL i Poczta Polska:
 
 #### A) DOSTAWA W POLSCE:
 
@@ -144,7 +144,6 @@ Sklep oferuje następujące opcje dostawy:
 | **DPD Kurier** | 1-3 dni robocze | 12,99 zł |
 | **Pocztex (Poczta Polska)** | 2-4 dni robocze | 11,99 zł |
 | **Poczta Polska (list priorytetowy)** | 2-5 dni roboczych | 15,99 zł |
-| **Odbiór osobisty** | Po uzgodnieniu | **DARMOWY** |
 
 #### B) DOSTAWA MIĘDZYNARODOWA:
 
@@ -162,20 +161,7 @@ Sklep oferuje następujące opcje dostawy:
 
 ### 4.3. Odbiór osobisty
 
-**Możesz odebrać zamówienie osobiście** pod adresem:
-
-**ul. Wojska Polskiego 11, 63-507 Kobyla Góra**
-
-**Procedura:**
-1. Złóż zamówienie online i wybierz opcję "Odbiór osobisty"
-2. Opłać zamówienie (przelew lub gotówka przy odbiorze)
-3. Otrzymasz SMS/email z informacją, że zamówienie jest gotowe do odbioru
-4. Odbierz zamówienie w uzgodnionym terminie (Pn-Pt: 9:00-17:00, po wcześniejszym uzgodnieniu)
-
-**Zalety:**
-- ✅ **DARMOWA** dostawa
-- ✅ Możliwość oględzin produktu przed zakupem (zamknięte opakowania)
-- ✅ Natychmiastowa płatność gotówką (jeśli nie opłacono wcześniej)
+**Odbiór osobisty:** Aktualnie niedostępny. Wszystkie zamówienia realizowane są wyłącznie za pośrednictwem dostaw kurierskich.
 
 ### 4.4. Dostawa za pobraniem
 
@@ -226,9 +212,9 @@ Termin 14 dni liczy się:
 Aby skorzystać z prawa odstąpienia, należy:
 
 1. **Poinformować Sprzedawcę** o swojej decyzji poprzez:
-   - Email: [adres email]
+   - Email: kontakt@kupmax.pl
    - Formularz kontaktowy: https://kupmax.pl/kontakt
-   - List: [adres pocztowy, jeśli dostępny]
+   - List: ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
 
 2. **Można skorzystać** ze wzoru formularza odstąpienia (dostępny w § 5.8 poniżej), ale nie jest to obowiązkowe.
 
@@ -278,11 +264,11 @@ Zgodnie z **art. 38 Ustawy o prawach konsumenta**, prawo odstąpienia **nie przy
 
 ```
 Do:
-KupMax
-[adres pocztowy, jeśli dostępny]
-Email: [adres email]
+KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+Email: kontakt@kupmax.pl
 
-Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym(*) odstąpieniu 
+Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym(*) odstąpieniu
 od umowy sprzedaży następujących rzeczy:
 
 Numer zamówienia: ___________________
@@ -342,9 +328,9 @@ Dla Kupujących niebędących Konsumentami:
 ### 6.5. Procedura reklamacyjna
 
 1. Reklamację należy zgłosić:
-   - **Email:** [adres email reklamacji]
+   - **Email:** kontakt@kupmax.pl
    - **Formularz kontaktowy:** https://kupmax.pl/kontakt
-   - **Pocztą** (jeśli dostępny adres pocztowy)
+   - **Pocztą:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
 
 2. Reklamacja powinna zawierać:
    - Imię, nazwisko, adres, email, telefon
@@ -390,7 +376,7 @@ Sprzedawca nie odpowiada za niewykonanie lub nienależyte wykonanie Umowy z przy
 
 ## § 8. OCHRONA DANYCH OSOBOWYCH
 
-1. Administratorem danych osobowych Kupującego jest **KupMax**.
+1. Administratorem danych osobowych Kupującego jest **KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)**.
 
 2. Dane osobowe przetwarzane są zgodnie z **RODO** (Rozporządzenie UE 2016/679) oraz [**Polityką Prywatności**](./POLITYKA_PRYWATNOSCI.md).
 
@@ -490,7 +476,7 @@ W przypadku uznania któregokolwiek postanowienia Regulaminu za **nieważne lub 
 
 W razie pytań dotyczących Regulaminu, prosimy o kontakt:
 
-**Email:** [adres email]  
+**Email:** kontakt@kupmax.pl
 **Formularz kontaktowy:** https://kupmax.pl/kontakt
 
 ---
@@ -517,9 +503,9 @@ Brak minimalnej wartości zamówienia.
 
 ---
 
-**© 2025 BossxD Mateusz Pietrow. Wszelkie prawa zastrzeżone.**
+**© 2026 KUPMAX PROSTA SPÓŁKA AKCYJNA. Wszelkie prawa zastrzeżone.**
 
-**Data wejścia w życie Regulaminu:** 5 października 2025
+**Data wejścia w życie Regulaminu:** 23 lutego 2026
 
 ---
 

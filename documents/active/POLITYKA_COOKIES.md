@@ -1,7 +1,7 @@
 # POLITYKA COOKIES
 ## KUPMAX.PL - Retro Portal & E-commerce
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
@@ -28,6 +28,19 @@ Nasza Polityka Cookies została opracowana zgodnie z:
 
 ---
 
+## 2a. ADMINISTRATOR
+
+Administratorem plików cookies na stronie jest:
+
+- **Nazwa:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+- **Siedziba:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+- **KRS:** 0001224803
+- **NIP:** 8971967476
+- **REGON:** 54404302800000
+- **Email:** kontakt@kupmax.pl
+
+---
+
 ## 3. JAKIE COOKIES UŻYWAMY?
 
 ### 3.1. COOKIES NIEZBĘDNE (Strictly Necessary Cookies)
@@ -38,11 +51,9 @@ Nasza Polityka Cookies została opracowana zgodnie z:
 
 | Nazwa cookie | Opis | Ważność |
 |--------------|------|---------|
-| `woo_session_*` | Przechowuje stan sesji koszyka WooCommerce | 2 dni |
-| `woo_items_in_cart` | Zlicza produkty w koszyku | Sesja |
+| `sb-*-auth-token` | Supabase - sesja użytkownika | 7 dni |
 | `__stripe_mid` | Stripe - identyfikator sesji płatności | 1 rok |
 | `__stripe_sid` | Stripe - identyfikator sesji | 30 minut |
-| `PHPSESSID` | Identyfikator sesji PHP | Sesja |
 | `next-auth.session-token` | Token sesji użytkownika (jeśli logowanie) | 30 dni |
 | `csrf_token` | Ochrona przed CSRF (Cross-Site Request Forgery) | Sesja |
 | `cookie_consent` | Przechowuje informację o zgodzie na cookies | 1 rok |
@@ -125,10 +136,20 @@ Nasza Polityka Cookies została opracowana zgodnie z:
 
 ### 4.4. Socket.io (chatroom)
 
-**Dostawca:** Własny serwer (Socket.io library)  
-**Cel:** Real-time komunikacja w chatroomie.  
-**Cookies:** `io` (identyfikator sesji WebSocket) - Sesja.  
+**Dostawca:** Własny serwer (Socket.io library)
+**Cel:** Real-time komunikacja w chatroomie.
+**Cookies:** `io` (identyfikator sesji WebSocket) - Sesja.
 **Podstawa prawna:** Zgoda użytkownika (korzystanie z chatroom).
+
+### 4.5. Supabase (Baza danych)
+
+**Dostawca:** Supabase Inc.
+**Cel:** Uwierzytelnianie, sesja użytkownika.
+**Cookies:**
+- `sb-*-auth-token` - token sesji użytkownika (7 dni)
+
+**Podstawa prawna:** Niezbędne do wykonania umowy (art. 6 ust. 1 lit. b RODO).
+**Polityka prywatności Supabase:** https://supabase.com/privacy
 
 ---
 
@@ -232,14 +253,14 @@ Formularz: https://kupmax.pl/kontakt
 
 Cookies działają **tak samo** jak na komputerze. Możesz zarządzać nimi w ustawieniach przeglądarki mobilnej (Chrome, Safari, Firefox).
 
-### 9.2. Aplikacje mobilne (jeśli w przyszłości)
+### 9.2. Aplikacje mobilne
 
-Jeśli uruchomimy aplikację mobilną (Android/iOS), będzie ona mogła używać:
+Aplikacja mobilna KupMax na Android (vibe3d) już istnieje i może korzystać z:
 - **Cookies** (w WebView)
 - **SDK analityczne** (np. Firebase Analytics, Appsflyer)
 - **Advertising ID** (GAID/IDFA)
 
-Przed wdrożeniem aplikacji zaktualizujemy tę Politykę.
+Podczas aktualizacji aplikacji poinformujemy o zmianach w przetwarzaniu danych.
 
 ---
 
@@ -261,17 +282,16 @@ O istotnych zmianach poinformujemy poprzez:
 ## 11. LISTA COOKIES - PODSUMOWANIE
 
 ### NIEZBĘDNE (zawsze aktywne):
-✅ `woo_session_*` - koszyk WooCommerce  
-✅ `__stripe_mid`, `__stripe_sid` - płatności Stripe  
-✅ `PHPSESSID` - sesja PHP  
-✅ `csrf_token` - ochrona CSRF  
+✅ `sb-*-auth-token` - sesja Supabase
+✅ `__stripe_mid`, `__stripe_sid` - płatności Stripe
+✅ `csrf_token` - ochrona CSRF
 ✅ `cookie_consent` - zgoda na cookies
 
 ### FUNKCJONALNE (opcjonalne):
-⚙️ `retroVisitorCount` - licznik odwiedzin  
-⚙️ `selectedRadioStation` - radio  
-⚙️ `tetrisHighScore` - wynik gry  
-⚙️ `theme_preference` - motyw  
+⚙️ `retroVisitorCount` - licznik odwiedzin
+⚙️ `selectedRadioStation` - radio
+⚙️ `tetrisHighScore` - wynik gry
+⚙️ `theme_preference` - motyw
 ⚙️ `language` - język
 
 ### ANALITYCZNE (opcjonalne):
@@ -295,6 +315,6 @@ O istotnych zmianach poinformujemy poprzez:
 
 ---
 
-**© 2025 BossxD Mateusz Pietrow. Wszelkie prawa zastrzeżone.**
+**© 2026 KUPMAX PROSTA SPÓŁKA AKCYJNA. Wszelkie prawa zastrzeżone.**
 
 *Niniejszy dokument ma charakter informacyjny. W przypadku wątpliwości zalecamy konsultację z prawnikiem specjalizującym się w ochronie danych osobowych i prawie telekomunikacyjnym.*

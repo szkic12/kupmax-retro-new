@@ -1,19 +1,20 @@
 # POLITYKA PRYWATNOŚCI
 ## KUPMAX.PL - Retro Portal & E-commerce
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
 ## 1. ADMINISTRATOR DANYCH OSOBOWYCH
 
-**Administrator:** BossxD Mateusz Pietrow  
-**Forma prawna:** Indywidualna działalność gospodarcza  
-**Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra  
-**NIP:** 7393625722  
-**REGON:** 526689520  
-**Strona internetowa:** https://kupmax.pl, https://api.kupmax.pl, https://bossxd.pl  
-**Email:** kontakt@kupmax.pl, bossxdnft@gmail.com  
+**Administrator:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Forma prawna:** Prosta Spółka Akcyjna
+**Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
+**Strona internetowa:** https://kupmax.pl
+**Email:** kontakt@kupmax.pl
 **Kontakt:** poprzez formularz kontaktowy na stronie
 
 ---
@@ -33,9 +34,8 @@ Niniejsza Polityka Prywatności została opracowana zgodnie z:
 Administrator prowadzi następujące serwisy:
 
 1. **kupmax.pl** - sklep internetowy e-commerce (Retro Portal)
-2. **api.kupmax.pl** - backend sklepu (WordPress + WooCommerce)
-3. **bossxd.pl** - strona firmowa
-4. **vibe3d** - aplikacja mobilna (Android, Google Play Store) do udostępniania modeli 3D
+2. **kupmax.ai** - marketplace z AI
+3. **vibe3d** - aplikacja mobilna (Android, Google Play Store) do udostępniania modeli 3D
 
 **Wszystkie serwisy są powiązane** - jedno konto użytkownika działa we wszystkich serwisach.
 
@@ -112,14 +112,14 @@ Niniejsza Polityka Prywatności obejmuje **wszystkie** powyższe serwisy.
 - **Obsługa reklamacji i zwrotów** - podstawa prawna: wykonanie umowy i obowiązek prawny
 - **Marketing bezpośredni** - podstawa prawna: prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO)
 
-### 4.2. PORTAL SPOŁECZNOŚCIOWY:
+### 5.2. PORTAL SPOŁECZNOŚCIOWY:
 - **Funkcjonowanie chatroomu** - podstawa prawna: zgoda użytkownika (art. 6 ust. 1 lit. a RODO)
 - **Księga gości** - podstawa prawna: zgoda użytkownika
 - **Galeria zdjęć** - podstawa prawna: zgoda użytkownika
 - **Forum dyskusyjne** - podstawa prawna: zgoda użytkownika
 - **Moderacja treści** - podstawa prawna: prawnie uzasadniony interes (bezpieczeństwo)
 
-### 4.3. FUNKCJE DODATKOWE:
+### 5.3. FUNKCJE DODATKOWE:
 - **Radio internetowe** - podstawa prawna: prawnie uzasadniony interes (świadczenie usługi)
 - **Gry i konkursy** - podstawa prawna: zgoda użytkownika
 - **Webring** - podstawa prawna: prawnie uzasadniony interes (promowanie sieci stron)
@@ -146,28 +146,29 @@ Niniejsza Polityka Prywatności obejmuje **wszystkie** powyższe serwisy.
 Twoje dane osobowe mogą być przekazywane następującym kategoriom odbiorców:
 
 #### A) DOSTAWCY USŁUG PŁATNICZYCH:
-- **Stripe, Inc.** - procesor płatności kartami kredytowymi/debetowymi
-- **WooCommerce Payments** - obsługa płatności online
+- **Stripe** - procesor płatności kartami kredytowymi/debetowymi
 
 #### B) FIRMY KURIERSKIE:
 - **InPost** (Paczkomaty 24/7)
 - **DPD Polska**
 - **Pocztex** (Poczta Polska)
+- **Apaczka.pl** - pośrednik wysyłkowy
 - Inne firmy kurierskie wybrane podczas składania zamówienia
 
 #### C) DOSTAWCY INFRASTRUKTURY TECHNICZNEJ:
 - **Vercel** - hosting aplikacji Next.js (frontend kupmax.pl)
-- **Google Cloud Platform** - hosting WordPress (api.kupmax.pl), Compute Engine, Cloud Run
+- **Supabase** - baza danych i uwierzytelnianie
 - **Firebase (Google)** - backend aplikacji vibe3d (Authentication, Firestore, Storage, Analytics)
-- **AWS (Amazon Web Services)** - przechowywanie danych (S3, DynamoDB), backupy
 - **Dostawcy usług CDN** - przyspieszenie ładowania strony
 
-#### D) DOSTAWCY REKLAM (APLIKACJA VIBE3D):
+#### D) DOSTAWCY USŁUG EMAILOWYCH:
+- **Resend** - obsługa emaili transakcyjnych
+
+#### E) DOSTAWCY REKLAM (APLIKACJA VIBE3D):
 - **Google AdMob** - wyświetlanie reklam w aplikacji mobilnej vibe3d
 - **TikTok for Business** - remarketing (TikTok Pixel) - jeśli użytkownik wyrazi zgodę
 
-#### E) USŁUGI WSPIERAJĄCE:
-- **WooCommerce/WordPress** - backend sklepu (api.kupmax.pl)
+#### F) USŁUGI WSPIERAJĄCE:
 - **Socket.io** - real-time komunikacja w chatroomie
 - **OpenStreetMap / Nominatim** - mapy i geolokalizacja (wybór paczkomatu)
 
@@ -177,8 +178,8 @@ Niektórzy nasi partnerzy przetwarzają dane poza Europejskim Obszarem Gospodarc
 
 - **Stripe** (USA) - Adequacy Decision (Komisja Europejska uznała USA za kraj zapewniający odpowiedni poziom ochrony w ramach Data Privacy Framework)
 - **Google (Firebase, Google Cloud, AdMob)** (USA) - Standard Contractual Clauses (SCC) zatwierdzone przez Komisję Europejską
-- **AWS (Amazon)** (USA) - Standard Contractual Clauses (SCC)
 - **Vercel** (USA) - Standard Contractual Clauses (SCC)
+- **Resend** (USA) - Standard Contractual Clauses (SCC)
 
 Zapewniamy odpowiednie zabezpieczenia zgodnie z art. 46 RODO (standardowe klauzule umowne, decyzje o adekwatności).
 
@@ -208,28 +209,28 @@ Zapewniamy odpowiednie zabezpieczenia zgodnie z art. 46 RODO (standardowe klauzu
 
 Zgodnie z RODO, przysługują Ci następujące prawa:
 
-### 7.1. **PRAWO DOSTĘPU DO DANYCH** (art. 15 RODO)
+### 8.1. **PRAWO DOSTĘPU DO DANYCH** (art. 15 RODO)
 Masz prawo uzyskać potwierdzenie, czy przetwarzamy Twoje dane oraz otrzymać ich kopię.
 
-### 7.2. **PRAWO DO SPROSTOWANIA** (art. 16 RODO)
+### 8.2. **PRAWO DO SPROSTOWANIA** (art. 16 RODO)
 Możesz poprosić o skorygowanie nieprawidłowych lub uzupełnienie niekompletnych danych.
 
-### 7.3. **PRAWO DO USUNIĘCIA** - "prawo do bycia zapomnianym" (art. 17 RODO)
+### 8.3. **PRAWO DO USUNIĘCIA** - "prawo do bycia zapomnianym" (art. 17 RODO)
 Możesz żądać usunięcia swoich danych, chyba że musimy je zachować z przyczyn prawnych (np. obowiązek podatkowy).
 
-### 7.4. **PRAWO DO OGRANICZENIA PRZETWARZANIA** (art. 18 RODO)
+### 8.4. **PRAWO DO OGRANICZENIA PRZETWARZANIA** (art. 18 RODO)
 Możesz zażądać, abyśmy wstrzymali przetwarzanie Twoich danych w określonych sytuacjach.
 
-### 7.5. **PRAWO DO PRZENOSZENIA DANYCH** (art. 20 RODO)
+### 8.5. **PRAWO DO PRZENOSZENIA DANYCH** (art. 20 RODO)
 Możesz otrzymać swoje dane w ustrukturyzowanym formacie (np. CSV, JSON) i przenieść je do innego usługodawcy.
 
-### 7.6. **PRAWO DO SPRZECIWU** (art. 21 RODO)
+### 8.6. **PRAWO DO SPRZECIWU** (art. 21 RODO)
 Możesz sprzeciwić się przetwarzaniu danych w celach marketingowych lub gdy podstawą jest nasz prawnie uzasadniony interes.
 
-### 7.7. **PRAWO DO COFNIĘCIA ZGODY** (art. 7 ust. 3 RODO)
+### 8.7. **PRAWO DO COFNIĘCIA ZGODY** (art. 7 ust. 3 RODO)
 Jeśli przetwarzanie odbywa się na podstawie zgody, możesz ją w każdej chwili wycofać.
 
-### 7.8. **PRAWO DO WNIESIENIA SKARGI**
+### 8.8. **PRAWO DO WNIESIENIA SKARGI**
 Masz prawo wnieść skargę do **Prezesa Urzędu Ochrony Danych Osobowych** (PUODO):
 - **Adres:** ul. Stawki 2, 00-193 Warszawa
 - **Strona:** https://uodo.gov.pl
@@ -240,7 +241,7 @@ Masz prawo wnieść skargę do **Prezesa Urzędu Ochrony Danych Osobowych** (PUO
 
 Stosujemy odpowiednie środki techniczne i organizacyjne, aby chronić Twoje dane:
 
-### 8.1. ŚRODKI TECHNICZNE:
+### 9.1. ŚRODKI TECHNICZNE:
 - ✅ **Szyfrowanie SSL/TLS** - cała komunikacja z serwerem jest szyfrowana (HTTPS)
 - ✅ **Content Security Policy (CSP)** - ochrona przed atakami XSS
 - ✅ **X-Frame-Options: DENY** - ochrona przed clickjacking
@@ -249,7 +250,7 @@ Stosujemy odpowiednie środki techniczne i organizacyjne, aby chronić Twoje dan
 - ✅ **Rate limiting** - ochrona przed atakami brute-force
 - ✅ **Kopie zapasowe** - regularne backupy danych
 
-### 8.2. ŚRODKI ORGANIZACYJNE:
+### 9.2. ŚRODKI ORGANIZACYJNE:
 - ✅ Dostęp do danych tylko dla upoważnionych osób
 - ✅ Procedury reagowania na incydenty bezpieczeństwa
 - ✅ Szkolenia personelu w zakresie ochrony danych
@@ -261,13 +262,13 @@ Stosujemy odpowiednie środki techniczne i organizacyjne, aby chronić Twoje dan
 
 Nasza strona wykorzystuje pliki cookies. Szczegółowe informacje znajdziesz w [**Polityce Cookies**](./POLITYKA_COOKIES.md).
 
-### 9.1. RODZAJE COOKIES:
+### 10.1. RODZAJE COOKIES:
 - **Niezbędne** - wymagane do działania sklepu (koszyk, sesja)
 - **Funkcjonalne** - zapamiętują Twoje preferencje (np. wybór stacji radiowej)
 - **Analityczne** - pomagają nam zrozumieć, jak korzystasz ze strony
 - **Marketingowe** - służą do personalizacji reklam (jeśli używamy)
 
-### 9.2. ZARZĄDZANIE COOKIES:
+### 10.2. ZARZĄDZANIE COOKIES:
 Możesz zarządzać cookies w ustawieniach swojej przeglądarki. Pamiętaj, że wyłączenie niektórych cookies może ograniczyć funkcjonalność strony.
 
 ---
@@ -294,7 +295,13 @@ Skontaktuj się z nami niezwłocznie pod adresem **kontakt@kupmax.pl**, a my pod
 
 ---
 
-## 13. ZMIANY W POLITYCE PRYWATNOŚCI
+## 13. INSPEKTOR OCHRONY DANYCH (IOD)
+
+Administrator nie powołał Inspektora Ochrony Danych (IOD). W sprawach dotyczących przetwarzania danych osobowych prosimy kontaktować się bezpośrednio z administratorem pod adresem **kontakt@kupmax.pl**.
+
+---
+
+## 14. ZMIANY W POLITYCE PRYWATNOŚCI
 
 Zastrzegamy sobie prawo do aktualizacji niniejszej Polityki Prywatności.
 
@@ -306,20 +313,20 @@ O wszelkich istotnych zmianach poinformujemy Cię poprzez:
 
 ---
 
-## 14. KONTAKT W SPRAWACH PRYWATNOŚCI
+## 15. KONTAKT W SPRAWACH PRYWATNOŚCI
 
 Jeśli masz pytania dotyczące przetwarzania Twoich danych osobowych lub chcesz skorzystać ze swoich praw wynikających z RODO, skontaktuj się z nami:
 
-**Administrator:** BossxD Mateusz Pietrow  
-**Email:** kontakt@kupmax.pl, bossxdnft@gmail.com  
-**Telefon:** +48 539 977 433  
-**Adres pocztowy:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra  
-**Formularz kontaktowy:** https://kupmax.pl/kontakt  
+**Administrator:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Email:** kontakt@kupmax.pl
+**Telefon:** +48 539 977 433
+**Adres pocztowy:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**Formularz kontaktowy:** https://kupmax.pl/kontakt
 **Czas odpowiedzi:** do 30 dni od otrzymania zapytania (zgodnie z RODO)
 
 ---
 
-## 15. SŁOWNICZEK
+## 16. SŁOWNICZEK
 
 - **RODO (GDPR)** - Rozporządzenie o Ochronie Danych Osobowych (UE 2016/679)
 - **Administrator danych** - podmiot decydujący o celach i sposobach przetwarzania danych (KupMax)
@@ -335,6 +342,6 @@ Jeśli masz pytania dotyczące przetwarzania Twoich danych osobowych lub chcesz 
 
 ---
 
-**© 2025 BossxD Mateusz Pietrow. Wszelkie prawa zastrzeżone.**
+**© 2026 KUPMAX PROSTA SPÓŁKA AKCYJNA. Wszelkie prawa zastrzeżone.**
 
 *Niniejszy dokument ma charakter informacyjny i nie zastępuje profesjonalnej porady prawnej. W przypadku wątpliwości zalecamy konsultację z prawnikiem specjalizującym się w ochronie danych osobowych.*

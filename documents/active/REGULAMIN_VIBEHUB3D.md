@@ -1,18 +1,19 @@
 # WARUNKI KORZYSTANIA Z GRY „VIBEHUB3D"
 ## GRA W ROBLOX - QUIZY, ZADANIA I WSPÓLNA ZABAWA
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
 ## § 1. INFORMACJE OGÓLNE
 
 ### 1.1. Administrator gry
-**Twórca i administrator:** BossxD Mateusz Pietrow
-**Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra
-**NIP:** 7393625722
-**REGON:** 526689520
-**Email:** kontakt@kupmax.pl, bossxdnft@gmail.com
+**Twórca i administrator:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
+**Email:** kontakt@kupmax.pl
 **Strona internetowa:** https://kupmax.pl
 
 ### 1.2. Nazwa i platforma
@@ -131,7 +132,7 @@ VibeHub3D jest zaprojektowane jako **gra rodzinna**:
 - ❌ Lokalizacji GPS
 
 ### 5.2. Kto ma dostęp do danych?
-- **Administrator gry** (BossxD Mateusz Pietrow) - postęp w grze, statystyki
+- **Administrator gry** (KUPMAX PROSTA SPÓŁKA AKCYJNA) - postęp w grze, statystyki
 - **Roblox Corporation** - dane zgodnie z polityką prywatności Roblox (https://www.roblox.com/info/privacy)
 
 ### 5.3. Jak usunąć dane?
@@ -178,7 +179,7 @@ Przetwarzanie danych odbywa się zgodnie z:
 
 ### 7.1. Prawa autorskie
 Wszystkie elementy gry (grafiki, modele 3D, teksty, quizy, kod) są własnością:
-- **BossxD Mateusz Pietrow** (VibeHub3D)
+- **KUPMAX PROSTA SPÓŁKA AKCYJNA** (VibeHub3D)
 - **Roblox Corporation** (platforma Roblox)
 
 ### 7.2. Licencja
@@ -191,8 +192,8 @@ Grając w VibeHub3D, otrzymujesz **niewyłączną, nieprzenoszalną licencję** 
 - Używać grafik/modeli poza grą bez zgody
 
 ### 7.3. Znaki towarowe
-- **KupMax™** - znak towarowy BossxD Mateusz Pietrow
-- **VibeHub3D™** - znak towarowy BossxD Mateusz Pietrow
+- **KupMax™** - znak towarowy KUPMAX PROSTA SPÓŁKA AKCYJNA
+- **VibeHub3D™** - znak towarowy KUPMAX PROSTA SPÓŁKA AKCYJNA
 - **Roblox®** - znak towarowy Roblox Corporation
 
 ---
@@ -254,7 +255,7 @@ Problemy z grą? Napisz do nas:
 
 ### 10.2. Zgłaszanie błędów (bugs)
 Znalazłeś błąd? Pomóż nam go naprawić!
-- Email: bossxdnft@gmail.com (temat: "VibeHub3D BUG")
+- Email: kontakt@kupmax.pl (temat: "VibeHub3D BUG")
 - Opisz krok po kroku jak odtworzyć błąd
 
 **Za zgłoszenie poważnego błędu możesz otrzymać nagrodę!** 🎁
@@ -282,7 +283,7 @@ Regulamin jest dostępny w języku **polskim**. W przypadku sporów, wersja pols
 Do Regulaminu stosuje się **prawo polskie**.
 
 ### 11.4. Rozstrzyganie sporów
-Spory będą rozstrzygane przez sąd właściwy dla siedziby Administratora (Kobyla Góra, Polska).
+Spory będą rozstrzygane przez sąd właściwy dla siedziby Administratora (Wrocław, Polska).
 
 **Konsumenci:** mają prawo do pozasądowego rozstrzygania sporów (mediacja, arbitraż).
 
@@ -290,26 +291,27 @@ Spory będą rozstrzygane przez sąd właściwy dla siedziby Administratora (Kob
 Jeśli którekolwiek postanowienie Regulaminu jest nieważne, pozostałe postanowienia pozostają w mocy.
 
 ### 11.6. Data wejścia w życie
-Regulamin wchodzi w życie z dniem **8 października 2025**.
+Regulamin wchodzi w życie z dniem **23 lutego 2026**.
 
 ---
 
 ## § 12. DANE KONTAKTOWE
 
 **Administrator gry:**
-BossxD Mateusz Pietrow
-Indywidualna działalność gospodarcza
+KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+Prosta Spółka Akcyjna
 
 **Adres:**
-ul. Wojska Polskiego 11
-63-507 Kobyla Góra
+ul. Marsz. Józefa Piłsudskiego 74/320
+50-020 Wrocław
 Polska
 
-**NIP:** 7393625722
-**REGON:** 526689520
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
 
 **Kontakt:**
-📧 Email: kontakt@kupmax.pl, bossxdnft@gmail.com
+📧 Email: kontakt@kupmax.pl
 📞 Telefon: +48 539 977 433
 🌐 Strona: https://kupmax.pl
 🎮 Roblox: (link do gry wkrótce)

@@ -1,7 +1,7 @@
 # REGULAMIN PORTALU SPOŁECZNOŚCIOWEGO
 ## RETRO PORTAL KUPMAX.PL
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
@@ -9,8 +9,8 @@
 
 ### 1.1. Definicje
 
-- **Portal** - portal społecznościowy "Retro Portal" działający pod adresem https://kupmax.pl/retro-portal oraz https://api.kupmax.pl
-- **Administrator** - KupMax, prowadzący działalność gospodarczą
+- **Portal** - portal społecznościowy "Retro Portal" działający pod adresem https://kupmax.pl/retro-portal
+- **Administrator** - KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
 - **Użytkownik** - osoba fizyczna, osoba prawna lub jednostka organizacyjna korzystająca z funkcjonalności Portalu
 - **Treść** - wszelkie materiały publikowane przez Użytkowników (teksty, zdjęcia, komentarze, wiadomości, pliki)
 - **Chatroom** - funkcja czatu na żywo (publiczny lub prywatny)
@@ -273,7 +273,7 @@ W przypadku naruszenia Regulaminu, Administrator może:
 ### 4.3. Odwołanie od sankcji
 
 Jeśli uważasz, że ban został nałożony niesłusznie, możesz:
-1. Wysłać **odwołanie** na adres: [email moderacji]
+1. Wysłać **odwołanie** na adres: kontakt@kupmax.pl (temat: Moderacja)
 2. W odwołaniu podaj:
    - Twój IP / pseudonim
    - Data banu
@@ -286,7 +286,7 @@ Administrator rozpatrzy odwołanie w ciągu **7 dni**.
 
 ## § 5. OCHRONA DANYCH OSOBOWYCH
 
-### 5.1. Administratorem danych jest KupMax
+### 5.1. Administratorem danych jest KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
 
 Szczegółowe informacje o przetwarzaniu danych osobowych znajdują się w [**Polityce Prywatności**](./POLITYKA_PRYWATNOSCI.md).
 
@@ -355,7 +355,7 @@ Formularz: https://kupmax.pl/kontakt
 
 1. **Moderacja post factum** - Administrator nie sprawdza treści przed publikacją (Użytkownik publikuje od razu).
 2. **Zgłoszenia naruszeń** - Każdy Użytkownik może **zgłosić** naruszenie Regulaminu:
-   - Email: [email moderacji]
+   - Email: kontakt@kupmax.pl (temat: Moderacja)
    - Przycisk „Zgłoś" (jeśli dostępny)
 
 3. Administrator **zobowiązuje się** do rozpatrzenia zgłoszenia w ciągu **48 godzin**.
@@ -426,19 +426,19 @@ Jeśli którekolwiek postanowienie Regulaminu zostanie uznane za **nieważne**, 
 
 ### 8.5. Wejście w życie
 
-Niniejszy Regulamin wchodzi w życie z dniem **5 października 2025**.
+Niniejszy Regulamin wchodzi w życie z dniem **23 lutego 2026**.
 
 ---
 
 ## § 9. KONTAKT
 
-**Email (ogólny):** [adres email]  
-**Email (moderacja/zgłoszenia):** [adres email moderacji]  
-**Formularz kontaktowy:** https://kupmax.pl/kontakt  
-**Zgłoszenie naruszenia RODO:** [adres email RODO]
+**Email (ogólny):** kontakt@kupmax.pl
+**Email (moderacja/zgłoszenia):** kontakt@kupmax.pl (temat: Moderacja)
+**Formularz kontaktowy:** https://kupmax.pl/kontakt
+**Zgłoszenie naruszenia RODO:** kontakt@kupmax.pl (temat: RODO)
 
 ---
 
-**© 2025 BossxD Mateusz Pietrow. Wszelkie prawa zastrzeżone.**
+**© 2026 KUPMAX PROSTA SPÓŁKA AKCYJNA. Wszelkie prawa zastrzeżone.**
 
 *Niniejszy Regulamin został sporządzony z należytą starannością. W przypadku wątpliwości zalecamy konsultację z prawnikiem specjalizującym się w prawie internetowym i ochronie danych osobowych.*

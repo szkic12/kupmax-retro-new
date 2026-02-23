@@ -1,7 +1,7 @@
 # CZĘSTO ZADAWANE PYTANIA (FAQ)
 ## KUPMAX.PL - Retro Portal & Sklep
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
@@ -335,9 +335,9 @@ Akceptujemy:
 ## 📦 DOSTAWA
 
 ### 32. Ile kosztuje dostawa?
-- 🎁 **DARMOWA wysyłka** od **80 zł**!
-- 📦 Poniżej 80 zł: **12,99 zł** (kurier InPost/DPD)
-- 🏪 **Odbiór osobisty: 0 zł** (Kobyla Góra, ul. Wojska Polskiego 11)
+- 🎁 **DARMOWA wysyłka** od **199 zł**!
+- 📦 Poniżej 199 zł: **InPost 9,99 zł, DPD 12,99 zł** (kurier)
+- 📧 **Wysyłki realizowane za pośrednictwem Apaczka.pl**
 
 ### 33. Jaki jest czas dostawy?
 - ⚡ **Przygotowanie:** 24-48h roboczych
@@ -364,7 +364,7 @@ Akceptujemy:
 
 **Jak zwrócić?**
 1. Email: kontakt@kupmax.pl lub formularz: https://kupmax.pl/zwroty
-2. Wyślij produkt na: ul. Wojska Polskiego 11, 63-507 Kobyla Góra
+2. Adres zwrotny zostanie podany w odpowiedzi na zgłoszenie zwrotu na kontakt@kupmax.pl
 3. Zwrot pieniędzy w ciągu 14 dni
 
 ---
@@ -409,9 +409,9 @@ Nasza gra w **Roblox**:
 ⏱️ **Odpowiadamy w:** 24h
 
 ### 40. Gdzie jesteście?
-📍 **Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra
+📍 **Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
 
-**Odbiór osobisty:** Zadzwoń przed przyjazdem!
+**Odbiór osobisty:** Odbiór osobisty aktualnie niedostępny.
 
 ---
 

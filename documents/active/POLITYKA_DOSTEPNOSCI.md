@@ -1,13 +1,13 @@
 # DEKLARACJA DOSTĘPNOŚCI
 ## POLITYKA DOSTĘPNOŚCI STRONY INTERNETOWEJ KUPMAX.PL
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
 ## 1. WPROWADZENIE
 
-**BossxD Mateusz Pietrow** zobowiązuje się zapewnić dostępność swojej strony internetowej zgodnie z:
+**KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)** zobowiązuje się zapewnić dostępność swojej strony internetowej zgodnie z:
 - Ustawą z dnia 4 kwietnia 2019 r. o dostępności cyfrowej stron internetowych i aplikacji mobilnych podmiotów publicznych
 - Wytycznymi WCAG 2.1 (Web Content Accessibility Guidelines)
 - Dyrektywą Parlamentu Europejskiego i Rady (UE) 2016/2102
@@ -85,7 +85,7 @@ Strona internetowa KupMax jest **częściowo zgodna** z przepisami dostępności
 ## 4. PRZYGOTOWANIE DEKLARACJI DOSTĘPNOŚCI
 
 ### 4.1. Data sporządzenia
-Deklaracja została sporządzona dnia **8 października 2025 roku**.
+Deklaracja została sporządzona dnia **23 lutego 2026 roku**.
 
 ### 4.2. Metoda przygotowania
 Deklaracja została sporządzona na podstawie:
@@ -96,9 +96,9 @@ Deklaracja została sporządzona na podstawie:
 - Testów kontrastów (WCAG Contrast Checker)
 
 ### 4.3. Data ostatniego przeglądu
-Ostatni przegląd dostępności: **8 października 2025**
+Ostatni przegląd dostępności: **23 lutego 2026**
 
-**Planowany następny przegląd:** styczeń 2026
+**Planowany następny przegląd:** maj 2026
 
 ---
 
@@ -127,7 +127,7 @@ Jeśli nie otrzymałeś odpowiedzi lub odpowiedź nie jest satysfakcjonująca, m
 
 Wniosek można złożyć:
 - Elektronicznie: kontakt@kupmax.pl
-- Pisemnie: ul. Wojska Polskiego 11, 63-507 Kobyla Góra
+- Pisemnie: ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
 
 Rozpatrzymy wniosek w ciągu **14 dni**.
 
@@ -136,12 +136,10 @@ Rozpatrzymy wniosek w ciągu **14 dni**.
 ## 6. DOSTĘPNOŚĆ ARCHITEKTONICZNA
 
 ### 6.1. Odbiór osobisty
-🏪 **Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra
+🏪 **Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
 
 **Dostępność:**
-- ⚠️ Brak podjazdu dla wózków inwalidzkich
-- ✅ Parking dostępny
-- ✅ Obsługa na miejscu (po wcześniejszym umówieniu)
+- ⚠️ Aktualnie odbiór osobisty jest niedostępny. Zamówienia realizowane wyłącznie za pośrednictwem dostaw kurierskich.
 
 **Alternatywa:**
 - Dostarczamy zamówienia pod wskazany adres (kurier)
@@ -248,18 +246,19 @@ Strona dąży do zgodności z **WCAG 2.1 poziom AA**:
 ## 12. DANE KONTAKTOWE
 
 **Administrator:**
-BossxD Mateusz Pietrow
-Indywidualna działalność gospodarcza
+KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+Prosta Spółka Akcyjna
 
 **Adres:**
-ul. Wojska Polskiego 11
-63-507 Kobyla Góra
+ul. Marsz. Józefa Piłsudskiego 74/320
+50-020 Wrocław
 
-**NIP:** 7393625722
-**REGON:** 526689520
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
 
 **Kontakt:**
-📧 Email: kontakt@kupmax.pl, bossxdnft@gmail.com
+📧 Email: kontakt@kupmax.pl
 📞 Telefon: +48 539 977 433
 🌐 Strona: https://kupmax.pl
 📝 Formularz: https://kupmax.pl/kontakt

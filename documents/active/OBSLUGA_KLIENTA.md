@@ -1,7 +1,7 @@
 # OBSŁUGA KLIENTA
 ## KUPMAX.PL - Retro Portal & Sklep
 
-**Ostatnia aktualizacja:** 8 października 2025
+**Ostatnia aktualizacja:** 23 lutego 2026
 
 ---
 
@@ -11,8 +11,8 @@
 📧 **kontakt@kupmax.pl**
 - Główny kontakt (sklep, portal, ogólne pytania)
 
-📧 **bossxdnft@gmail.com**
-- Kontakt alternatywny (sprawy techniczne, vibe3d, współpraca)
+📧 **kontakt@kupmax.pl**
+- Dla spraw technicznych, vibe3d i współpracy
 
 ### Telefon
 📞 **+48 539 977 433**
@@ -38,9 +38,7 @@
 🌐 **24/7** - Zamówienia online przyjmujemy non-stop!
 
 ### Odbiór Osobisty
-🏪 **Po wcześniejszym umówieniu**
-- Adres: ul. Wojska Polskiego 11, 63-507 Kobyla Góra
-- Zadzwoń przed przyjazdem: +48 539 977 433
+🏪 **Aktualnie niedostępny. Wszystkie zamówienia realizowane są za pośrednictwem dostaw kurierskich.**
 
 ---
 
@@ -165,16 +163,16 @@ Aby przyspieszyć obsługę, podaj:
 
 ## 🏢 DANE FIRMY
 
-**Właściciel:** BossxD Mateusz Pietrow
-**Forma prawna:** Indywidualna działalność gospodarcza
-**Adres:** ul. Wojska Polskiego 11, 63-507 Kobyla Góra
-**NIP:** 7393625722
-**REGON:** 526689520
+**Nazwa firmy:** KUPMAX PROSTA SPÓŁKA AKCYJNA (KupMax PSA)
+**Forma prawna:** Prosta Spółka Akcyjna
+**Adres:** ul. Marsz. Józefa Piłsudskiego 74/320, 50-020 Wrocław
+**NIP:** 8971967476
+**REGON:** 54404302800000
+**KRS:** 0001224803
 
 **Strony internetowe:**
 - https://kupmax.pl (sklep + retro portal)
-- https://api.kupmax.pl (backend)
-- https://bossxd.pl (strona firmowa)
+- https://kupmax.ai (marketplace AI)
 
 **Aplikacje:**
 - vibe3d (Android, Google Play)
@@ -188,7 +186,7 @@ Aby przyspieszyć obsługę, podaj:
 1. Odśwież stronę (F5 lub Ctrl+R)
 2. Wyczyść cache przeglądarki
 3. Spróbuj innej przeglądarki
-4. Napisz do nas: bossxdnft@gmail.com
+4. Napisz do nas: kontakt@kupmax.pl
 
 ### Problem z płatnością?
 - Sprawdź czy masz wystarczające środki
