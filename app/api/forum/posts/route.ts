@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
+import { sanitizeInput } from '@/lib/sanitize';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -100,19 +101,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { threadId, message, author } = await req.json();
+    const { threadId, message: rawMessage, author: rawAuthor } = await req.json();
 
     // Walidacja
-    if (!threadId || !message || !author) {
+    if (!threadId || !rawMessage || !rawAuthor) {
       return NextResponse.json(
         { success: false, error: 'Thread ID, message, and author are required' },
         { status: 400 }
       );
     }
 
-    if (message.length > 5000) {
+    // Sanitize message input
+    const message = sanitizeInput(rawMessage, 5000);
+
+    if (!message) {
       return NextResponse.json(
-        { success: false, error: 'Message too long (max 5000 characters)' },
+        { success: false, error: 'Message cannot be empty after sanitization' },
         { status: 400 }
       );
     }
@@ -135,15 +139,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize author nickname
+    const sanitizedNickname = sanitizeInput(rawAuthor.nickname || 'Anonim', 40);
+
     // Utwórz nowy post
     const newPost = {
       id: `post_${Date.now()}`,
       threadId,
       author: {
-        nickname: author.nickname?.substring(0, 40) || 'Anonim',
-        avatar: author.avatar || '👤'
+        nickname: sanitizedNickname || 'Anonim',
+        avatar: rawAuthor.avatar || '👤'
       },
-      message: message.substring(0, 5000),
+      message,
       date: new Date().toISOString(),
       isAnswer: false
     };

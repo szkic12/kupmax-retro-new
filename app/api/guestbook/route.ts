@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
+import { sanitizeInput } from '@/lib/sanitize';
 
 // Wyłącz cache dla tego route
 export const dynamic = 'force-dynamic';
@@ -83,19 +84,23 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const name = body.name || body.nickname;
-    const message = body.message;
+    const rawName = body.name || body.nickname;
+    const rawMessage = body.message;
 
-    if (!name || !message) {
+    if (!rawName || !rawMessage) {
       return NextResponse.json(
         { error: 'Name and message are required' },
         { status: 400 }
       );
     }
 
-    if (message.length > 500) {
+    // Sanitize inputs to prevent XSS
+    const name = sanitizeInput(rawName, 50);
+    const message = sanitizeInput(rawMessage, 500);
+
+    if (!name || !message) {
       return NextResponse.json(
-        { error: 'Message too long (max 500 characters)' },
+        { error: 'Name and message cannot be empty after sanitization' },
         { status: 400 }
       );
     }
@@ -104,8 +109,8 @@ export async function POST(req: NextRequest) {
 
     const newEntry = {
       id: Date.now().toString(),
-      name: name.substring(0, 50),
-      message: message.substring(0, 500),
+      name,
+      message,
       timestamp: Date.now(),
       approved: true, // Auto-approve for now
     };
@@ -172,10 +177,10 @@ export async function PUT(req: NextRequest) {
 
     // Aktualizuj tylko podane pola
     if (name !== undefined) {
-      guestbookEntries[entryIndex].name = name.substring(0, 50);
+      guestbookEntries[entryIndex].name = sanitizeInput(name, 50);
     }
     if (message !== undefined) {
-      guestbookEntries[entryIndex].message = message.substring(0, 500);
+      guestbookEntries[entryIndex].message = sanitizeInput(message, 500);
     }
 
     // Zapisz do S3
