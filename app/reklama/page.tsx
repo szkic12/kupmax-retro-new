@@ -423,7 +423,7 @@ export default function ReklamaPage() {
 
           {/* Copyright */}
           <p className="text-center text-gray-500 text-sm mt-4">
-            © 1999-2026 {adAdvertiser} | Powered by KUPMAX Retro
+            © 1999-{new Date().getFullYear()} {adAdvertiser} | Powered by KUPMAX Retro
           </p>
         </div>
       </div>

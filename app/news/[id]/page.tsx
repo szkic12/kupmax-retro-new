@@ -300,7 +300,7 @@ export default function NewsDetailPage() {
               ← Więcej artykułów
             </Link>
             <div className="text-sm text-gray-500">
-              © 1998-2026 KUPMAX News
+              © 1998-{new Date().getFullYear()} KUPMAX News
             </div>
           </div>
         </article>
@@ -322,7 +322,7 @@ export default function NewsDetailPage() {
             ← POWRÓT DO KUPMAX RETRO
           </Link>
           <p className="text-gray-400 text-xs mt-4">
-            © 1998-2026 KUPMAX News - Wszystkie prawa zastrzeżone
+            © 1998-{new Date().getFullYear()} KUPMAX News - Wszystkie prawa zastrzeżone
           </p>
         </div>
       </footer>

@@ -346,7 +346,7 @@ export default function TetrisPage() {
           className="text-gray-500 text-sm mt-4"
           style={{ fontFamily: 'monospace' }}
         >
-          © 1984-2026 KUPMAX ARCADE | INSERT COIN TO CONTINUE
+          © 1984-{new Date().getFullYear()} KUPMAX ARCADE | INSERT COIN TO CONTINUE
         </p>
       </footer>
 

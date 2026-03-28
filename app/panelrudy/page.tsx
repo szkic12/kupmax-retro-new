@@ -549,6 +549,9 @@ export default function SecureAdminPanel() {
         setMessage('Stacja dodana!');
         setNewStation({ name: '', url: '', genre: '' });
         fetchData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMessage(`Błąd: ${data.message || res.statusText}`);
       }
     } catch (error) {
       setMessage('Błąd sieci');

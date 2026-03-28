@@ -707,7 +707,7 @@ export default function NewsPage() {
           </div>
 
           <p className="text-center text-gray-400 text-xs mt-4">
-            © 1998-2026 KUPMAX News - Wszystkie prawa zastrzeżone
+            © 1998-{new Date().getFullYear()} KUPMAX News - Wszystkie prawa zastrzeżone
             <br />
             Redakcja nie ponosi odpowiedzialności za treść reklam
           </p>

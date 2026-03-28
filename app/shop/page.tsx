@@ -729,7 +729,7 @@ export default function ShopPage() {
               </a>
             </div>
             <p className="text-gray-400 text-sm">
-              © 2024-2026 KUPMAX PSA - Retro Shop
+              © 2024-{new Date().getFullYear()} KUPMAX PSA - Retro Shop
             </p>
             <p className="text-gray-500 text-xs mt-1">
               Produkty od zweryfikowanych sprzedawców (Dźwięki Ula 🐝)

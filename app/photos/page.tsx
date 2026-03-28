@@ -460,7 +460,7 @@ export default function PhotosPage() {
         </Link>
 
         <p className="text-gray-500 text-xs mt-4">
-          © 1999-2026 My Awesome Photo Gallery | All Rights Reserved
+          © 1999-{new Date().getFullYear()} My Awesome Photo Gallery | All Rights Reserved
         </p>
       </footer>
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
-import { verifyAdminToken } from '@/lib/admin-auth';
+import { getToken } from 'next-auth/jwt';
+
+const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
 // Domyślne stacje (używane gdy S3 jest puste)
 const DEFAULT_STATIONS = [
@@ -47,9 +49,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Admin auth required
-    const isAdmin = await verifyAdminToken(req, body);
-    if (!isAdmin) {
+    // Admin auth via next-auth session
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token?.email || !ADMIN_EMAILS.includes(token.email.toLowerCase())) {
       return NextResponse.json({ message: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 

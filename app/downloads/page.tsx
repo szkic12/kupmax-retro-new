@@ -610,7 +610,7 @@ export default function DownloadsPage() {
           </div>
 
           <p className="text-center text-cyan-300 text-xs mt-4">
-            © 1999-2026 KUPMAX Downloads - Your trusted source for free software
+            © 1999-{new Date().getFullYear()} KUPMAX Downloads - Your trusted source for free software
             <br />
             All software is checked for viruses before being listed
           </p>

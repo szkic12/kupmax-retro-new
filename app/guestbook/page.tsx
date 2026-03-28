@@ -545,7 +545,7 @@ export default function GuestbookPage() {
         </Link>
 
         <p className="text-orange-300 text-sm mt-4" style={{ fontFamily: 'Georgia, serif' }}>
-          Guestbook powered by KUPMAX © 1999-2026
+          Guestbook powered by KUPMAX © 1999-{new Date().getFullYear()}
         </p>
       </footer>
 
