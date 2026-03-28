@@ -15,7 +15,6 @@ const NAV_LINKS = [
   { label: '🎮 Tetris', href: '/tetris' },
   { label: '🛒 Shop', href: '/shop' },
   { label: '🌐 Webring', href: '/webring' },
-  { label: '🤖 Clippy', href: '/clippy' },
 ];
 
 export default function SubpageNavbar() {

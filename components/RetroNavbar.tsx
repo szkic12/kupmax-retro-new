@@ -112,24 +112,37 @@ const RetroNavbar = ({
             </div>
           </div>
 
-          <div className="border-t-2 border-gray-400 mt-1"></div>
-          {session ? (
-            <button
-              onClick={() => { signOut(); setShowStartMenu(false); }}
-              className="w-full text-left px-3 py-2 hover:bg-[#000080] hover:text-white flex items-center gap-3 font-bold bg-gray-300 border-t border-white"
-            >
-              <span>🔑</span>
-              <span>Wyloguj</span>
-            </button>
-          ) : (
-            <Link
-              href="/retro-admin"
-              onClick={() => setShowStartMenu(false)}
-              className="w-full text-left px-3 py-2 hover:bg-[#000080] hover:text-white flex items-center gap-3 font-bold bg-gray-300 border-t border-white"
-            >
-              <span>🔑</span>
-              <span>Zaloguj Admin</span>
-            </Link>
+          {/* Stałe linki nawigacyjne */}
+          {desktopIcons.length === 0 && (
+            <>
+              <div className="px-2 py-1 font-bold text-[10px] bg-gray-400 text-gray-800 border-b border-gray-500 uppercase">NAWIGACJA</div>
+              <div className="bg-white py-1">
+                {[
+                  { icon: '🏠', label: 'Strona główna', href: '/' },
+                  { icon: '📰', label: 'News', href: '/news' },
+                  { icon: '💬', label: 'Chat', href: '/chat' },
+                  { icon: '📋', label: 'Forum', href: '/forum' },
+                  { icon: '📖', label: 'Księga gości', href: '/guestbook' },
+                  { icon: '📸', label: 'Zdjęcia', href: '/photos' },
+                  { icon: '📥', label: 'Pliki', href: '/downloads' },
+                  { icon: '📻', label: 'Radio', href: '/radio' },
+                  { icon: '🎮', label: 'Tetris', href: '/tetris' },
+                  { icon: '🛒', label: 'Sklep', href: '/shop' },
+                  { icon: '🌐', label: 'Webring', href: '/webring' },
+                  { icon: '🛒', label: 'KupMax AI', href: 'https://ai.kupmax.pl' },
+                ].map(item => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setShowStartMenu(false)}
+                    className="w-full text-left px-2 py-1 hover:bg-[#000080] hover:text-white flex items-center gap-2 text-xs block"
+                  >
+                    <span className="text-base">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
