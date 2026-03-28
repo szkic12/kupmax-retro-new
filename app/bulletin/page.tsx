@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 const LegalNoticeBoard = dynamic(() => import('../../components/LegalNoticeBoard'), {
   ssr: false,
@@ -30,6 +31,7 @@ export default function BulletinPage() {
         `,
       }}
     >
+      <SubpageNavbar />
       {/* Paper document container */}
       <div
         className="max-w-4xl mx-auto"

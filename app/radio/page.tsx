@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 const ReactRadio = dynamic(() => import('../../components/ReactRadio/ReactRadio'), {
   ssr: false,
@@ -144,6 +145,7 @@ export default function RadioPage() {
         background: `radial-gradient(ellipse at center, ${colors.bg} 0%, #000000 100%)`,
       }}
     >
+      <SubpageNavbar />
       {/* Hidden audio player */}
       <audio ref={audioRef} preload="metadata">
         <source src={TRACKS[currentTrackIndex].url} type="audio/mpeg" />

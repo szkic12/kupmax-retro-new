@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
 import { useGuestbook, useGuestbookEntries } from '../../hooks/useGuestbook';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 const Guestbook = dynamic(() => import('../../components/Guestbook/Guestbook'), {
   ssr: false,
@@ -111,6 +112,7 @@ export default function GuestbookPage() {
         `,
       }}
     >
+      <SubpageNavbar />
       {/* Header */}
       <header
         className="py-8 text-center"

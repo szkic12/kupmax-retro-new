@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
 import RetroNavbar from '../../components/RetroNavbar';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 const allEmojis: EmojiType[] = ['smile', 'laugh', 'sad', 'wink', 'tongue', 'love', 'cool', 'angry', 'surprise', 'think'];
 
@@ -183,39 +184,7 @@ export default function PhotosPage() {
       </header>
 
       {/* Navigation */}
-      <nav
-        className="relative mx-4 mb-8 p-4 rounded-lg text-center"
-        style={{
-          background: 'linear-gradient(180deg, #4a004a 0%, #2a002a 100%)',
-          border: '3px ridge #ff00ff',
-        }}
-      >
-        <div className="flex flex-wrap justify-center gap-4">
-          {[
-            { label: 'Home', href: '/' },
-            { label: 'Photos', href: '/photos' },
-            { label: 'Shop', href: '/shop' },
-            { label: 'Kontakt', href: 'mailto:kontakt@kupmax.pl' },
-            { label: 'News', href: '/news' },
-            { label: 'Guestbook', href: '/guestbook' },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="px-4 py-2 cursor-pointer transition-all hover:scale-110"
-              style={{
-                background: 'linear-gradient(180deg, #ff00ff 0%, #aa00aa 100%)',
-                border: '2px outset #ff66ff',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                textShadow: '1px 1px 2px #000',
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <SubpageNavbar />
 
       {/* Main content */}
       <main className="relative container mx-auto px-4 pb-8">

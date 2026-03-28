@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import RetroNavbar from '../../components/RetroNavbar';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 const TetrisGame = dynamic(() => import('../../components/TetrisGame/TetrisGame'), {
   ssr: false,
@@ -43,6 +44,7 @@ export default function TetrisPage() {
       }}
     >
       <RetroNavbar />
+      <SubpageNavbar />
       {/* Animated background effects */}
       <div className="fixed inset-0 pointer-events-none">
         {/* Grid lines */}

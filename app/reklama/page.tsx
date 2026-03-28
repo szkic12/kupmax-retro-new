@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface Slide {
   id: string;
@@ -128,6 +129,7 @@ export default function ReklamaPage() {
   if (isLoading || loadingAd) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+        <SubpageNavbar />
         {/* Animated stars background */}
         <div className="absolute inset-0">
           {[...Array(50)].map((_, i) => (
@@ -209,6 +211,7 @@ export default function ReklamaPage() {
 
   return (
     <div className={`min-h-screen bg-black relative overflow-hidden transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+      <SubpageNavbar />
       {/* Animated background */}
       <div className="absolute inset-0">
         {[...Array(30)].map((_, i) => (

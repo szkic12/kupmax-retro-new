@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { EmojiParser } from '../../components/RetroEmoji';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function ForumPage() {
   const [categories, setCategories] = useState([]);
@@ -187,6 +188,7 @@ export default function ForumPage() {
       </Head>
 
       <div className="forum-page">
+        <SubpageNavbar />
         {/* Nagłówek */}
         <div className="forum-header">
           <h1 className="forum-title">Forum Kupmax</h1>

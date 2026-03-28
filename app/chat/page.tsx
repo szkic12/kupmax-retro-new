@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Chatroom from '../../components/Chatroom/Chatroom';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function ChatPage() {
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function ChatPage() {
       padding: '20px',
       fontFamily: "'MS Sans Serif', 'Segoe UI', sans-serif"
     }}>
+      <SubpageNavbar />
       <Chatroom />
     </div>
   );

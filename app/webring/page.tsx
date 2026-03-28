@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface WebringEntry {
   id: string;
@@ -46,6 +47,7 @@ export default function WebringCatalog() {
       fontFamily: '"MS Sans Serif", "Segoe UI", Tahoma, sans-serif',
       padding: '20px',
     }}>
+      <SubpageNavbar />
       {/* Header */}
       <div style={{
         background: 'linear-gradient(180deg, #000080 0%, #0000AA 100%)',
