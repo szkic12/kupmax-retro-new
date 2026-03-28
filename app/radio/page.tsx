@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 const ReactRadio = dynamic(() => import('../../components/ReactRadio/ReactRadio'), {
   ssr: false,
@@ -147,7 +146,6 @@ export default function RadioPage() {
       }}
     >
       <RetroNavbar />
-      <SubpageNavbar />
       {/* Hidden audio player */}
       <audio ref={audioRef} preload="metadata">
         <source src={TRACKS[currentTrackIndex].url} type="audio/mpeg" />

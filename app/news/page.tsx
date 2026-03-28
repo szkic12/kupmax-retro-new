@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import RetroEmoji from '@/components/RetroEmoji/RetroEmoji';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface NewsItem {
   id: string;
@@ -189,7 +188,6 @@ export default function NewsPage() {
   return (
     <div className="min-h-screen pt-10" style={{ background: '#c0c0c0' }}>
       <RetroNavbar />
-      <SubpageNavbar />
       {/* Top bar - like old portals */}
       <div
         className="py-1 px-4 flex justify-between items-center text-xs"

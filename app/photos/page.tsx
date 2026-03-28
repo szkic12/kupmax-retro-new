@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 const allEmojis: EmojiType[] = ['smile', 'laugh', 'sad', 'wink', 'tongue', 'love', 'cool', 'angry', 'surprise', 'think'];
 
@@ -184,7 +183,6 @@ export default function PhotosPage() {
       </header>
 
       {/* Navigation */}
-      <SubpageNavbar />
 
       {/* Main content */}
       <main className="relative container mx-auto px-4 pb-8">

@@ -4,7 +4,6 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface Seller {
   id: string;
@@ -114,7 +113,6 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen pt-10" style={{ background: '#f0f0f0' }}>
       <RetroNavbar />
-      <SubpageNavbar />
       {/* Top banner - Allegro style */}
       <div
         className="py-1 text-center text-sm overflow-hidden"

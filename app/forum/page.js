@@ -6,7 +6,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { EmojiParser } from '../../components/RetroEmoji';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function ForumPage() {
   const [categories, setCategories] = useState([]);
@@ -190,7 +189,6 @@ export default function ForumPage() {
 
       <div className="forum-page" style={{ paddingTop: '40px' }}>
         <RetroNavbar />
-        <SubpageNavbar />
         {/* Nagłówek */}
         <div className="forum-header">
           <h1 className="forum-title">Forum Kupmax</h1>

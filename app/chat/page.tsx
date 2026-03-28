@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import Chatroom from '../../components/Chatroom/Chatroom';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function ChatPage() {
   useEffect(() => {
@@ -27,7 +26,6 @@ export default function ChatPage() {
       fontFamily: "'MS Sans Serif', 'Segoe UI', sans-serif"
     }}>
       <RetroNavbar />
-      <SubpageNavbar />
       <Chatroom />
     </div>
   );

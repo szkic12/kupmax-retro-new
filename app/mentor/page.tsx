@@ -5,7 +5,6 @@ import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 // Dynamic import Monaco Editor (client-side only)
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
@@ -435,7 +434,6 @@ export default function MentorIDEPage() {
   return (
     <div className="h-screen flex flex-col" style={{ background: '#008080' }}>
       <RetroNavbar />
-      <SubpageNavbar />
       {/* Hidden file inputs */}
       <input
         ref={fileInputRef}

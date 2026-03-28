@@ -5,7 +5,6 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useDownloads } from '../../hooks/useDownloads';
 import RetroNavbar from '../../components/RetroNavbar';
-import SubpageNavbar from '../../components/SubpageNavbar';
 
 const Downloads = dynamic(() => import('../../components/Downloads/Downloads'), {
   ssr: false,
@@ -137,7 +136,6 @@ export default function DownloadsPage() {
   return (
     <div className="min-h-screen pt-10" style={{ background: '#e8e8e8' }}>
       <RetroNavbar />
-      <SubpageNavbar />
       {/* Download progress overlay */}
       {downloading && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
