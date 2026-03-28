@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import PrivateChatroom from '../../components/PrivateChatroom/PrivateChatroom';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function PrivateChatPage() {
@@ -22,8 +23,10 @@ export default function PrivateChatPage() {
       minHeight: '100vh',
       background: '#008080',
       padding: '20px',
+      paddingTop: '60px',
       fontFamily: "'MS Sans Serif', 'Segoe UI', sans-serif"
     }}>
+      <RetroNavbar />
       <SubpageNavbar />
       <PrivateChatroom />
     </div>

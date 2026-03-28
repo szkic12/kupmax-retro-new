@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface Seller {
@@ -111,7 +112,8 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#f0f0f0' }}>
+    <div className="min-h-screen pt-10" style={{ background: '#f0f0f0' }}>
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Top banner - Allegro style */}
       <div

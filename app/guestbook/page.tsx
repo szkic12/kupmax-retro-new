@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { RetroEmoji, EmojiType, emojiToCode } from '../../components/RetroEmoji/RetroEmoji';
 import { useGuestbook, useGuestbookEntries } from '../../hooks/useGuestbook';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 const Guestbook = dynamic(() => import('../../components/Guestbook/Guestbook'), {
@@ -105,13 +106,14 @@ export default function GuestbookPage() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen pt-10"
       style={{
         background: `
           linear-gradient(180deg, #ffffcc 0%, #ffcc99 50%, #ff9966 100%)
         `,
       }}
     >
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Header */}
       <header

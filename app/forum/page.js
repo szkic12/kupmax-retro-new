@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { EmojiParser } from '../../components/RetroEmoji';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 export default function ForumPage() {
@@ -187,7 +188,8 @@ export default function ForumPage() {
         <meta name="description" content="Forum dyskusyjne Kupmax - pytania o produkty, wspomnienia retro, pomoc techniczna" />
       </Head>
 
-      <div className="forum-page">
+      <div className="forum-page" style={{ paddingTop: '40px' }}>
+        <RetroNavbar />
         <SubpageNavbar />
         {/* Nagłówek */}
         <div className="forum-header">

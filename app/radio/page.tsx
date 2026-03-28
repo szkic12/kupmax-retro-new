@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 const ReactRadio = dynamic(() => import('../../components/ReactRadio/ReactRadio'), {
@@ -140,11 +141,12 @@ export default function RadioPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-4"
+      className="min-h-screen flex flex-col items-center justify-center p-4 pt-14"
       style={{
         background: `radial-gradient(ellipse at center, ${colors.bg} 0%, #000000 100%)`,
       }}
     >
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Hidden audio player */}
       <audio ref={audioRef} preload="metadata">

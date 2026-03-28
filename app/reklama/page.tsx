@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface Slide {
@@ -128,7 +129,8 @@ export default function ReklamaPage() {
   // Loading screen - Flash style
   if (isLoading || loadingAd) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden pt-10">
+        <RetroNavbar />
         <SubpageNavbar />
         {/* Animated stars background */}
         <div className="absolute inset-0">
@@ -210,7 +212,8 @@ export default function ReklamaPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-black relative overflow-hidden transition-opacity duration-1000 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen bg-black relative overflow-hidden transition-opacity duration-1000 pt-10 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Animated background */}
       <div className="absolute inset-0">

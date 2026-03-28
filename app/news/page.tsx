@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import RetroEmoji from '@/components/RetroEmoji/RetroEmoji';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 interface NewsItem {
@@ -186,7 +187,8 @@ export default function NewsPage() {
   const sideNews = getSideNews();
 
   return (
-    <div className="min-h-screen" style={{ background: '#c0c0c0' }}>
+    <div className="min-h-screen pt-10" style={{ background: '#c0c0c0' }}>
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Top bar - like old portals */}
       <div

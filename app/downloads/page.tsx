@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useDownloads } from '../../hooks/useDownloads';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 const Downloads = dynamic(() => import('../../components/Downloads/Downloads'), {
@@ -134,7 +135,8 @@ export default function DownloadsPage() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: '#e8e8e8' }}>
+    <div className="min-h-screen pt-10" style={{ background: '#e8e8e8' }}>
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Download progress overlay */}
       {downloading && (

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import RetroNavbar from '../../components/RetroNavbar';
 import SubpageNavbar from '../../components/SubpageNavbar';
 
 const LegalNoticeBoard = dynamic(() => import('../../components/LegalNoticeBoard'), {
@@ -24,13 +25,14 @@ export default function BulletinPage() {
 
   return (
     <div
-      className="min-h-screen py-8 px-4"
+      className="min-h-screen py-8 px-4 pt-16"
       style={{
         background: `
           linear-gradient(180deg, #d4c4a8 0%, #e8dcc8 50%, #d4c4a8 100%)
         `,
       }}
     >
+      <RetroNavbar />
       <SubpageNavbar />
       {/* Paper document container */}
       <div
