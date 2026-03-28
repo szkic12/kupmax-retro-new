@@ -26,6 +26,22 @@ const CATEGORIES = [
 ] as const;
 
 /**
+ * Sanitize HTML to prevent XSS attacks
+ * Removes: script tags, event handlers, javascript: protocol, iframes, objects, embeds, forms
+ */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<iframe/gi, '&lt;iframe')
+    .replace(/<object/gi, '&lt;object')
+    .replace(/<embed/gi, '&lt;embed')
+    .replace(/<form/gi, '&lt;form');
+}
+
+/**
  * /news - Portal informacyjny
  * Połączenie stylu Onet/WP z 1998 z kategoriami BossXD
  */
@@ -443,7 +459,7 @@ export default function NewsPage() {
                         {expandedNews === item.id ? (
                           <div
                             className="text-sm text-gray-700"
-                            dangerouslySetInnerHTML={{ __html: parseMarkdown(item.content) }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(parseMarkdown(item.content)) }}
                           />
                         ) : (
                           <p className="text-sm text-gray-600">{item.excerpt}</p>

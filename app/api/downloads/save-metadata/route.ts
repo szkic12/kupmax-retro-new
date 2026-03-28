@@ -4,9 +4,36 @@ import FileDatabase from '../../../../lib/file-database';
 import { randomUUID } from 'crypto';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
+// Rate limiting: map of IP -> { count, resetAt }
+const metadataRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isMetadataRateLimited(ip: string, maxRequests = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const entry = metadataRateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    metadataRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
 // Save file metadata after direct S3 upload
 export async function POST(req: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+
+    // Rate limiting check
+    if (isMetadataRateLimited(ip, 10, 60000)) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests. Maximum 10 metadata saves per minute.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     // Admin auth required for saving file metadata

@@ -10,8 +10,35 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const dynamic = 'force-dynamic';
 
+// Rate limiting: map of IP -> { count, resetAt }
+const adUploadRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isAdUploadRateLimited(ip: string, maxRequests = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const entry = adUploadRateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    adUploadRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+
+    // Rate limiting check
+    if (isAdUploadRateLimited(ip, 10, 60000)) {
+      return NextResponse.json(
+        { error: 'Too many upload requests. Maximum 10 uploads per minute.' },
+        { status: 429 }
+      );
+    }
+
     // Admin auth required for uploading advertisements
     const isAdmin = await verifyAdminToken(request);
     if (!isAdmin) {

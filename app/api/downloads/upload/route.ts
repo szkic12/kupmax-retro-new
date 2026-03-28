@@ -5,6 +5,22 @@ import FileDatabase from '../../../../lib/file-database';
 import { randomUUID } from 'crypto';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
+// Rate limiting: map of IP -> { count, resetAt }
+const uploadRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isUploadRateLimited(ip: string, maxRequests = 5, windowMs = 60000): boolean {
+  const now = Date.now();
+  const entry = uploadRateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    uploadRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
 // Allowed MIME types
 const allowedMimeTypes = [
   'image/jpeg',
@@ -72,6 +88,17 @@ function validateFile(file: File) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+
+    // Rate limiting check
+    if (isUploadRateLimited(ip, 5, 60000)) {
+      return NextResponse.json(
+        { success: false, error: 'Too many upload requests. Maximum 5 uploads per minute.' },
+        { status: 429 }
+      );
+    }
+
     // Admin auth required for uploading files
     const isAdmin = await verifyAdminToken(req);
     if (!isAdmin) {

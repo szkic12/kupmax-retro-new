@@ -23,6 +23,22 @@ const CATEGORIES = [
   { name: 'Eksperckie Poradniki', icon: '📖', color: '#800000' },
 ] as const;
 
+/**
+ * Sanitize HTML to prevent XSS attacks
+ * Removes: script tags, event handlers, javascript: protocol, iframes, objects, embeds, forms
+ */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<iframe/gi, '&lt;iframe')
+    .replace(/<object/gi, '&lt;object')
+    .replace(/<embed/gi, '&lt;embed')
+    .replace(/<form/gi, '&lt;form');
+}
+
 export default function NewsDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -261,7 +277,7 @@ export default function NewsDetailPage() {
             <div
               className="prose max-w-none"
               style={{ fontSize: '16px', lineHeight: '1.8' }}
-              dangerouslySetInnerHTML={{ __html: parseMarkdown(news.content) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(parseMarkdown(news.content)) }}
             />
           </div>
 
