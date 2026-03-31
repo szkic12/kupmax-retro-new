@@ -192,7 +192,7 @@ Problemy z dostępnością w aplikacji: kontakt@kupmax.pl
 ## 9. DOSTĘPNOŚĆ GRY VIBEHUB3D (ROBLOX)
 
 ### 9.1. Status
-Gra **VibeHub3D** w Roblox podlega ograniczeniom platformy Roblox.
+Gra **Baby3DVibe** w Roblox podlega ograniczeniom platformy Roblox.
 
 **Dostępność zależy od:**
 - Ustawień dostępności w Roblox

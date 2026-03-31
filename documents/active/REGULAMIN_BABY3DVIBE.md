@@ -17,13 +17,13 @@
 **Strona internetowa:** https://kupmax.pl
 
 ### 1.2. Nazwa i platforma
-**Nazwa gry:** VibeHub3D
+**Nazwa gry:** Baby3DVibe
 **Platforma:** Roblox (https://www.roblox.com)
 **Typ gry:** Edukacyjno-rozrywkowa, quizy i zadania, kolekcjonowanie przedmiotów
 **Wiek:** 7+ (zalecana obecność rodzica/opiekuna)
 
 ### 1.3. Cel gry
-VibeHub3D to gra edukacyjno-rozrywkowa, która:
+Baby3DVibe to gra edukacyjno-rozrywkowa, która:
 - Łączy pokolenia (dzieci + rodzice)
 - Uczy poprzez quizy i zadania
 - Promuje wspólną zabawę
@@ -36,7 +36,7 @@ VibeHub3D to gra edukacyjno-rozrywkowa, która:
 ## § 2. ZASADY GRY
 
 ### 2.1. Jak grać?
-1. **Wejdź do gry VibeHub3D** w Roblox
+1. **Wejdź do gry Baby3DVibe** w Roblox
 2. **Eksploruj świat** - poruszaj się po mapie
 3. **Znajdź stacje z zadaniami** - ikony pytajników (?)
 4. **Odpowiadaj na quizy:**
@@ -71,7 +71,7 @@ VibeHub3D to gra edukacyjno-rozrywkowa, która:
 ## § 3. WSPÓŁPRACA Z RODZICEM
 
 ### 3.1. Zalecana obecność rodzica
-VibeHub3D jest zaprojektowane jako **gra rodzinna**:
+Baby3DVibe jest zaprojektowane jako **gra rodzinna**:
 - Rodzic + dziecko grają razem
 - Rodzic pomaga w trudniejszych pytaniach
 - Wspólna zabawa wzmacnia więź
@@ -120,7 +120,7 @@ VibeHub3D jest zaprojektowane jako **gra rodzinna**:
 ## § 5. DANE OSOBOWE I PRYWATNOŚĆ
 
 ### 5.1. Jakie dane zbieramy?
-**W grze VibeHub3D:**
+**W grze Baby3DVibe:**
 - ✅ Nickname Roblox (publiczny, widoczny dla wszystkich)
 - ✅ Postęp w grze (zebrane przedmioty, punkty)
 - ✅ Statystyki (czas gry, odpowiedzi na quizy)
@@ -179,11 +179,11 @@ Przetwarzanie danych odbywa się zgodnie z:
 
 ### 7.1. Prawa autorskie
 Wszystkie elementy gry (grafiki, modele 3D, teksty, quizy, kod) są własnością:
-- **KUPMAX PROSTA SPÓŁKA AKCYJNA** (VibeHub3D)
+- **KUPMAX PROSTA SPÓŁKA AKCYJNA** (Baby3DVibe)
 - **Roblox Corporation** (platforma Roblox)
 
 ### 7.2. Licencja
-Grając w VibeHub3D, otrzymujesz **niewyłączną, nieprzenoszalną licencję** na korzystanie z gry wyłącznie do celów osobistych i rozrywkowych.
+Grając w Baby3DVibe, otrzymujesz **niewyłączną, nieprzenoszalną licencję** na korzystanie z gry wyłącznie do celów osobistych i rozrywkowych.
 
 **NIE WOLNO:**
 - Kopiować kodu gry
@@ -193,7 +193,7 @@ Grając w VibeHub3D, otrzymujesz **niewyłączną, nieprzenoszalną licencję** 
 
 ### 7.3. Znaki towarowe
 - **KupMax™** - znak towarowy KUPMAX PROSTA SPÓŁKA AKCYJNA
-- **VibeHub3D™** - znak towarowy KUPMAX PROSTA SPÓŁKA AKCYJNA
+- **Baby3DVibe™** - znak towarowy KUPMAX PROSTA SPÓŁKA AKCYJNA
 - **Roblox®** - znak towarowy Roblox Corporation
 
 ---
@@ -255,14 +255,14 @@ Problemy z grą? Napisz do nas:
 
 ### 10.2. Zgłaszanie błędów (bugs)
 Znalazłeś błąd? Pomóż nam go naprawić!
-- Email: kontakt@kupmax.pl (temat: "VibeHub3D BUG")
+- Email: kontakt@kupmax.pl (temat: "Baby3DVibe BUG")
 - Opisz krok po kroku jak odtworzyć błąd
 
 **Za zgłoszenie poważnego błędu możesz otrzymać nagrodę!** 🎁
 
 ### 10.3. Sugestie i pomysły
 Masz pomysł na nową funkcję?
-- Email: kontakt@kupmax.pl (temat: "VibeHub3D POMYSŁ")
+- Email: kontakt@kupmax.pl (temat: "Baby3DVibe POMYSŁ")
 
 **Każda sugestia jest dla nas cenna!** 💡
 
@@ -271,7 +271,7 @@ Masz pomysł na nową funkcję?
 ## § 11. POSTANOWIENIA KOŃCOWE
 
 ### 11.1. Akceptacja Regulaminu
-Grając w VibeHub3D, akceptujesz niniejszy Regulamin oraz:
+Grając w Baby3DVibe, akceptujesz niniejszy Regulamin oraz:
 - Politykę Prywatności KupMax (https://kupmax.pl)
 - Terms of Service Roblox (https://www.roblox.com/info/terms)
 - Community Standards Roblox (https://en.help.roblox.com/hc/en-us/articles/203313410)
@@ -322,7 +322,7 @@ Sobota: 9:00 - 12:00
 
 ---
 
-**Dziękujemy za grę w VibeHub3D!** 🎮💙
+**Dziękujemy za grę w Baby3DVibe!** 🎮💙
 
 *Baw się, ucz i odkrywaj - razem z rodziną!*
 

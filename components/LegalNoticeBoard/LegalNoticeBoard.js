@@ -79,9 +79,9 @@ const LegalNoticeBoard = () => {
     },
     {
       id: 8,
-      title: '🎮 Regulamin VibeHub3D',
+      title: '🎮 Regulamin Baby3DVibe',
       description: 'Gra Roblox - Quizy i zadania',
-      file: 'REGULAMIN_VIBEHUB3D',
+      file: 'REGULAMIN_BABY3DVIBE',
       rotation: 2,
       color: '#fce4ec', // różowy papier
       pinColor: '#e91e63'

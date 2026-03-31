@@ -218,7 +218,7 @@ export default function Home() {
     {
       id: "roblox",
       icon: "🎪",
-      label: "VibeHub3D.url",
+      label: "Baby3DVibe.url",
       type: "link",
       action: () => window.open("https://www.roblox.com/pl/games/95847270410338/shop", "_blank"),
       iconImage: "/images/icons-app/P48.jpg",

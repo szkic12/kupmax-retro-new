@@ -18,7 +18,7 @@ export async function GET(
     'FAQ',
     'OBSLUGA_KLIENTA',
     'POLITYKA_DOSTEPNOSCI',
-    'REGULAMIN_VIBEHUB3D',
+    'REGULAMIN_BABY3DVIBE',
     'privacy-policy'
   ];
 

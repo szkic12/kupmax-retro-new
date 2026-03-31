@@ -176,7 +176,7 @@ Aby przyspieszyć obsługę, podaj:
 
 **Aplikacje:**
 - vibe3d (Android, Google Play)
-- VibeHub3D (Roblox)
+- Baby3DVibe (Roblox)
 
 ---
 

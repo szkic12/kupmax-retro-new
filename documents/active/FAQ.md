@@ -389,7 +389,7 @@ Akceptujemy:
 
 ## 🎲 GRA VIBEHUB3D (ROBLOX)
 
-### 38. Co to jest VibeHub3D?
+### 38. Co to jest Baby3DVibe?
 Nasza gra w **Roblox**:
 - ❓ Odpowiadaj na quizy i zadania
 - 🎒 Zbieraj przedmioty do plecaka
