@@ -65,11 +65,15 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            value: 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
           },
           {
             key: 'Referrer-Policy',
@@ -81,7 +85,26 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://unpkg.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https:",
+              "media-src 'self' blob: data: https:",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' blob: https://kxsgfuppoliuvprhxwyc.supabase.co wss://kxsgfuppoliuvprhxwyc.supabase.co https://*.amazonaws.com https://api.anthropic.com",
+              "worker-src 'self' blob:",
+              "frame-src 'self'",
+              "frame-ancestors 'none'",
+            ].join('; '),
           },
         ],
       },

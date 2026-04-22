@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +13,20 @@ const anthropic = new Anthropic({
 // POST - generuj artykuł z pomocą AI
 export async function POST(request: NextRequest) {
   try {
+    // Must be logged in (next-auth session required)
+    const cookieStore = await cookies();
+    const session = cookieStore.get('next-auth.session-token') || cookieStore.get('__Secure-next-auth.session-token');
+    if (!session) {
+      return NextResponse.json({ error: 'Musisz być zalogowany' }, { status: 401 });
+    }
+
+    // Rate limit: 5 requests/min per IP
+    const ip = getClientIP(request);
+    const rateLimit = checkRateLimit(`news-generate:${ip}`, 5, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: 'Za dużo żądań. Spróbuj za chwilę.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const { prompt, style, language = 'pl' } = body;
 
