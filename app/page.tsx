@@ -223,6 +223,13 @@ export default function Home() {
       action: () => window.open("https://www.roblox.com/pl/games/95847270410338/shop", "_blank"),
       iconImage: "/images/icons-app/P48.jpg",
     },
+    {
+      id: "rss",
+      icon: "📡",
+      label: "RSS Feed.xml",
+      type: "link",
+      action: () => window.open("/api/rss", "_blank"),
+    },
     // FOLDERY
     {
       id: "folder-system",
