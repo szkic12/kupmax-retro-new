@@ -20,6 +20,7 @@ export default function DownloadsPage() {
   const [progress, setProgress] = useState(0);
   const [activeTab, setActiveTab] = useState('home');
   const [showCategories, setShowCategories] = useState(false);
+  const [show3DObjects, setShow3DObjects] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -48,6 +49,8 @@ export default function DownloadsPage() {
       fetchFiles({ sortBy: 'downloadCount', sortOrder: 'desc', limit: 20 });
     } else if (tab === 'home') {
       fetchFiles({ limit: 6, sortBy: 'downloads' });
+    } else if (tab === '3d-objects') {
+      fetchFiles({ category: '3D Objects', sortBy: 'uploadedAt', sortOrder: 'desc', limit: 50 });
     }
   };
 
@@ -118,18 +121,30 @@ export default function DownloadsPage() {
       Graphics: '🎨',
       Internet: '🌐',
       Development: '💻',
+      '3D Objects': '🧊',
     };
     return icons[category] || '📦';
   }
 
   // Sidebar categories = połączenie kategorii plików + linków do podstron
   const sidebarCategories = [
+    {
+      name: '3D Objects',
+      icon: '🧊',
+      count: null,
+      url: null,
+      isLink: false,
+      isFilter: true,
+      tab: '3d-objects',
+    },
     ...categoriesLinks.map(cat => ({
       name: cat.name,
       icon: cat.icon,
       count: null,
       url: cat.url,
       isLink: true,
+      isFilter: false,
+      tab: null,
     })),
   ];
 
@@ -271,6 +286,17 @@ export default function DownloadsPage() {
             >
               ⭐ Top Downloads
             </button>
+            <button
+              onClick={() => handleTabClick('3d-objects')}
+              className="px-3 py-1 text-sm font-bold transition-all hover:scale-105"
+              style={{
+                background: activeTab === '3d-objects' ? '#ffcc00' : '#ffffff',
+                border: '2px outset #ffffff',
+                color: '#003399',
+              }}
+            >
+              🧊 3D Objects
+            </button>
             <div className="relative">
               <button
                 onClick={() => setShowCategories(!showCategories)}
@@ -358,10 +384,27 @@ export default function DownloadsPage() {
               </div>
               <div className="p-2">
                 {sidebarCategories.map((cat) => (
-                  cat.isLink ? (
+                  cat.isFilter ? (
+                    <div
+                      key={cat.name}
+                      onClick={() => handleTabClick(cat.tab!)}
+                      className="flex items-center justify-between px-2 py-2 cursor-pointer text-sm transition-colors"
+                      style={{
+                        borderBottom: '1px dotted #ccc',
+                        background: activeTab === cat.tab ? '#dbeafe' : undefined,
+                        fontWeight: activeTab === cat.tab ? 'bold' : undefined,
+                      }}
+                    >
+                      <span>
+                        <span className="mr-2">{cat.icon}</span>
+                        {cat.name}
+                      </span>
+                      <span className="text-gray-500 text-xs">→</span>
+                    </div>
+                  ) : cat.isLink ? (
                     <Link
                       key={cat.url}
-                      href={cat.url}
+                      href={cat.url!}
                       className="flex items-center justify-between px-2 py-2 hover:bg-blue-50 text-sm transition-colors"
                       style={{ borderBottom: '1px dotted #ccc' }}
                     >

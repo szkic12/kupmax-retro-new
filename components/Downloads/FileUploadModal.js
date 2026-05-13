@@ -352,14 +352,23 @@ const FileUploadModal = ({ onClose }) => {
             </div>
 
             <div className={styles.formGroup}>
-              <label>CATEGORY (OPTIONAL)</label>
-              <input
-                type="text"
+              <label>CATEGORY</label>
+              <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Enter category name..."
                 className={styles.textInput}
-              />
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="">-- Select category --</option>
+                <option value="3D Objects">🧊 3D Objects</option>
+                <option value="Audio">🎵 Audio</option>
+                <option value="Video">🎬 Video</option>
+                <option value="Graphics">🎨 Graphics</option>
+                <option value="Games">🎮 Games</option>
+                <option value="Utilities">🔧 Utilities</option>
+                <option value="Development">💻 Development</option>
+                <option value="Internet">🌐 Internet</option>
+              </select>
             </div>
           </div>
         </div>
