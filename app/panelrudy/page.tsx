@@ -91,6 +91,16 @@ export default function SecureAdminPanel() {
   const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
   const [newGalleryPhoto, setNewGalleryPhoto] = useState({ title: '', image_url: '', description: '' });
 
+  // 3D Objects (Vibe3D / Firebase)
+  const [models3d, setModels3d] = useState<any[]>([]);
+  const [models3dLoading, setModels3dLoading] = useState(false);
+  const [models3dMessage, setModels3dMessage] = useState('');
+  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Inne', shopUrl: '' });
+  const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
+  const [uploading3d, setUploading3d] = useState(false);
+  const [upload3dProgress, setUpload3dProgress] = useState(0);
+  const VIBE3D_CATEGORIES = ['Sztuka', 'Jedzenie', 'Natura', 'Zwierzęta', 'Pojazdy', 'Architektura', 'Ludzie', 'Technologia', 'Sport', 'Inne'];
+
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
   // Simple formatting helpers for news content
@@ -199,6 +209,12 @@ export default function SecureAdminPanel() {
         const resSources = await fetch('/api/news/rss?action=sources');
         const dataSources = await resSources.json();
         setRssSources(dataSources.sources || []);
+      } else if (activeTab === '3d') {
+        setModels3dLoading(true);
+        fetch('/api/models3d').then(r => r.json()).then(d => {
+          if (d.success) setModels3d(d.models);
+          setModels3dLoading(false);
+        }).catch(() => setModels3dLoading(false));
       } else if (activeTab === 'gallery') {
         // Pobierz zdjęcia z galerii
         const resGallery = await fetch('/api/gallery-photos');
@@ -1237,6 +1253,9 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === 'gallery')} onClick={() => setActiveTab('gallery')}>
               📷 Moje Zdjecia
+            </button>
+            <button style={tabStyle(activeTab === '3d')} onClick={() => setActiveTab('3d')}>
+              🧊 3D Objects
             </button>
           </div>
 
@@ -2395,6 +2414,186 @@ export default function SecureAdminPanel() {
                           ))}
                         </div>
                       )}
+                    </div>
+                  </>
+                )}
+
+                {activeTab === '3d' && (
+                  <>
+                    <h3 style={{ margin: '0 0 15px', fontSize: '14px' }}>🧊 Dodaj Model 3D (S3 + Firebase)</h3>
+
+                    {models3dMessage && (
+                      <div style={{ padding: '8px 12px', marginBottom: '10px', background: models3dMessage.startsWith('✅') ? '#d4edda' : '#f8d7da', border: '1px solid', borderColor: models3dMessage.startsWith('✅') ? '#c3e6cb' : '#f5c6cb', borderRadius: '4px', fontSize: '12px' }}>
+                        {models3dMessage}
+                      </div>
+                    )}
+
+                    {/* Formularz upload */}
+                    <div style={{ background: '#fff', border: '2px inset #808080', padding: '15px', marginBottom: '15px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>TYTUŁ *</label>
+                          <input
+                            type="text"
+                            value={new3dModel.title}
+                            onChange={(e) => setNew3dModel({ ...new3dModel, title: e.target.value })}
+                            placeholder="np. Balon z podpisem"
+                            style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>KATEGORIA VIBE3D</label>
+                          <select
+                            value={new3dModel.category}
+                            onChange={(e) => setNew3dModel({ ...new3dModel, category: e.target.value })}
+                            style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                          >
+                            {VIBE3D_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>OPIS</label>
+                        <input
+                          type="text"
+                          value={new3dModel.description}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, description: e.target.value })}
+                          placeholder="Krótki opis modelu..."
+                          style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>LINK DO SKLEPU (opcjonalnie)</label>
+                        <input
+                          type="text"
+                          value={new3dModel.shopUrl}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, shopUrl: e.target.value })}
+                          placeholder="https://ai.kupmax.pl/product/..."
+                          style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>PLIK GLB *</label>
+                        <input
+                          type="file"
+                          accept=".glb,.gltf,.obj"
+                          onChange={(e) => setSelected3dFile(e.target.files?.[0] || null)}
+                          style={{ fontSize: '12px' }}
+                        />
+                        {selected3dFile && (
+                          <span style={{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>
+                            {selected3dFile.name} ({(selected3dFile.size / 1024 / 1024).toFixed(1)} MB)
+                          </span>
+                        )}
+                      </div>
+
+                      {uploading3d && (
+                        <div style={{ marginBottom: '10px' }}>
+                          <div style={{ background: '#e0e0e0', border: '2px inset #808080', height: '20px', borderRadius: '2px' }}>
+                            <div style={{ background: '#0000ff', height: '100%', width: `${upload3dProgress}%`, transition: 'width 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}>{upload3dProgress}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        disabled={!selected3dFile || !new3dModel.title || uploading3d}
+                        onClick={async () => {
+                          if (!selected3dFile || !new3dModel.title) return;
+                          setUploading3d(true);
+                          setUpload3dProgress(0);
+                          setModels3dMessage('');
+                          try {
+                            // Krok 1: Pobierz presigned URL z S3
+                            const presRes = await fetch('/api/downloads/presigned-url', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                fileName: selected3dFile.name,
+                                fileType: selected3dFile.type || 'model/gltf-binary',
+                                fileSize: selected3dFile.size,
+                              }),
+                            });
+                            const presData = await presRes.json();
+                            if (!presData.success) throw new Error(presData.error);
+
+                            // Krok 2: Upload bezpośrednio na S3
+                            await new Promise<void>((resolve, reject) => {
+                              const xhr = new XMLHttpRequest();
+                              xhr.upload.addEventListener('progress', (e) => {
+                                if (e.lengthComputable) setUpload3dProgress(Math.round((e.loaded / e.total) * 100));
+                              });
+                              xhr.addEventListener('load', () => xhr.status < 300 ? resolve() : reject(new Error(`S3 error ${xhr.status}`)));
+                              xhr.addEventListener('error', () => reject(new Error('S3 upload failed')));
+                              xhr.open('PUT', presData.uploadUrl);
+                              xhr.setRequestHeader('Content-Type', selected3dFile.type || 'model/gltf-binary');
+                              xhr.send(selected3dFile);
+                            });
+
+                            // Krok 3: Zapisz do Firebase Firestore
+                            const fbRes = await fetch('/api/models3d', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                s3Key: presData.s3Key,
+                                fileName: selected3dFile.name,
+                                fileSize: selected3dFile.size,
+                                title: new3dModel.title,
+                                description: new3dModel.description,
+                                category: new3dModel.category,
+                                shopUrl: new3dModel.shopUrl,
+                              }),
+                            });
+                            const fbData = await fbRes.json();
+                            if (!fbData.success) throw new Error(fbData.error);
+
+                            setModels3dMessage(`✅ Model dodany! Firebase ID: ${fbData.firestoreId}`);
+                            setNew3dModel({ title: '', description: '', category: 'Inne', shopUrl: '' });
+                            setSelected3dFile(null);
+                            setUpload3dProgress(0);
+                            // Odśwież listę
+                            const listRes = await fetch('/api/models3d');
+                            const listData = await listRes.json();
+                            if (listData.success) setModels3d(listData.models);
+                          } catch (err: any) {
+                            setModels3dMessage('❌ Błąd: ' + err.message);
+                          } finally {
+                            setUploading3d(false);
+                          }
+                        }}
+                        style={{ ...buttonStyle, background: uploading3d ? '#999' : '#006600', color: '#fff', padding: '8px 20px', fontSize: '13px', cursor: !selected3dFile || !new3dModel.title || uploading3d ? 'not-allowed' : 'pointer' }}
+                      >
+                        {uploading3d ? `⏳ Uploading... ${upload3dProgress}%` : '🚀 Dodaj Model (S3 + Firebase)'}
+                      </button>
+                    </div>
+
+                    {/* Lista modeli */}
+                    <h4 style={{ margin: '0 0 8px', fontSize: '13px' }}>
+                      Modele w Firebase ({models3d.length}):
+                      {models3dLoading && ' ⏳'}
+                    </h4>
+                    {models3d.length === 0 && !models3dLoading && (
+                      <p style={{ fontSize: '12px', color: '#666' }}>Brak modeli. Dodaj pierwszy!</p>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                      {models3d.map((model: any) => (
+                        <div key={model.id} style={{ background: '#fff', border: '2px solid #003399', padding: '8px', fontSize: '11px' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            🧊 {model.title || model.displayName}
+                          </div>
+                          <div style={{ color: '#666', marginBottom: '4px' }}>{model.category}</div>
+                          <div style={{ color: '#999', marginBottom: '6px', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {model.modelUrl}
+                          </div>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(model.modelUrl).then(() => setModels3dMessage('✅ URL skopiowany!'))}
+                            style={{ ...buttonStyle, fontSize: '10px', padding: '2px 6px', marginRight: '4px' }}
+                          >
+                            📋 Kopiuj URL
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
