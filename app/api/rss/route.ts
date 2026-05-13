@@ -133,9 +133,7 @@ export async function GET(_req: NextRequest) {
   // Sortuj wszystko po dacie malejąco
   items.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-    const WEBSUB_HUB = 'https://hub.switchboard.pub';
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
   xmlns:media="http://search.yahoo.com/mrss/">
@@ -146,7 +144,8 @@ export async function GET(_req: NextRequest) {
     <language>pl</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/api/rss" rel="self" type="application/rss+xml" />
-    <atom:link href="${WEBSUB_HUB}" rel="hub" />
+    <atom:link href="https://pubsubhubbub.appspot.com/" rel="hub" />
+    <atom:link href="https://pubsubhubbub.superfeedr.com/" rel="hub" />
     <image>
       <url>${SITE_URL}/favicon.ico</url>
       <title>${SITE_NAME}</title>

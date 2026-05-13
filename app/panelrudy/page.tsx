@@ -2440,6 +2440,31 @@ export default function SecureAdminPanel() {
                       >
                         📡 Ping WebSub (powiadom subskrybentów)
                       </button>
+                      <button
+                        onClick={async () => {
+                          const lastModel = models3d[0];
+                          if (!lastModel) { setModels3dMessage('❌ Nostr: brak modeli'); return; }
+                          setModels3dMessage('⏳ Publikowanie na Nostr...');
+                          try {
+                            const res = await fetch('/api/nostr', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                title: lastModel.displayName || lastModel.title,
+                                content: lastModel.userDescription || 'Nowy model 3D w aplikacji Vibe3D!',
+                                url: 'https://kupmax.pl',
+                              }),
+                            });
+                            const data = await res.json();
+                            setModels3dMessage(data.success ? `✅ ${data.message}` : `❌ Nostr: ${data.error}`);
+                          } catch {
+                            setModels3dMessage('❌ Nostr: błąd sieci');
+                          }
+                        }}
+                        style={{ ...buttonStyle, background: '#7c3aed', color: '#fff', padding: '5px 12px', fontSize: '11px' }}
+                      >
+                        🔮 Publikuj na Nostr
+                      </button>
                       <a href="/api/rss" target="_blank" style={{ fontSize: '11px', color: '#0066cc' }}>🔗 Podgląd RSS</a>
                     </div>
 
