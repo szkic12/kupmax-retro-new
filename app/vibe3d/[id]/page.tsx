@@ -50,12 +50,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${model.title} — Vibe3D / KupMax`,
     description: model.description || `Model 3D w kategorii ${model.category}. Pobierz aplikację Vibe3D i oglądaj w AR!`,
+    alternates: {
+      canonical: `${SITE_URL}/vibe3d/${model.id}`,
+    },
     openGraph: {
       title: model.title,
       description: model.description || 'Model 3D dostępny w aplikacji Vibe3D',
       images: model.thumbnailUrl ? [{ url: model.thumbnailUrl }] : [],
       url: `${SITE_URL}/vibe3d/${model.id}`,
-      type: 'website',
+      type: 'article',
+      publishedTime: model.createdAt || undefined,
     },
     twitter: {
       card: 'summary_large_image',
