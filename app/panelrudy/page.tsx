@@ -95,11 +95,11 @@ export default function SecureAdminPanel() {
   const [models3d, setModels3d] = useState<any[]>([]);
   const [models3dLoading, setModels3dLoading] = useState(false);
   const [models3dMessage, setModels3dMessage] = useState('');
-  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Inne', shopUrl: '' });
+  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', availableForDownload: false });
   const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
   const [uploading3d, setUploading3d] = useState(false);
   const [upload3dProgress, setUpload3dProgress] = useState(0);
-  const VIBE3D_CATEGORIES = ['Sztuka', 'Jedzenie', 'Natura', 'Zwierzęta', 'Pojazdy', 'Architektura', 'Ludzie', 'Technologia', 'Sport', 'Inne'];
+  const VIBE3D_CATEGORIES = ['Art', 'Body', 'Epic Fail', 'Ghost Object', 'Glitch', 'Randomize Chaos', 'Secret Face', 'Live', 'Games'];
 
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
 
@@ -2472,6 +2472,18 @@ export default function SecureAdminPanel() {
                           style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
                         />
                       </div>
+                      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="checkbox"
+                          id="availableForDownload"
+                          checked={new3dModel.availableForDownload}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, availableForDownload: e.target.checked })}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="availableForDownload" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Dostępny do pobrania na kupmax.pl/downloads
+                        </label>
+                      </div>
                       <div style={{ marginBottom: '12px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>PLIK GLB *</label>
                         <input
@@ -2543,13 +2555,31 @@ export default function SecureAdminPanel() {
                                 description: new3dModel.description,
                                 category: new3dModel.category,
                                 shopUrl: new3dModel.shopUrl,
+                                availableForDownload: new3dModel.availableForDownload,
                               }),
                             });
                             const fbData = await fbRes.json();
                             if (!fbData.success) throw new Error(fbData.error);
 
-                            setModels3dMessage(`✅ Model dodany! Firebase ID: ${fbData.firestoreId}`);
-                            setNew3dModel({ title: '', description: '', category: 'Inne', shopUrl: '' });
+                            // Krok 4 (opcjonalny): Zapisz do S3 downloads DB tylko gdy checkbox zaznaczony
+                            if (new3dModel.availableForDownload) {
+                              await fetch('/api/downloads/save-metadata', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  s3Key: presData.s3Key,
+                                  fileName: selected3dFile.name,
+                                  fileSize: selected3dFile.size,
+                                  fileType: selected3dFile.type || 'model/gltf-binary',
+                                  description: new3dModel.description,
+                                  category: '3D Objects',
+                                }),
+                              });
+                            }
+
+                            const downloadInfo = new3dModel.availableForDownload ? ' + widoczny na /downloads' : '';
+                            setModels3dMessage(`✅ Model dodany do Firebase!${downloadInfo} ID: ${fbData.firestoreId}`);
+                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', availableForDownload: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
                             // Odśwież listę

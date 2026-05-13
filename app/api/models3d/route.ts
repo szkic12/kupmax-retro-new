@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { s3Key, fileName, fileSize, title, description, category, shopUrl } = body;
+    const { s3Key, fileName, fileSize, title, description, category, shopUrl, availableForDownload } = body;
 
     if (!s3Key || !fileName || !title) {
       return NextResponse.json(
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       originalFormat: fileName.split('.').pop()?.toLowerCase() || 'glb',
       needsConversion: false,
       shopUrl: shopUrl || '',
+      availableForDownload: availableForDownload || false,
     };
 
     const docRef = await firestore.collection('models3D').add(docData);
