@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
 import { logger } from '@/lib/logger';
 import S3Service from '../../../../lib/aws-s3';
-import { verifyAdminToken } from '@/lib/admin-auth';
+
+const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
 // Generate presigned URL for direct S3 upload
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-
-    // Admin auth required for getting presigned upload URLs
-    const isAdmin = await verifyAdminToken(req, body);
-    if (!isAdmin) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       );
     }
+
+    const body = await req.json();
     const { fileName, fileType, fileSize } = body;
 
     if (!fileName || !fileType) {
