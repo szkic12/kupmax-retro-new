@@ -1,28 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
 import { firestore } from '@/lib/firebase-admin';
+import { logger } from '@/lib/logger';
+import { validateUrl, validateUrls } from '@/lib/validate-url';
 
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
-// POST /api/models3d — zapisuje metadata do Firestore po uploadzie (S3 lub Firebase Storage)
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { modelUrl, fileName, title, description, category, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl, galleryImageUrls, availableForDownload } = body;
-
-    // galleryImageUrls może przyjść jako string z przecinkami lub już jako tablica
-    const galleryArray: string[] = Array.isArray(galleryImageUrls)
-      ? galleryImageUrls
-      : (galleryImageUrls || '').split(',').map((u: string) => u.trim()).filter(Boolean);
+    const {
+      modelUrl, fileName, title, description, category,
+      shopUrl, backgroundMusicUrl, embeddedVideoUrl,
+      thumbnailUrl, galleryImageUrls, availableForDownload,
+    } = body;
 
     if (!modelUrl || !fileName || !title) {
       return NextResponse.json(
         { success: false, error: 'Wymagane pola: modelUrl, fileName, title' },
+        { status: 400 }
+      );
+    }
+
+    // Walidacja URLi — tylko https z dozwolonych hostów
+    const urlsToValidate = [
+      modelUrl, shopUrl, backgroundMusicUrl,
+      embeddedVideoUrl, thumbnailUrl,
+    ].filter(Boolean);
+
+    const galleryArray: string[] = Array.isArray(galleryImageUrls)
+      ? galleryImageUrls
+      : (galleryImageUrls || '').split(',').map((u: string) => u.trim()).filter(Boolean);
+
+    if (!validateUrls(urlsToValidate) || !validateUrls(galleryArray)) {
+      return NextResponse.json(
+        { success: false, error: 'Nieprawidłowy URL — tylko https z dozwolonych domen' },
         { status: 400 }
       );
     }
@@ -50,22 +68,18 @@ export async function POST(req: NextRequest) {
     };
 
     const docRef = await firestore.collection('models3D').add(docData);
+    logger.log(`Model added to Firestore: ${docRef.id}`);
 
-    return NextResponse.json({
-      success: true,
-      firestoreId: docRef.id,
-      modelUrl,
-    });
+    return NextResponse.json({ success: true, firestoreId: docRef.id, modelUrl });
   } catch (error: any) {
-    console.error('models3d POST error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    logger.error('models3d POST error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// GET /api/models3d — lista modeli z Firestore
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
@@ -77,10 +91,10 @@ export async function GET(req: NextRequest) {
       .get();
 
     const models = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
     return NextResponse.json({ success: true, models });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    logger.error('models3d GET error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
