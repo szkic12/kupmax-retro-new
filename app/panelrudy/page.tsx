@@ -2517,52 +2517,38 @@ export default function SecureAdminPanel() {
                           setUpload3dProgress(0);
                           setModels3dMessage('');
                           try {
-                            // Krok 1: Pobierz presigned URL z S3
-                            const presRes = await fetch('/api/downloads/presigned-url', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                fileName: selected3dFile.name,
-                                fileType: selected3dFile.type || 'model/gltf-binary',
-                                fileSize: selected3dFile.size,
-                              }),
-                            });
-                            const presData = await presRes.json();
-                            if (!presData.success) throw new Error(presData.error);
+                            let modelUrl = '';
 
-                            // Krok 2: Upload bezpośrednio na S3
-                            await new Promise<void>((resolve, reject) => {
-                              const xhr = new XMLHttpRequest();
-                              xhr.upload.addEventListener('progress', (e) => {
-                                if (e.lengthComputable) setUpload3dProgress(Math.round((e.loaded / e.total) * 100));
-                              });
-                              xhr.addEventListener('load', () => xhr.status < 300 ? resolve() : reject(new Error(`S3 error ${xhr.status}`)));
-                              xhr.addEventListener('error', () => reject(new Error('S3 upload failed')));
-                              xhr.open('PUT', presData.uploadUrl);
-                              xhr.setRequestHeader('Content-Type', selected3dFile.type || 'model/gltf-binary');
-                              xhr.send(selected3dFile);
-                            });
-
-                            // Krok 3: Zapisz do Firebase Firestore
-                            const fbRes = await fetch('/api/models3d', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                s3Key: presData.s3Key,
-                                fileName: selected3dFile.name,
-                                fileSize: selected3dFile.size,
-                                title: new3dModel.title,
-                                description: new3dModel.description,
-                                category: new3dModel.category,
-                                shopUrl: new3dModel.shopUrl,
-                                availableForDownload: new3dModel.availableForDownload,
-                              }),
-                            });
-                            const fbData = await fbRes.json();
-                            if (!fbData.success) throw new Error(fbData.error);
-
-                            // Krok 4 (opcjonalny): Zapisz do S3 downloads DB tylko gdy checkbox zaznaczony
                             if (new3dModel.availableForDownload) {
+                              // === ŚCIEŻKA A: S3 publiczny (downloads/) — do pobrania przez wszystkich ===
+                              setModels3dMessage('⏳ Upload na S3 (publiczny)...');
+
+                              const presRes = await fetch('/api/downloads/presigned-url', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  fileName: selected3dFile.name,
+                                  fileType: selected3dFile.type || 'model/gltf-binary',
+                                  fileSize: selected3dFile.size,
+                                }),
+                              });
+                              const presData = await presRes.json();
+                              if (!presData.success) throw new Error(presData.error);
+
+                              await new Promise<void>((resolve, reject) => {
+                                const xhr = new XMLHttpRequest();
+                                xhr.upload.addEventListener('progress', (e) => {
+                                  if (e.lengthComputable) setUpload3dProgress(Math.round((e.loaded / e.total) * 100));
+                                });
+                                xhr.addEventListener('load', () => xhr.status < 300 ? resolve() : reject(new Error(`S3 error ${xhr.status}`)));
+                                xhr.addEventListener('error', () => reject(new Error('S3 upload failed')));
+                                xhr.open('PUT', presData.uploadUrl);
+                                xhr.setRequestHeader('Content-Type', selected3dFile.type || 'model/gltf-binary');
+                                xhr.send(selected3dFile);
+                              });
+
+                              modelUrl = `https://kupmax-downloads.s3.eu-central-1.amazonaws.com/${presData.s3Key}`;
+
                               await fetch('/api/downloads/save-metadata', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -2575,14 +2561,50 @@ export default function SecureAdminPanel() {
                                   category: '3D Objects',
                                 }),
                               });
+                            } else {
+                              // === ŚCIEŻKA B: Firebase Storage prywatny (models3d/) — tylko apka widzi ===
+                              setModels3dMessage('⏳ Upload do Firebase Storage (prywatny)...');
+                              setUpload3dProgress(20);
+
+                              const formData = new FormData();
+                              formData.append('file', selected3dFile);
+
+                              const uploadRes = await fetch('/api/models3d/upload', {
+                                method: 'POST',
+                                body: formData,
+                              });
+                              setUpload3dProgress(80);
+                              const uploadData = await uploadRes.json();
+                              if (!uploadData.success) throw new Error(uploadData.error);
+                              modelUrl = uploadData.firebaseUrl;
                             }
 
-                            const downloadInfo = new3dModel.availableForDownload ? ' + widoczny na /downloads' : '';
-                            setModels3dMessage(`✅ Model dodany do Firebase!${downloadInfo} ID: ${fbData.firestoreId}`);
+                            // === WSPÓLNY KROK: metadata do Firestore ===
+                            setModels3dMessage('⏳ Zapisuję do Firestore...');
+                            const fbRes = await fetch('/api/models3d', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                modelUrl,
+                                fileName: selected3dFile.name,
+                                title: new3dModel.title,
+                                description: new3dModel.description,
+                                category: new3dModel.category,
+                                shopUrl: new3dModel.shopUrl,
+                                availableForDownload: new3dModel.availableForDownload,
+                              }),
+                            });
+                            const fbData = await fbRes.json();
+                            if (!fbData.success) throw new Error(fbData.error);
+
+                            setUpload3dProgress(100);
+                            const where = new3dModel.availableForDownload
+                              ? 'S3 publiczny + /downloads'
+                              : 'Firebase Storage prywatny';
+                            setModels3dMessage(`✅ Dodano! (${where}) ID: ${fbData.firestoreId}`);
                             setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', availableForDownload: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
-                            // Odśwież listę
                             const listRes = await fetch('/api/models3d');
                             const listData = await listRes.json();
                             if (listData.success) setModels3d(listData.models);

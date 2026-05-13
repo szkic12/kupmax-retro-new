@@ -1,53 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { firestore } from '@/lib/firebase-admin';
-import S3Service from '@/lib/aws-s3';
-import { randomUUID } from 'crypto';
 
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
-// Kategorie Vibe3D (muszą pasować do listy w apce)
-const VIBE3D_CATEGORIES = [
-  'Sztuka',
-  'Jedzenie',
-  'Natura',
-  'Zwierzęta',
-  'Pojazdy',
-  'Architektura',
-  'Ludzie',
-  'Technologia',
-  'Sport',
-  'Inne',
-];
-
-// POST /api/models3d — upload GLB na S3 + zapis do Firestore
+// POST /api/models3d — zapisuje metadata do Firestore po uploadzie (S3 lub Firebase Storage)
 export async function POST(req: NextRequest) {
   try {
-    // Auth check — tylko zalogowany admin
     const session = await getServerSession();
     if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { s3Key, fileName, fileSize, title, description, category, shopUrl, availableForDownload } = body;
+    const { modelUrl, fileName, title, description, category, shopUrl, availableForDownload } = body;
 
-    if (!s3Key || !fileName || !title) {
+    if (!modelUrl || !fileName || !title) {
       return NextResponse.json(
-        { success: false, error: 'Wymagane pola: s3Key, fileName, title' },
+        { success: false, error: 'Wymagane pola: modelUrl, fileName, title' },
         { status: 400 }
       );
     }
 
-    // Pobierz publiczny URL pliku z S3
-    const modelUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
-
-    // Zapisz do Firebase Firestore models3D
     const docData = {
       modelUrl,
       title,
       displayName: title,
-      category: category || 'Inne',
+      category: category || 'Art',
       userDescription: description || '',
       uploaderId: 'admin-kupmax',
       uploaderName: 'KupMax',
