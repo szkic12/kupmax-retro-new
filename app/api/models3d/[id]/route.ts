@@ -31,9 +31,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    // Whitelist — tylko te pola może admin edytować
     const updateData: Record<string, any> = { updatedAt: new Date() };
-    if (title !== undefined) updateData.title = title.substring(0, 100);
-    if (title !== undefined) updateData.displayName = title.substring(0, 100);
+    if (title !== undefined) { updateData.title = title.substring(0, 100); updateData.displayName = title.substring(0, 100); }
     if (modelUrl !== undefined) updateData.modelUrl = modelUrl;
     if (userDescription !== undefined) updateData.userDescription = userDescription.substring(0, 1000);
     if (category !== undefined) updateData.category = category;
@@ -41,6 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (backgroundMusicUrl !== undefined) updateData.backgroundMusicUrl = backgroundMusicUrl;
     if (embeddedVideoUrl !== undefined) updateData.embeddedVideoUrl = embeddedVideoUrl;
     if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
+    // Pola systemowe (funnyVotes, whatIsItVotes, commentsCount, uploaderId) są ignorowane
 
     await firestore.collection('models3D').doc(id).update(updateData);
     logger.log(`Model ${id} updated`);
@@ -64,41 +65,34 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     // Pobierz dokument żeby wiedzieć gdzie jest plik
     const doc = await firestore.collection('models3D').doc(id).get();
-    if (doc.exists) {
-      const data = doc.data()!;
-      const modelUrl: string | undefined = data.modelUrl;
+    if (!doc.exists) {
+      return NextResponse.json({ success: false, error: 'Model not found' }, { status: 404 });
+    }
 
-      if (modelUrl) {
-        const s3Prefix = 'https://kupmax-downloads.s3.eu-central-1.amazonaws.com/';
-        const firebasePrefix = 'https://firebasestorage.googleapis.com/';
+    const data = doc.data()!;
+    const modelUrl: string | undefined = data.modelUrl;
 
-        if (modelUrl.startsWith(s3Prefix)) {
-          // Usuń z S3
-          const s3Key = decodeURIComponent(modelUrl.replace(s3Prefix, ''));
-          try {
-            await S3Service.deleteFile(s3Key);
-            logger.log(`S3 file deleted: ${s3Key}`);
-          } catch (e) {
-            logger.error(`S3 delete failed for ${s3Key}:`, e);
-          }
-        } else if (modelUrl.startsWith(firebasePrefix)) {
-          // Usuń z Firebase Storage — wyciągnij ścieżkę z URL
-          try {
-            const url = new URL(modelUrl);
-            // Firebase Storage URL: /v0/b/BUCKET/o/PATH → PATH jest URL-encoded
-            const match = url.pathname.match(/\/o\/(.+)$/);
-            if (match) {
-              const filePath = decodeURIComponent(match[1]);
-              await storageBucket.file(filePath).delete();
-              logger.log(`Firebase Storage file deleted: ${filePath}`);
-            }
-          } catch (e) {
-            logger.error(`Firebase Storage delete failed:`, e);
-          }
+    // Najpierw usuń plik — jeśli wywali błąd, Firestore zostaje (atomowość)
+    if (modelUrl) {
+      const s3Prefix = 'https://kupmax-downloads.s3.eu-central-1.amazonaws.com/';
+      const firebasePrefix = 'https://firebasestorage.googleapis.com/';
+
+      if (modelUrl.startsWith(s3Prefix)) {
+        const s3Key = decodeURIComponent(modelUrl.replace(s3Prefix, ''));
+        await S3Service.deleteFile(s3Key);
+        logger.log(`S3 file deleted: ${s3Key}`);
+      } else if (modelUrl.startsWith(firebasePrefix)) {
+        const url = new URL(modelUrl);
+        const match = url.pathname.match(/\/o\/(.+)$/);
+        if (match) {
+          const filePath = decodeURIComponent(match[1]);
+          await storageBucket.file(filePath).delete();
+          logger.log(`Firebase Storage file deleted: ${filePath}`);
         }
       }
     }
 
+    // Plik usunięty — teraz usuń z Firestore
     await firestore.collection('models3D').doc(id).delete();
     logger.log(`Model ${id} deleted from Firestore`);
 

@@ -50,11 +50,12 @@ export async function POST(req: NextRequest) {
       metadata: { contentType: file.type || 'model/gltf-binary' },
     });
 
-    // Signed URL ważny 10 lat — kompromis między bezpieczeństwem a UX w apce mobilnej
-    // (appka publiczna, URL musi działać długo; nie zawiera danych osobowych)
+    // Signed URL ważny 1 rok
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1);
     const [firebaseUrl] = await fileRef.getSignedUrl({
       action: 'read',
-      expires: '01-01-2036',
+      expires: expiry,
     });
 
     logger.log(`Firebase Storage upload: ${storagePath} (${file.size} bytes)`);

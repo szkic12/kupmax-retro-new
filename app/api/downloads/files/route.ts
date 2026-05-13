@@ -23,9 +23,12 @@ export async function GET(req: NextRequest) {
     const result = await FileDatabase.getPaginatedFiles(page, limit, filters);
     const stats = await FileDatabase.getStats();
 
+    // Usuń s3Key z publicznej odpowiedzi — to wewnętrzny klucz S3
+    const publicFiles = result.files.map(({ s3Key: _, ...rest }: any) => rest);
+
     return NextResponse.json({
       success: true,
-      files: result.files,
+      files: publicFiles,
       pagination: result.pagination,
       categories: stats.categories,
       stats: {

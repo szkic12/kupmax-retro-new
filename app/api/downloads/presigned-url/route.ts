@@ -6,6 +6,20 @@ import S3Service from '../../../../lib/aws-s3';
 
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20; // max 20 presigned URLs na godzinę per admin
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(email);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(email, { count: 1, resetAt: now + 3600_000 });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 // Generate presigned URL for direct S3 upload
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +29,10 @@ export async function POST(req: NextRequest) {
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       );
+    }
+
+    if (!checkRateLimit(session.user.email)) {
+      return NextResponse.json({ success: false, error: 'Rate limit: max 20 uploadów na godzinę' }, { status: 429 });
     }
 
     const body = await req.json();
