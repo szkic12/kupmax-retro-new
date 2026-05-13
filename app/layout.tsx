@@ -38,6 +38,9 @@ export const metadata: Metadata = {
   keywords: ["kupmax", "retro", "portfolio", "3D", "web design", "creative"],
   alternates: {
     canonical: 'https://www.kupmax.pl',
+    types: {
+      'application/rss+xml': 'https://kupmax.pl/api/rss',
+    },
   },
   manifest: '/manifest.json',
   icons: {
