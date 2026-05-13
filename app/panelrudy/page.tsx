@@ -95,7 +95,7 @@ export default function SecureAdminPanel() {
   const [models3d, setModels3d] = useState<any[]>([]);
   const [models3dLoading, setModels3dLoading] = useState(false);
   const [models3dMessage, setModels3dMessage] = useState('');
-  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', availableForDownload: false });
+  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', availableForDownload: false });
   const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
   const [uploading3d, setUploading3d] = useState(false);
   const [upload3dProgress, setUpload3dProgress] = useState(0);
@@ -2472,6 +2472,26 @@ export default function SecureAdminPanel() {
                           style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
                         />
                       </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>MUZYKA TŁA (URL mp3)</label>
+                        <input
+                          type="text"
+                          value={new3dModel.backgroundMusicUrl}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, backgroundMusicUrl: e.target.value })}
+                          placeholder="https://kupmax-downloads.s3...pl.mp3"
+                          style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>WIDEO / TELEDYSK (URL mp4 lub YouTube)</label>
+                        <input
+                          type="text"
+                          value={new3dModel.embeddedVideoUrl}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, embeddedVideoUrl: e.target.value })}
+                          placeholder="https://youtube.com/watch?v=... lub URL mp4"
+                          style={{ width: '100%', padding: '4px', fontSize: '12px', border: '2px inset #808080', boxSizing: 'border-box' }}
+                        />
+                      </div>
                       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                           type="checkbox"
@@ -2591,6 +2611,8 @@ export default function SecureAdminPanel() {
                                 description: new3dModel.description,
                                 category: new3dModel.category,
                                 shopUrl: new3dModel.shopUrl,
+                                backgroundMusicUrl: new3dModel.backgroundMusicUrl,
+                                embeddedVideoUrl: new3dModel.embeddedVideoUrl,
                                 availableForDownload: new3dModel.availableForDownload,
                               }),
                             });
@@ -2602,7 +2624,7 @@ export default function SecureAdminPanel() {
                               ? 'S3 publiczny + /downloads'
                               : 'Firebase Storage prywatny';
                             setModels3dMessage(`✅ Dodano! (${where}) ID: ${fbData.firestoreId}`);
-                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', availableForDownload: false });
+                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', availableForDownload: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
                             const listRes = await fetch('/api/models3d');

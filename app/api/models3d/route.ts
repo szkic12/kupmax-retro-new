@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { modelUrl, fileName, title, description, category, shopUrl, availableForDownload } = body;
+    const { modelUrl, fileName, title, description, category, shopUrl, backgroundMusicUrl, embeddedVideoUrl, availableForDownload } = body;
 
     if (!modelUrl || !fileName || !title) {
       return NextResponse.json(
@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
       originalFormat: fileName.split('.').pop()?.toLowerCase() || 'glb',
       needsConversion: false,
       shopUrl: shopUrl || '',
+      backgroundMusicUrl: backgroundMusicUrl || '',
+      embeddedVideoUrl: embeddedVideoUrl || '',
       availableForDownload: availableForDownload || false,
     };
 
