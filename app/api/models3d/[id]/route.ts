@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { firestore } from '@/lib/firebase-admin';
+import { firestore, storageBucket } from '@/lib/firebase-admin';
 import { logger } from '@/lib/logger';
 import { validateUrl } from '@/lib/validate-url';
+import S3Service from '@/lib/aws-s3';
 
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
@@ -61,8 +62,45 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params;
     if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
+    // Pobierz dokument żeby wiedzieć gdzie jest plik
+    const doc = await firestore.collection('models3D').doc(id).get();
+    if (doc.exists) {
+      const data = doc.data()!;
+      const modelUrl: string | undefined = data.modelUrl;
+
+      if (modelUrl) {
+        const s3Prefix = 'https://kupmax-downloads.s3.eu-central-1.amazonaws.com/';
+        const firebasePrefix = 'https://firebasestorage.googleapis.com/';
+
+        if (modelUrl.startsWith(s3Prefix)) {
+          // Usuń z S3
+          const s3Key = decodeURIComponent(modelUrl.replace(s3Prefix, ''));
+          try {
+            await S3Service.deleteFile(s3Key);
+            logger.log(`S3 file deleted: ${s3Key}`);
+          } catch (e) {
+            logger.error(`S3 delete failed for ${s3Key}:`, e);
+          }
+        } else if (modelUrl.startsWith(firebasePrefix)) {
+          // Usuń z Firebase Storage — wyciągnij ścieżkę z URL
+          try {
+            const url = new URL(modelUrl);
+            // Firebase Storage URL: /v0/b/BUCKET/o/PATH → PATH jest URL-encoded
+            const match = url.pathname.match(/\/o\/(.+)$/);
+            if (match) {
+              const filePath = decodeURIComponent(match[1]);
+              await storageBucket.file(filePath).delete();
+              logger.log(`Firebase Storage file deleted: ${filePath}`);
+            }
+          } catch (e) {
+            logger.error(`Firebase Storage delete failed:`, e);
+          }
+        }
+      }
+    }
+
     await firestore.collection('models3D').doc(id).delete();
-    logger.log(`Model ${id} deleted`);
+    logger.log(`Model ${id} deleted from Firestore`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
