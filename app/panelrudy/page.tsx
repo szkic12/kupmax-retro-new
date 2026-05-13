@@ -2422,7 +2422,26 @@ export default function SecureAdminPanel() {
 
                 {activeTab === '3d' && (
                   <>
-                    <h3 style={{ margin: '0 0 15px', fontSize: '14px' }}>🧊 Dodaj Model 3D (S3 + Firebase)</h3>
+                    <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>🧊 Dodaj Model 3D (S3 + Firebase)</h3>
+
+                    <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={async () => {
+                          setModels3dMessage('⏳ Pingowanie WebSub...');
+                          try {
+                            const res = await fetch('/api/websub', { method: 'POST' });
+                            const data = await res.json();
+                            setModels3dMessage(data.success ? '✅ WebSub: subskrybenci powiadomieni!' : `❌ WebSub: ${data.error}`);
+                          } catch {
+                            setModels3dMessage('❌ WebSub: błąd sieci');
+                          }
+                        }}
+                        style={{ ...buttonStyle, background: '#6600cc', color: '#fff', padding: '5px 12px', fontSize: '11px' }}
+                      >
+                        📡 Ping WebSub (powiadom subskrybentów)
+                      </button>
+                      <a href="/api/rss" target="_blank" style={{ fontSize: '11px', color: '#0066cc' }}>🔗 Podgląd RSS</a>
+                    </div>
 
                     {models3dMessage && (
                       <div style={{ padding: '8px 12px', marginBottom: '10px', background: models3dMessage.startsWith('✅') ? '#d4edda' : '#f8d7da', border: '1px solid', borderColor: models3dMessage.startsWith('✅') ? '#c3e6cb' : '#f5c6cb', borderRadius: '4px', fontSize: '12px' }}>
