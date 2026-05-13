@@ -7,14 +7,14 @@ import { validateUrl } from '@/lib/validate-url';
 
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
     const body = await req.json();
@@ -50,14 +50,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
     await firestore.collection('models3D').doc(id).delete();
