@@ -18,9 +18,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
     const body = await req.json();
-    const { title, userDescription, category, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl } = body;
+    const { title, userDescription, category, modelUrl, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl } = body;
 
-    const urlsToValidate = [shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl].filter(Boolean);
+    const urlsToValidate = [modelUrl, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl].filter(Boolean);
     for (const url of urlsToValidate) {
       if (!validateUrl(url)) {
         return NextResponse.json(
@@ -33,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updateData: Record<string, any> = { updatedAt: new Date() };
     if (title !== undefined) updateData.title = title.substring(0, 100);
     if (title !== undefined) updateData.displayName = title.substring(0, 100);
+    if (modelUrl !== undefined) updateData.modelUrl = modelUrl;
     if (userDescription !== undefined) updateData.userDescription = userDescription.substring(0, 1000);
     if (category !== undefined) updateData.category = category;
     if (shopUrl !== undefined) updateData.shopUrl = shopUrl;

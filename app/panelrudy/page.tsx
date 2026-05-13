@@ -2678,10 +2678,11 @@ export default function SecureAdminPanel() {
                           {[
                             { label: 'Tytuł', key: 'title' },
                             { label: 'Opis', key: 'userDescription' },
+                            { label: 'Model URL (.glb)', key: 'modelUrl' },
+                            { label: 'Thumbnail URL', key: 'thumbnailUrl' },
                             { label: 'Shop URL', key: 'shopUrl' },
                             { label: 'Background Music URL', key: 'backgroundMusicUrl' },
                             { label: 'Video URL', key: 'embeddedVideoUrl' },
-                            { label: 'Thumbnail URL', key: 'thumbnailUrl' },
                           ].map(({ label, key }) => (
                             <div key={key} style={{ marginBottom: '8px' }}>
                               <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{label}:</label>
@@ -2722,6 +2723,7 @@ export default function SecureAdminPanel() {
                                       title: editing3dModel.title,
                                       userDescription: editing3dModel.userDescription,
                                       category: editing3dModel.category,
+                                      modelUrl: editing3dModel.modelUrl,
                                       shopUrl: editing3dModel.shopUrl,
                                       backgroundMusicUrl: editing3dModel.backgroundMusicUrl,
                                       embeddedVideoUrl: editing3dModel.embeddedVideoUrl,
