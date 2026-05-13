@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 import { sanitizeInput } from '@/lib/sanitize';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -101,7 +102,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { threadId, message: rawMessage, author: rawAuthor } = await req.json();
+    const { threadId, message: rawMessage, author: rawAuthor, recaptchaToken } = await req.json();
+
+    // reCAPTCHA v3 weryfikacja
+    const captcha = await verifyRecaptcha(recaptchaToken);
+    if (!captcha.success) {
+      return NextResponse.json(
+        { success: false, error: 'Weryfikacja reCAPTCHA nie powiodła się. Spróbuj ponownie.' },
+        { status: 403 }
+      );
+    }
 
     // Walidacja
     if (!threadId || !rawMessage || !rawAuthor) {

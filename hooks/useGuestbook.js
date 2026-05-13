@@ -16,6 +16,15 @@ export function useGuestbook() {
     setError(null);
 
     try {
+      // reCAPTCHA v3 token
+      let recaptchaToken = '';
+      try {
+        const { getRecaptchaToken } = await import('../lib/recaptcha-client');
+        recaptchaToken = await getRecaptchaToken('guestbook_submit');
+      } catch (e) {
+        console.warn('reCAPTCHA failed to load:', e);
+      }
+
       const response = await fetch('/api/guestbook', {
         method: 'POST',
         headers: {
@@ -25,7 +34,8 @@ export function useGuestbook() {
           nickname,
           message,
           email,
-          productRef
+          productRef,
+          recaptchaToken,
         })
       });
 
