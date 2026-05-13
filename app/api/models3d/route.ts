@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { modelUrl, fileName, title, description, category, shopUrl, backgroundMusicUrl, embeddedVideoUrl, availableForDownload } = body;
+    const { modelUrl, fileName, title, description, category, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl, galleryImageUrls, availableForDownload } = body;
+
+    // galleryImageUrls może przyjść jako string z przecinkami lub już jako tablica
+    const galleryArray: string[] = Array.isArray(galleryImageUrls)
+      ? galleryImageUrls
+      : (galleryImageUrls || '').split(',').map((u: string) => u.trim()).filter(Boolean);
 
     if (!modelUrl || !fileName || !title) {
       return NextResponse.json(
@@ -39,6 +44,8 @@ export async function POST(req: NextRequest) {
       shopUrl: shopUrl || '',
       backgroundMusicUrl: backgroundMusicUrl || '',
       embeddedVideoUrl: embeddedVideoUrl || '',
+      thumbnailUrl: thumbnailUrl || '',
+      galleryImageUrls: galleryArray,
       availableForDownload: availableForDownload || false,
     };
 
