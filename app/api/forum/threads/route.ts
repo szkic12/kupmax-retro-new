@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -105,7 +106,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, author } = await req.json();
+    const { categoryId, title, message, author, recaptchaToken } = await req.json();
+
+    // reCAPTCHA v3 weryfikacja
+    const captcha = await verifyRecaptcha(recaptchaToken);
+    if (!captcha.success) {
+      return NextResponse.json(
+        { success: false, error: 'Weryfikacja reCAPTCHA nie powiodła się. Spróbuj ponownie.' },
+        { status: 403 }
+      );
+    }
 
     // Walidacja
     if (!categoryId || !title || !message || !author) {

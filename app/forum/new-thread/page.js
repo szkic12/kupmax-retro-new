@@ -65,6 +65,15 @@ export default function NewThreadPage() {
     setLoading(true);
 
     try {
+      // reCAPTCHA v3 token
+      let recaptchaToken = '';
+      try {
+        const { getRecaptchaToken } = await import('../../../lib/recaptcha-client');
+        recaptchaToken = await getRecaptchaToken('forum_new_thread');
+      } catch (e) {
+        console.warn('reCAPTCHA failed to load:', e);
+      }
+
       const response = await fetch('/api/forum/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,7 +84,8 @@ export default function NewThreadPage() {
           author: {
             nickname: formData.nickname,
             avatar: formData.avatar
-          }
+          },
+          recaptchaToken,
         })
       });
 
