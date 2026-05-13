@@ -99,6 +99,8 @@ export default function SecureAdminPanel() {
   const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
   const [uploading3d, setUploading3d] = useState(false);
   const [upload3dProgress, setUpload3dProgress] = useState(0);
+  const [editing3dModel, setEditing3dModel] = useState<any | null>(null);
+  const [saving3dEdit, setSaving3dEdit] = useState(false);
   const VIBE3D_CATEGORIES = ['Art', 'Body', 'Epic Fail', 'Ghost Object', 'Glitch', 'Randomize Chaos', 'Secret Face', 'Live', 'Games'];
 
   const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
@@ -2665,6 +2667,90 @@ export default function SecureAdminPanel() {
                       </button>
                     </div>
 
+                    {/* Modal edycji modelu */}
+                    {editing3dModel && (
+                      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ background: '#c0c0c0', border: '3px outset #fff', padding: '16px', width: '500px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
+                          <div style={{ background: 'linear-gradient(90deg, #000080, #1084d0)', color: '#fff', padding: '4px 8px', fontWeight: 'bold', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>✏️ Edytuj model</span>
+                            <button onClick={() => setEditing3dModel(null)} style={{ background: '#c0c0c0', border: '2px outset #fff', cursor: 'pointer', padding: '0 6px', color: '#000' }}>✕</button>
+                          </div>
+                          {[
+                            { label: 'Tytuł', key: 'title' },
+                            { label: 'Opis', key: 'userDescription' },
+                            { label: 'Shop URL', key: 'shopUrl' },
+                            { label: 'Background Music URL', key: 'backgroundMusicUrl' },
+                            { label: 'Video URL', key: 'embeddedVideoUrl' },
+                            { label: 'Thumbnail URL', key: 'thumbnailUrl' },
+                          ].map(({ label, key }) => (
+                            <div key={key} style={{ marginBottom: '8px' }}>
+                              <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>{label}:</label>
+                              <input
+                                type="text"
+                                value={editing3dModel[key] || ''}
+                                onChange={(e) => setEditing3dModel({ ...editing3dModel, [key]: e.target.value })}
+                                style={{ width: '100%', padding: '4px', border: '2px inset #808080', fontFamily: 'inherit', fontSize: '12px', boxSizing: 'border-box' as const }}
+                              />
+                            </div>
+                          ))}
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '2px' }}>Kategoria:</label>
+                            <select
+                              value={editing3dModel.category || 'Art'}
+                              onChange={(e) => setEditing3dModel({ ...editing3dModel, category: e.target.value })}
+                              style={{ padding: '4px', border: '2px inset #808080', fontFamily: 'inherit', fontSize: '12px' }}
+                            >
+                              {VIBE3D_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setEditing3dModel(null)}
+                              style={{ ...buttonStyle, padding: '6px 14px', fontSize: '12px' }}
+                            >
+                              Anuluj
+                            </button>
+                            <button
+                              disabled={saving3dEdit}
+                              onClick={async () => {
+                                setSaving3dEdit(true);
+                                try {
+                                  const res = await fetch(`/api/models3d/${editing3dModel.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      title: editing3dModel.title,
+                                      userDescription: editing3dModel.userDescription,
+                                      category: editing3dModel.category,
+                                      shopUrl: editing3dModel.shopUrl,
+                                      backgroundMusicUrl: editing3dModel.backgroundMusicUrl,
+                                      embeddedVideoUrl: editing3dModel.embeddedVideoUrl,
+                                      thumbnailUrl: editing3dModel.thumbnailUrl,
+                                    }),
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    setModels3d(prev => prev.map(m => m.id === editing3dModel.id ? { ...m, ...editing3dModel } : m));
+                                    setEditing3dModel(null);
+                                    setModels3dMessage('✅ Model zaktualizowany!');
+                                  } else {
+                                    setModels3dMessage('❌ Błąd: ' + data.error);
+                                  }
+                                } catch {
+                                  setModels3dMessage('❌ Błąd sieci');
+                                } finally {
+                                  setSaving3dEdit(false);
+                                }
+                              }}
+                              style={{ ...buttonStyle, background: '#006600', color: '#fff', padding: '6px 14px', fontSize: '12px', cursor: saving3dEdit ? 'not-allowed' : 'pointer' }}
+                            >
+                              {saving3dEdit ? '⏳ Zapisuję...' : '💾 Zapisz'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Lista modeli */}
                     <h4 style={{ margin: '0 0 8px', fontSize: '13px' }}>
                       Modele w Firebase ({models3d.length}):
@@ -2673,7 +2759,7 @@ export default function SecureAdminPanel() {
                     {models3d.length === 0 && !models3dLoading && (
                       <p style={{ fontSize: '12px', color: '#666' }}>Brak modeli. Dodaj pierwszy!</p>
                     )}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
                       {models3d.map((model: any) => (
                         <div key={model.id} style={{ background: '#fff', border: '2px solid #003399', padding: '8px', fontSize: '11px' }}>
                           <div style={{ fontWeight: 'bold', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2683,12 +2769,40 @@ export default function SecureAdminPanel() {
                           <div style={{ color: '#999', marginBottom: '6px', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {model.modelUrl}
                           </div>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(model.modelUrl).then(() => setModels3dMessage('✅ URL skopiowany!'))}
-                            style={{ ...buttonStyle, fontSize: '10px', padding: '2px 6px', marginRight: '4px' }}
-                          >
-                            📋 Kopiuj URL
-                          </button>
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' as const }}>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(model.modelUrl).then(() => setModels3dMessage('✅ URL skopiowany!'))}
+                              style={{ ...buttonStyle, fontSize: '10px', padding: '2px 6px' }}
+                            >
+                              📋 Kopiuj URL
+                            </button>
+                            <button
+                              onClick={() => setEditing3dModel({ ...model, userDescription: model.userDescription || model.description || '' })}
+                              style={{ ...buttonStyle, fontSize: '10px', padding: '2px 6px', background: '#003399', color: '#fff' }}
+                            >
+                              ✏️ Edytuj
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Usunąć model "${model.title || model.displayName}"?`)) return;
+                                try {
+                                  const res = await fetch(`/api/models3d/${model.id}`, { method: 'DELETE' });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    setModels3d(prev => prev.filter(m => m.id !== model.id));
+                                    setModels3dMessage('✅ Model usunięty!');
+                                  } else {
+                                    setModels3dMessage('❌ Błąd: ' + data.error);
+                                  }
+                                } catch {
+                                  setModels3dMessage('❌ Błąd sieci');
+                                }
+                              }}
+                              style={{ ...buttonStyle, fontSize: '10px', padding: '2px 6px', background: '#cc0000', color: '#fff' }}
+                            >
+                              🗑️ Usuń
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
