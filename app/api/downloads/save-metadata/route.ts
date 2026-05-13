@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
 import { logger } from '@/lib/logger';
 import FileDatabase from '../../../../lib/file-database';
 import { randomUUID } from 'crypto';
-import { verifyAdminToken } from '@/lib/admin-auth';
+
+const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
 // Rate limiting: map of IP -> { count, resetAt }
 const metadataRateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -34,16 +37,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-
-    // Admin auth required for saving file metadata
-    const isAdmin = await verifyAdminToken(req, body);
-    if (!isAdmin) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
       );
     }
+
+    const body = await req.json();
     const { s3Key, fileName, fileSize, fileType, description, category } = body;
 
     if (!s3Key || !fileName || !fileSize) {
