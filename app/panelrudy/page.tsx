@@ -23,15 +23,27 @@ function MediaTab() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    setMsg('⏳ Wysyłanie...');
+    setMsg('⏳ Generowanie URL...');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', folder);
-      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+      // Krok 1: pobierz presigned URL z API
+      const res = await fetch('/api/media/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type, folder }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setUploads(prev => [{ url: data.url, name: file.name, folder }, ...prev]);
+
+      // Krok 2: wgraj plik bezpośrednio do S3 (omija limit Vercel)
+      setMsg('⏳ Wysyłanie do S3...');
+      const s3Res = await fetch(data.presignedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error('Błąd uploadu do S3');
+
+      setUploads(prev => [{ url: data.publicUrl, name: file.name, folder }, ...prev]);
       setMsg('✅ Wgrano! Kliknij "Kopiuj URL" i wklej do formularza 3D.');
     } catch (err: any) {
       setMsg('❌ ' + err.message);
