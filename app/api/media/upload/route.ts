@@ -15,8 +15,28 @@ const ALLOWED_TYPES: Record<string, string[]> = {
   image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
 };
 
+const MAX_SIZE: Record<string, number> = {
+  music: 50 * 1024 * 1024,
+  video: 500 * 1024 * 1024,
+  image: 10 * 1024 * 1024,
+};
+
 const BUCKET = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
 const REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(email: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(email);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(email, { count: 1, resetAt: now + 3600_000 });
+    return true;
+  }
+  if (entry.count >= 30) return false;
+  entry.count++;
+  return true;
+}
 
 // POST: zwraca presigned URL — plik idzie bezpośrednio z przeglądarki do S3
 export async function POST(request: NextRequest) {
@@ -25,7 +45,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { fileName, fileType, folder } = await request.json();
+  if (!checkRateLimit(session.user.email)) {
+    return NextResponse.json({ error: 'Rate limit: max 30 uploadów na godzinę' }, { status: 429 });
+  }
+
+  const { fileName, fileType, fileSize, folder } = await request.json();
 
   if (!fileName || !fileType || !folder) {
     return NextResponse.json({ error: 'Brak wymaganych pól' }, { status: 400 });
@@ -33,7 +57,11 @@ export async function POST(request: NextRequest) {
 
   const allowed = ALLOWED_TYPES[folder];
   if (!allowed || !allowed.includes(fileType)) {
-    return NextResponse.json({ error: `Niedozwolony typ: ${fileType}` }, { status: 400 });
+    return NextResponse.json({ error: 'Niedozwolony typ pliku' }, { status: 400 });
+  }
+
+  if (fileSize && fileSize > MAX_SIZE[folder]) {
+    return NextResponse.json({ error: `Plik za duży (max ${MAX_SIZE[folder] / 1024 / 1024}MB)` }, { status: 400 });
   }
 
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -50,7 +78,7 @@ export async function POST(request: NextRequest) {
   const presignedUrl = await getSignedUrl(
     s3,
     new PutObjectCommand({ Bucket: BUCKET, Key: s3Key, ContentType: fileType }),
-    { expiresIn: 3600 }
+    { expiresIn: 300 }
   );
 
   const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;

@@ -29,7 +29,7 @@ function MediaTab() {
       const res = await fetch('/api/media/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, fileType: file.type, folder }),
+        body: JSON.stringify({ fileName: file.name, fileType: file.type, fileSize: file.size, folder }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
