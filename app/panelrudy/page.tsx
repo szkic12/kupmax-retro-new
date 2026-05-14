@@ -5,6 +5,118 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
 
+type MediaFolder = 'music' | 'video' | 'image';
+
+function MediaTab() {
+  const [folder, setFolder] = useState<MediaFolder>('music');
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [uploads, setUploads] = useState<{ url: string; name: string; folder: string }[]>([]);
+
+  const folderConfig = {
+    music: { label: '🎵 Muzyka', accept: 'audio/*', ext: 'MP3, WAV, OGG, FLAC', maxMB: 50 },
+    video: { label: '🎬 Film', accept: 'video/*', ext: 'MP4, WebM, MOV', maxMB: 500 },
+    image: { label: '🖼️ Miniaturka', accept: 'image/*', ext: 'JPG, PNG, WebP, GIF', maxMB: 10 },
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMsg('⏳ Wysyłanie...');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
+      const res = await fetch('/api/media/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setUploads(prev => [{ url: data.url, name: file.name, folder }, ...prev]);
+      setMsg('✅ Wgrano! Kliknij "Kopiuj URL" i wklej do formularza 3D.');
+    } catch (err: any) {
+      setMsg('❌ ' + err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const cfg = folderConfig[folder];
+
+  return (
+    <>
+      <h3 style={{ margin: '0 0 12px', fontSize: '14px' }}>🎵 Media Library — muzyka, filmy, miniatury</h3>
+      <p style={{ fontSize: '11px', color: '#555', marginBottom: '12px' }}>
+        Wgraj plik, skopiuj URL, wklej do pola <strong>backgroundMusicUrl</strong>, <strong>embeddedVideoUrl</strong> lub <strong>thumbnailUrl</strong> w formularzu 3D.
+      </p>
+
+      {/* Wybór folderu */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+        {(Object.keys(folderConfig) as MediaFolder[]).map(f => (
+          <button
+            key={f}
+            onClick={() => setFolder(f)}
+            style={{
+              padding: '6px 12px', fontSize: '12px', cursor: 'pointer',
+              border: '2px outset #808080',
+              background: folder === f ? '#000080' : '#c0c0c0',
+              color: folder === f ? '#fff' : '#000',
+              fontWeight: folder === f ? 'bold' : 'normal',
+            }}
+          >
+            {folderConfig[f].label}
+          </button>
+        ))}
+      </div>
+
+      {/* Upload */}
+      <div style={{ background: '#f0f0f0', border: '2px inset #808080', padding: '14px', marginBottom: '14px' }}>
+        <div style={{ fontSize: '12px', marginBottom: '8px' }}>
+          <strong>{cfg.label}</strong> — dozwolone: {cfg.ext} — max {cfg.maxMB}MB
+        </div>
+        <input
+          type="file"
+          accept={cfg.accept}
+          disabled={uploading}
+          onChange={handleUpload}
+          style={{ fontSize: '12px' }}
+        />
+        {msg && (
+          <div style={{
+            marginTop: '8px', padding: '6px 10px', fontSize: '12px',
+            background: msg.startsWith('✅') ? '#d4edda' : msg.startsWith('❌') ? '#f8d7da' : '#fff3cd',
+            border: '1px solid #ccc', borderRadius: '3px',
+          }}>
+            {msg}
+          </div>
+        )}
+      </div>
+
+      {/* Lista wgranych */}
+      {uploads.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: '12px', margin: '0 0 8px' }}>Wgrane w tej sesji:</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {uploads.map((u, i) => (
+              <div key={i} style={{ background: '#fff', border: '1px solid #ccc', padding: '8px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#333' }}>
+                  {u.folder === 'music' ? '🎵' : u.folder === 'video' ? '🎬' : '🖼️'} {u.name}
+                </span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(u.url); setMsg('✅ URL skopiowany!'); }}
+                  style={{ padding: '3px 8px', fontSize: '11px', cursor: 'pointer', background: '#006600', color: '#fff', border: '2px outset #808080' }}
+                >
+                  📋 Kopiuj URL
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // Dozwolone emaile adminów
 const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
@@ -1258,6 +1370,9 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === '3d')} onClick={() => setActiveTab('3d')}>
               🧊 3D Objects
+            </button>
+            <button style={tabStyle(activeTab === 'media')} onClick={() => setActiveTab('media')}>
+              🎵 Media
             </button>
           </div>
 
@@ -2853,6 +2968,10 @@ export default function SecureAdminPanel() {
                       ))}
                     </div>
                   </>
+                )}
+
+                {activeTab === 'media' && (
+                  <MediaTab />
                 )}
           </div>
         </div>
