@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/admin-auth';
-import S3Service from '../../../../lib/aws-s3';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
+
+const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 
 const ALLOWED_TYPES: Record<string, string[]> = {
   music: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/x-m4a'],
@@ -22,8 +24,8 @@ const BUCKET_NAME = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET
 const AWS_REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
 
 export async function POST(request: NextRequest) {
-  const isAdmin = await verifyAdminToken(request);
-  if (!isAdmin) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
