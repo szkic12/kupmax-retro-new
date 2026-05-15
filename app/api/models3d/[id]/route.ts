@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
     const body = await req.json();
-    const { title, userDescription, category, modelUrl, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl } = body;
+    const { title, userDescription, category, modelUrl, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl, showInShorts } = body;
 
     const urlsToValidate = [modelUrl, shopUrl, backgroundMusicUrl, embeddedVideoUrl, thumbnailUrl].filter(Boolean);
     for (const url of urlsToValidate) {
@@ -41,6 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (backgroundMusicUrl !== undefined) updateData.backgroundMusicUrl = backgroundMusicUrl;
     if (embeddedVideoUrl !== undefined) updateData.embeddedVideoUrl = embeddedVideoUrl;
     if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
+    if (showInShorts !== undefined) updateData.showInShorts = showInShorts === true;
     // Pola systemowe (funnyVotes, whatIsItVotes, commentsCount, uploaderId) są ignorowane
 
     await firestore.collection('models3D').doc(id).update(updateData);

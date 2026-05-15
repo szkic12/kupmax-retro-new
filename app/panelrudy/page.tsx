@@ -2888,6 +2888,18 @@ export default function SecureAdminPanel() {
                               {VIBE3D_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                           </div>
+                          <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: '#1a1a2e', padding: '8px 12px', borderRadius: '6px', border: '1px solid #7c3aed' }}>
+                            <input
+                              type="checkbox"
+                              id="editShowInShorts"
+                              checked={!!editing3dModel.showInShorts}
+                              onChange={(e) => setEditing3dModel({ ...editing3dModel, showInShorts: e.target.checked })}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#7c3aed' }}
+                            />
+                            <label htmlFor="editShowInShorts" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#a78bfa' }}>
+                              📱 Pokaż w Shorts (feed pionowy w aplikacji Vibe3D)
+                            </label>
+                          </div>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                             <button
                               onClick={() => setEditing3dModel(null)}
@@ -2912,6 +2924,7 @@ export default function SecureAdminPanel() {
                                       backgroundMusicUrl: editing3dModel.backgroundMusicUrl,
                                       embeddedVideoUrl: editing3dModel.embeddedVideoUrl,
                                       thumbnailUrl: editing3dModel.thumbnailUrl,
+                                      showInShorts: editing3dModel.showInShorts,
                                     }),
                                   });
                                   const data = await res.json();
