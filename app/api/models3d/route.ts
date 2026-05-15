@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { firestore, FieldValue } from '@/lib/firebase-admin';
+import { firestore, FieldValue, auth } from '@/lib/firebase-admin';
 import { logger } from '@/lib/logger';
 import { validateUrl, validateUrls } from '@/lib/validate-url';
 
@@ -46,14 +46,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Pobierz prawdziwy Firebase UID z emaila sesji
+    let uploaderId = 'admin-kupmax';
+    let uploaderName = session.user.name || 'KupMax';
+    let uploaderPhotoURL: string | null = session.user.image || null;
+    try {
+      const firebaseUser = await auth.getUserByEmail(session.user.email!);
+      uploaderId = firebaseUser.uid;
+      uploaderName = firebaseUser.displayName || uploaderName;
+      uploaderPhotoURL = firebaseUser.photoURL || uploaderPhotoURL;
+    } catch (e) {
+      // fallback — zostaje 'admin-kupmax'
+    }
+
     const docData = {
       modelUrl,
       title,
       displayName: title,
       category: category || 'Art',
       userDescription: description || '',
-      uploaderId: 'admin-kupmax',
-      uploaderName: 'KupMax',
+      uploaderId,
+      uploaderName,
+      uploaderPhotoURL,
       createdAt: FieldValue.serverTimestamp(),
       funnyVotes: 0,
       whatIsItVotes: 0,
