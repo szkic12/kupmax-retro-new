@@ -4,6 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 
 type ConvertStatus = 'idle' | 'loading' | 'ready' | 'converting' | 'done' | 'error';
 
+const CDN = 'https://cdn.jsdelivr.net/npm/three@0.134.0';
+
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
 export default function Konwerter3DPage() {
   const [status, setStatus] = useState<ConvertStatus>('idle');
   const [fileName, setFileName] = useState('');
@@ -12,38 +25,18 @@ export default function Konwerter3DPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [progress, setProgress] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
     setStatus('loading');
-    // Dynamically load Three.js from CDN — runs only in browser
-    const loadScript = (src: string) =>
-      new Promise<void>((resolve, reject) => {
-        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-        const s = document.createElement('script');
-        s.src = src;
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error(`Failed to load ${src}`));
-        document.head.appendChild(s);
+    loadScript(`${CDN}/build/three.min.js`)
+      .then(() => loadScript(`${CDN}/examples/js/loaders/OBJLoader.js`))
+      .then(() => loadScript(`${CDN}/examples/js/loaders/STLLoader.js`))
+      .then(() => loadScript(`${CDN}/examples/js/exporters/GLTFExporter.js`))
+      .then(() => setStatus('ready'))
+      .catch((e) => {
+        setErrorMsg('Nie udało się załadować bibliotek: ' + e.message);
+        setStatus('error');
       });
-
-    const cdn = 'https://cdn.jsdelivr.net/npm/three@0.160.0';
-    Promise.all([
-      loadScript(`${cdn}/build/three.min.js`),
-    ]).then(() =>
-      loadScript(`${cdn}/examples/js/loaders/OBJLoader.js`)
-    ).then(() =>
-      loadScript(`${cdn}/examples/js/loaders/STLLoader.js`)
-    ).then(() =>
-      loadScript(`${cdn}/examples/js/exporters/GLTFExporter.js`)
-    ).then(() => {
-      setStatus('ready');
-    }).catch((e) => {
-      setErrorMsg('Nie udało się załadować bibliotek: ' + e.message);
-      setStatus('error');
-    });
-
-    return () => { workerRef.current = null; };
   }, []);
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +46,6 @@ export default function Konwerter3DPage() {
     setDownloadUrl('');
     setOutputName('');
     setErrorMsg('');
-    setStatus('ready');
   };
 
   const convert = async () => {
@@ -63,33 +55,28 @@ export default function Konwerter3DPage() {
     const ext = file.name.split('.').pop()?.toLowerCase();
     setStatus('converting');
     setProgress('Wczytuję plik...');
+    setDownloadUrl('');
 
     try {
       const THREE = (window as any).THREE;
-      if (!THREE) throw new Error('Three.js nie jest załadowany');
+      if (!THREE) throw new Error('Three.js nie jest załadowany — odśwież stronę');
 
       const arrayBuffer = await file.arrayBuffer();
-      let geometry: any;
-      let mesh: any;
+      const scene = new THREE.Scene();
 
       if (ext === 'obj') {
         setProgress('Konwertuję OBJ → GLB...');
         const text = new TextDecoder().decode(arrayBuffer);
         const loader = new THREE.OBJLoader();
         const obj = loader.parse(text);
-        // Collect all geometries
-        const scene = new THREE.Scene();
         scene.add(obj);
-        mesh = obj;
       } else if (ext === 'stl') {
         setProgress('Konwertuję STL → GLB...');
         const loader = new THREE.STLLoader();
-        geometry = loader.parse(arrayBuffer);
-        const material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
-        mesh = new THREE.Mesh(geometry, material);
-        const scene = new THREE.Scene();
+        const geometry = loader.parse(arrayBuffer);
+        const material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.5 });
+        const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
-        mesh = scene;
       } else {
         throw new Error(`Format .${ext} nie jest obsługiwany. Użyj OBJ lub STL.`);
       }
@@ -97,9 +84,6 @@ export default function Konwerter3DPage() {
       setProgress('Eksportuję do GLB...');
 
       const exporter = new THREE.GLTFExporter();
-      const scene = new THREE.Scene();
-      scene.add(mesh);
-
       await new Promise<void>((resolve, reject) => {
         exporter.parse(
           scene,
@@ -113,7 +97,7 @@ export default function Konwerter3DPage() {
             setProgress('');
             resolve();
           },
-          (err: any) => reject(err),
+          (err: any) => reject(new Error(String(err))),
           { binary: true }
         );
       });
@@ -191,16 +175,16 @@ export default function Konwerter3DPage() {
           }}>→ .glb</span>
         </div>
 
-        {/* Loading state */}
+        {/* Loading */}
         {status === 'loading' && (
           <div style={{ textAlign: 'center', color: '#a78bfa', padding: '24px 0' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-            Ładowanie bibliotek Three.js...
+            Ładowanie bibliotek...
           </div>
         )}
 
-        {/* File picker */}
-        {(status === 'ready' || status === 'idle') && (
+        {/* Ready — file picker */}
+        {status === 'ready' && (
           <>
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -257,9 +241,7 @@ export default function Konwerter3DPage() {
         {status === 'converting' && (
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>⚙️</div>
-            <div style={{ color: '#a78bfa', fontWeight: 600, marginBottom: 8 }}>
-              Konwertuję...
-            </div>
+            <div style={{ color: '#a78bfa', fontWeight: 600, marginBottom: 8 }}>Konwertuję...</div>
             <div style={{ color: '#666', fontSize: 13 }}>{progress}</div>
           </div>
         )}
@@ -268,12 +250,8 @@ export default function Konwerter3DPage() {
         {status === 'done' && downloadUrl && (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <div style={{ color: '#4ade80', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
-              Gotowe!
-            </div>
-            <div style={{ color: '#666', fontSize: 13, marginBottom: 20 }}>
-              {outputName}
-            </div>
+            <div style={{ color: '#4ade80', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Gotowe!</div>
+            <div style={{ color: '#666', fontSize: 13, marginBottom: 20 }}>{outputName}</div>
             <a
               href={downloadUrl}
               download={outputName}
@@ -313,12 +291,8 @@ export default function Konwerter3DPage() {
         {status === 'error' && (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>❌</div>
-            <div style={{ color: '#f87171', fontWeight: 600, marginBottom: 8 }}>
-              Błąd konwersji
-            </div>
-            <div style={{ color: '#666', fontSize: 13, marginBottom: 20 }}>
-              {errorMsg}
-            </div>
+            <div style={{ color: '#f87171', fontWeight: 600, marginBottom: 8 }}>Błąd konwersji</div>
+            <div style={{ color: '#999', fontSize: 13, marginBottom: 20 }}>{errorMsg}</div>
             <button
               onClick={reset}
               style={{
@@ -337,7 +311,7 @@ export default function Konwerter3DPage() {
         )}
       </div>
 
-      {/* Info box */}
+      {/* Info */}
       <div style={{
         marginTop: 24,
         background: 'rgba(255,255,255,0.03)',
@@ -347,15 +321,13 @@ export default function Konwerter3DPage() {
         maxWidth: 540,
         width: '100%',
       }}>
-        <div style={{ color: '#a78bfa', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
-          💡 Wskazówka
-        </div>
+        <div style={{ color: '#a78bfa', fontWeight: 600, marginBottom: 8, fontSize: 14 }}>💡 Wskazówka</div>
         <div style={{ color: '#888', fontSize: 13, lineHeight: 1.6 }}>
           Konwersja odbywa się <strong style={{ color: '#ccc' }}>bezpośrednio w Twojej przeglądarce</strong> — plik nie jest nigdzie wysyłany.
-          Po pobraniu .glb wgraj go do Vibe3D w zakładce <strong style={{ color: '#ccc' }}>"Wgraj Gotowy .GLB"</strong>.
+          Po pobraniu .glb wgraj go w Vibe3D w zakładce <strong style={{ color: '#ccc' }}>"Wgraj Gotowy .GLB"</strong>.
         </div>
         <div style={{ marginTop: 12, color: '#888', fontSize: 13 }}>
-          Blender eksportuje GLB natywnie (File → Export → glTF 2.0). Jeśli masz plik .blend — lepiej wyeksportować bezpośrednio z Blendera.
+          Masz plik .blend? Blender eksportuje GLB natywnie: <strong style={{ color: '#ccc' }}>File → Export → glTF 2.0</strong> i zaznacz Binary (.glb).
         </div>
       </div>
     </main>
