@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { firestore } from '@/lib/firebase-admin';
+import { firestore, FieldValue } from '@/lib/firebase-admin';
 import { logger } from '@/lib/logger';
 import { validateUrl, validateUrls } from '@/lib/validate-url';
 
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       modelUrl, fileName, title, description, category,
       shopUrl, backgroundMusicUrl, embeddedVideoUrl,
       thumbnailUrl, galleryImageUrls, availableForDownload,
+      showInShorts,
     } = body;
 
     if (!modelUrl || !fileName || !title) {
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       userDescription: description || '',
       uploaderId: 'admin-kupmax',
       uploaderName: 'KupMax',
-      createdAt: new Date(),
+      createdAt: FieldValue.serverTimestamp(),
       funnyVotes: 0,
       whatIsItVotes: 0,
       commentsCount: 0,
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       thumbnailUrl: thumbnailUrl || '',
       galleryImageUrls: galleryArray,
       availableForDownload: availableForDownload || false,
+      showInShorts: showInShorts === true,
     };
 
     const docRef = await firestore.collection('models3D').add(docData);

@@ -219,7 +219,7 @@ export default function SecureAdminPanel() {
   const [models3d, setModels3d] = useState<any[]>([]);
   const [models3dLoading, setModels3dLoading] = useState(false);
   const [models3dMessage, setModels3dMessage] = useState('');
-  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false });
+  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false });
   const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
   const [uploading3d, setUploading3d] = useState(false);
   const [upload3dProgress, setUpload3dProgress] = useState(0);
@@ -2698,6 +2698,18 @@ export default function SecureAdminPanel() {
                           Dostępny do pobrania na kupmax.pl/downloads
                         </label>
                       </div>
+                      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: '#1a1a2e', padding: '8px 12px', borderRadius: '6px', border: '1px solid #7c3aed' }}>
+                        <input
+                          type="checkbox"
+                          id="showInShorts"
+                          checked={new3dModel.showInShorts}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, showInShorts: e.target.checked })}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#7c3aed' }}
+                        />
+                        <label htmlFor="showInShorts" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#a78bfa' }}>
+                          📱 Pokaż w Shorts (feed pionowy w aplikacji Vibe3D)
+                        </label>
+                      </div>
                       <div style={{ marginBottom: '12px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '3px' }}>PLIK GLB *</label>
                         <input
@@ -2810,6 +2822,7 @@ export default function SecureAdminPanel() {
                                 thumbnailUrl: new3dModel.thumbnailUrl,
                                 galleryImageUrls: new3dModel.galleryImageUrls,
                                 availableForDownload: new3dModel.availableForDownload,
+                                showInShorts: new3dModel.showInShorts,
                               }),
                             });
                             const fbData = await fbRes.json();
@@ -2820,7 +2833,7 @@ export default function SecureAdminPanel() {
                               ? 'S3 publiczny + /downloads'
                               : 'Firebase Storage prywatny';
                             setModels3dMessage(`✅ Dodano! (${where}) ID: ${fbData.firestoreId}`);
-                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false });
+                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
                             const listRes = await fetch('/api/models3d');
