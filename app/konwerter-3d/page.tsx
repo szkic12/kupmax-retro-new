@@ -42,6 +42,7 @@ export default function Konwerter3DPage() {
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setFileName(file.name);
     setDownloadUrl('');
     setOutputName('');
@@ -109,6 +110,7 @@ export default function Konwerter3DPage() {
   };
 
   const reset = () => {
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setStatus('ready');
     setFileName('');
     setDownloadUrl('');

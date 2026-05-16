@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Pobierz prawdziwy Firebase UID z emaila sesji
-    let uploaderId = 'admin-kupmax';
+    let uploaderId: string;
     let uploaderName = session.user.name || 'KupMax';
     let uploaderPhotoURL: string | null = session.user.image || null;
     try {
@@ -56,7 +56,11 @@ export async function POST(req: NextRequest) {
       uploaderName = firebaseUser.displayName || uploaderName;
       uploaderPhotoURL = firebaseUser.photoURL || uploaderPhotoURL;
     } catch (e) {
-      // fallback — zostaje 'admin-kupmax'
+      logger.error(`Firebase user not found for ${session.user.email}`);
+      return NextResponse.json(
+        { success: false, error: 'Konto Firebase nie znalezione dla tego emaila' },
+        { status: 400 }
+      );
     }
 
     const docData = {
