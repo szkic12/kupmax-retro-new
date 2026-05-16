@@ -100,7 +100,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "media-src 'self' blob: data: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' blob: https://kxsgfuppoliuvprhxwyc.supabase.co wss://kxsgfuppoliuvprhxwyc.supabase.co https://*.amazonaws.com https://api.anthropic.com",
+              "connect-src 'self' blob: https://kxsgfuppoliuvprhxwyc.supabase.co wss://kxsgfuppoliuvprhxwyc.supabase.co https://*.amazonaws.com https://api.anthropic.com https://storage.googleapis.com https://firebasestorage.googleapis.com",
               "worker-src 'self' blob:",
               "frame-src 'self'",
               "frame-ancestors 'none'",
