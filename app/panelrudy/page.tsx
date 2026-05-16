@@ -2789,20 +2789,35 @@ export default function SecureAdminPanel() {
                               });
                             } else {
                               // === ŚCIEŻKA B: Firebase Storage prywatny (models3d/) — tylko apka widzi ===
-                              setModels3dMessage('⏳ Upload do Firebase Storage (prywatny)...');
-                              setUpload3dProgress(20);
+                              setModels3dMessage('⏳ Pobieram URL do Firebase Storage...');
+                              setUpload3dProgress(5);
 
-                              const formData = new FormData();
-                              formData.append('file', selected3dFile);
-
-                              const uploadRes = await fetch('/api/models3d/upload', {
+                              const presRes = await fetch('/api/models3d/upload', {
                                 method: 'POST',
-                                body: formData,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  fileName: selected3dFile.name,
+                                  fileType: selected3dFile.type || 'model/gltf-binary',
+                                  fileSize: selected3dFile.size,
+                                }),
                               });
-                              setUpload3dProgress(80);
-                              const uploadData = await uploadRes.json();
-                              if (!uploadData.success) throw new Error(uploadData.error);
-                              modelUrl = uploadData.firebaseUrl;
+                              const presData = await presRes.json();
+                              if (!presData.success) throw new Error(presData.error);
+
+                              setModels3dMessage('⏳ Upload do Firebase Storage...');
+                              await new Promise<void>((resolve, reject) => {
+                                const xhr = new XMLHttpRequest();
+                                xhr.upload.addEventListener('progress', (e) => {
+                                  if (e.lengthComputable) setUpload3dProgress(Math.round((e.loaded / e.total) * 95));
+                                });
+                                xhr.addEventListener('load', () => xhr.status < 300 ? resolve() : reject(new Error(`Firebase error ${xhr.status}`)));
+                                xhr.addEventListener('error', () => reject(new Error('Firebase upload failed')));
+                                xhr.open('PUT', presData.uploadUrl);
+                                xhr.setRequestHeader('Content-Type', selected3dFile.type || 'model/gltf-binary');
+                                xhr.send(selected3dFile);
+                              });
+
+                              modelUrl = presData.firebaseUrl;
                             }
 
                             // === WSPÓLNY KROK: metadata do Firestore ===
