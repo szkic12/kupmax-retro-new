@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { s3Key, fileName, fileSize, fileType, description, category } = body;
+    const { s3Key, fileName, fileSize, fileType, description, category, availableForDownload } = body;
 
     if (!s3Key || !fileName || !fileSize) {
       return NextResponse.json(
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       description: description || '',
       category: category || '',
       uploadedAt: new Date().toISOString(),
+      availableForDownload: availableForDownload !== false,
     };
 
     // Save to database (now async with S3 storage)

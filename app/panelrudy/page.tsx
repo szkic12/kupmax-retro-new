@@ -2686,6 +2686,18 @@ export default function SecureAdminPanel() {
                         />
                         <span style={{ fontSize: '10px', color: '#666' }}>Wklej URLe do zdjęć modelu z różnych kątów, oddzielone przecinkami</span>
                       </div>
+                      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="checkbox"
+                          id="availableForDownload"
+                          checked={new3dModel.availableForDownload}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, availableForDownload: e.target.checked })}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="availableForDownload" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                          Widoczny na kupmax.pl/downloads
+                        </label>
+                      </div>
                       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: '#1a1a2e', padding: '8px 12px', borderRadius: '6px', border: '1px solid #7c3aed' }}>
                         <input
                           type="checkbox"
@@ -2778,15 +2790,30 @@ export default function SecureAdminPanel() {
                                 embeddedVideoUrl: new3dModel.embeddedVideoUrl,
                                 thumbnailUrl: new3dModel.thumbnailUrl,
                                 galleryImageUrls: new3dModel.galleryImageUrls,
-                                availableForDownload: true,
+                                availableForDownload: new3dModel.availableForDownload,
                                 showInShorts: new3dModel.showInShorts,
                               }),
                             });
                             const fbData = await fbRes.json();
                             if (!fbData.success) throw new Error(fbData.error);
 
+                            // Zapisz metadata do file-database (dla strony /downloads)
+                            await fetch('/api/downloads/save-metadata', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                s3Key: presData.s3Key,
+                                fileName: selected3dFile.name,
+                                fileSize: selected3dFile.size,
+                                fileType: selected3dFile.type || 'model/gltf-binary',
+                                description: new3dModel.description,
+                                category: '3D Objects',
+                                availableForDownload: new3dModel.availableForDownload,
+                              }),
+                            });
+
                             setUpload3dProgress(100);
-                            setModels3dMessage(`✅ Dodano! ID: ${fbData.firestoreId}`);
+                            setModels3dMessage(`✅ Dodano! ID: ${fbData.firestoreId} ${new3dModel.availableForDownload ? '(widoczny w /downloads)' : '(ukryty w /downloads)'}`);
                             setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
