@@ -5,12 +5,20 @@ import { firestore, FieldValue, auth } from '@/lib/firebase-admin';
 import { logger } from '@/lib/logger';
 import { validateUrl, validateUrls } from '@/lib/validate-url';
 
-const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
+async function isAdmin(email: string): Promise<boolean> {
+  try {
+    const doc = await firestore.collection('config').doc('admins').get();
+    const emails: string[] = doc.data()?.emails || [];
+    return emails.map((e: string) => e.toLowerCase()).includes(email.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+    if (!session?.user?.email || !(await isAdmin(session.user.email))) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -100,7 +108,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
+    if (!session?.user?.email || !(await isAdmin(session.user.email))) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
