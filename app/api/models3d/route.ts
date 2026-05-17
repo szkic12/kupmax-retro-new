@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       shopUrl, backgroundMusicUrl, embeddedVideoUrl,
       thumbnailUrl, galleryImageUrls, availableForDownload,
       showInShorts,
+      artistIntent, commentsArePerformance,
     } = body;
 
     if (!modelUrl || !fileName || !title) {
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest) {
       galleryImageUrls: galleryArray,
       availableForDownload: availableForDownload || false,
       showInShorts: showInShorts === true,
+      artistIntent: typeof artistIntent === 'string' ? artistIntent.slice(0, 500) : '',
+      commentsArePerformance: commentsArePerformance === true,
     };
 
     const docRef = await firestore.collection('models3D').add(docData);

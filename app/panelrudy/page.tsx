@@ -220,7 +220,7 @@ export default function SecureAdminPanel() {
   const [models3d, setModels3d] = useState<any[]>([]);
   const [models3dLoading, setModels3dLoading] = useState(false);
   const [models3dMessage, setModels3dMessage] = useState('');
-  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false });
+  const [new3dModel, setNew3dModel] = useState({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false, artistIntent: '', commentsArePerformance: false });
   const [selected3dFile, setSelected3dFile] = useState<File | null>(null);
   const [uploading3d, setUploading3d] = useState(false);
   const [upload3dProgress, setUpload3dProgress] = useState(0);
@@ -2690,6 +2690,34 @@ export default function SecureAdminPanel() {
                         />
                         <span style={{ fontSize: '10px', color: '#666' }}>Wklej URLe do zdjęć modelu z różnych kątów, oddzielone przecinkami</span>
                       </div>
+
+                      {/* 🎭 INTENCJA ARTYSTY — dla AI portretu, nie blokuje uploadu */}
+                      <div style={{ marginBottom: '12px', background: '#fff8e1', padding: '10px', borderRadius: '6px', border: '1px solid #f4b400' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#5d4037' }}>
+                          🎭 Intencja artysty (opcjonalnie — wskazówka dla AI)
+                        </label>
+                        <textarea
+                          value={new3dModel.artistIntent}
+                          onChange={(e) => setNew3dModel({ ...new3dModel, artistIntent: e.target.value })}
+                          placeholder="Np. „Chcę muzykę w stylu zaklamania, obłędnej rzeczy. Komentarze NIE oceniają osobowości — tylko atmosfery."
+                          rows={2}
+                          style={{ width: '100%', fontSize: '11px', padding: '4px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          maxLength={500}
+                        />
+                        <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            id="commentsArePerformance"
+                            checked={new3dModel.commentsArePerformance}
+                            onChange={(e) => setNew3dModel({ ...new3dModel, commentsArePerformance: e.target.checked })}
+                            style={{ width: '14px', height: '14px', cursor: 'pointer' }}
+                          />
+                          <label htmlFor="commentsArePerformance" style={{ fontSize: '11px', cursor: 'pointer', color: '#5d4037' }}>
+                            Komentarze są performance — wyklucz z analizy osobowości userów
+                          </label>
+                        </div>
+                      </div>
+
                       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                           type="checkbox"
@@ -2796,6 +2824,8 @@ export default function SecureAdminPanel() {
                                 galleryImageUrls: new3dModel.galleryImageUrls,
                                 availableForDownload: new3dModel.availableForDownload,
                                 showInShorts: new3dModel.showInShorts,
+                                artistIntent: new3dModel.artistIntent,
+                                commentsArePerformance: new3dModel.commentsArePerformance,
                               }),
                             });
                             const fbData = await fbRes.json();
