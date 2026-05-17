@@ -2848,7 +2848,7 @@ export default function SecureAdminPanel() {
 
                             setUpload3dProgress(100);
                             setModels3dMessage(`✅ Dodano! ID: ${fbData.firestoreId} ${new3dModel.availableForDownload ? '(widoczny w /downloads)' : '(ukryty w /downloads)'}`);
-                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false });
+                            setNew3dModel({ title: '', description: '', category: 'Art', shopUrl: '', backgroundMusicUrl: '', embeddedVideoUrl: '', thumbnailUrl: '', galleryImageUrls: '', availableForDownload: false, showInShorts: false, artistIntent: '', commentsArePerformance: false });
                             setSelected3dFile(null);
                             setUpload3dProgress(0);
                             const listRes = await fetch('/api/models3d');
