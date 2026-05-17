@@ -1,5 +1,6 @@
 'use client';
 import { logger } from '@/lib/logger';
+import Vibe3DAdminTab from '@/components/Vibe3DAdmin/Vibe3DAdminTab';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -1385,6 +1386,9 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === 'media')} onClick={() => setActiveTab('media')}>
               🎵 Media
+            </button>
+            <button style={tabStyle(activeTab === 'vibe3d')} onClick={() => setActiveTab('vibe3d')}>
+              ✨ Vibe3D
             </button>
           </div>
 
@@ -2991,6 +2995,10 @@ export default function SecureAdminPanel() {
 
                 {activeTab === 'media' && (
                   <MediaTab />
+                )}
+
+                {activeTab === 'vibe3d' && (
+                  <Vibe3DAdminTab />
                 )}
           </div>
         </div>
