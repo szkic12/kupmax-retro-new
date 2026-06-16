@@ -19,6 +19,7 @@ const CATEGORY_MAP: Record<string, string> = {
   'BIZNES': 'Eksperckie Poradniki',
   'INSPIRACJA': 'Niesamowite Historie',
   'AKTUALNOSCI': 'Nowoczesne Technologie',
+  'BOSSXD': 'BossXD EN 🧘', // kanał EN dla bossxd.com
 };
 
 // Mapowanie kategorii news -> BlogPost format
@@ -26,6 +27,7 @@ const CATEGORY_REVERSE_MAP: Record<string, string> = {
   'Eksperckie Poradniki': 'PORADNIK',
   'Niesamowite Historie': 'HISTORIA',
   'Nowoczesne Technologie': 'TECHNOLOGIA',
+  'BossXD EN 🧘': 'BOSSXD', // → trafia na bossxd.com [[bossxd-portal-drugie-slonce]]
 };
 
 // ID admina dla postów z panelrudy (z .env)

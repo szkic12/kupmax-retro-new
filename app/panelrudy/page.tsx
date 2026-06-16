@@ -228,7 +228,10 @@ export default function SecureAdminPanel() {
   const [saving3dEdit, setSaving3dEdit] = useState(false);
   const VIBE3D_CATEGORIES = ['Art', 'Body', 'Epic Fail', 'Ghost Object', 'Glitch', 'Randomize Chaos', 'Secret Face', 'Live', 'Games'];
 
-  const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki'];
+  // 🧘 "BossXD EN" = kanał treści dla bossxd.com (medytacja po angielsku).
+  // Wybór tej kategorii w formularzu News → wpis trafia TYLKO na bossxd.com,
+  // nie miesza się z polskimi newsami kupmax. [[bossxd-portal-drugie-slonce]]
+  const NEWS_CATEGORIES = ['Niesamowite Historie', 'Nowoczesne Technologie', 'Eksperckie Poradniki', 'BossXD EN 🧘'];
 
   // Simple formatting helpers for news content
   const insertFormatting = (format: string) => {
