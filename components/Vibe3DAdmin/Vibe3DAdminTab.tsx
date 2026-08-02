@@ -32,12 +32,23 @@ interface Stats {
   estimatedCostTodayUSD: number;
 }
 
+interface MatrixStats {
+  dailyMax: number;
+  currentDay: string;
+  count: number;
+  totalCount: number;
+  paused: boolean;
+  estimatedCostTodayUSD: number;
+  estimatedCostTotalUSD: number;
+}
+
 type ProviderFilter = 'all' | 'fal' | 'replicate';
 type UserFilter = 'all' | 'users' | 'guests';
 
 export default function Vibe3DAdminTab() {
   const [videos, setVideos] = useState<WelcomeVideo[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [matrixStats, setMatrixStats] = useState<MatrixStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<WelcomeVideo | null>(null);
@@ -54,6 +65,7 @@ export default function Vibe3DAdminTab() {
       if (data.success) {
         setVideos(data.videos);
         setStats(data.stats);
+        setMatrixStats(data.matrixStats || null);
       } else {
         setError(data.error || 'Load failed');
       }
@@ -81,6 +93,25 @@ export default function Vibe3DAdminTab() {
         await load();
       } else {
         alert('Update failed: ' + (data.error || 'unknown'));
+      }
+    } finally {
+      setSavingBudget(false);
+    }
+  };
+
+  const updateMatrixBudget = async (patch: Partial<Pick<MatrixStats, 'dailyMax' | 'paused'>>) => {
+    setSavingBudget(true);
+    try {
+      const res = await fetch('/api/vibe3d-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updateMatrix3DBudget', ...patch }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await load();
+      } else {
+        alert('Matrix budget update failed: ' + (data.error || 'unknown'));
       }
     } finally {
       setSavingBudget(false);
@@ -225,6 +256,66 @@ export default function Vibe3DAdminTab() {
             Dzień: <strong>{stats.currentDay}</strong> · {stats.count >= stats.dailyMax * 0.8 && (
               <span style={{ color: '#c00', fontWeight: 'bold' }}>⚠ Bliski limitu!</span>
             )}
+          </p>
+        </div>
+      )}
+
+      {/* === MATRIX 3D BUDGET === */}
+      {matrixStats && (
+        <div
+          style={{
+            border: '2px solid #ff69b4',
+            background: '#fff0f8',
+            padding: 12,
+            marginBottom: 16,
+          }}
+        >
+          <h3 style={{ margin: '0 0 8px', color: '#a0185c' }}>
+            🪞 Matrix Room — Image-to-3D (fal Trellis)
+          </h3>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              Dziś: <strong>{matrixStats.count} / {matrixStats.dailyMax}</strong>{' '}
+              <span style={{ color: matrixStats.count >= matrixStats.dailyMax * 0.8 ? '#c00' : '#888' }}>
+                (${matrixStats.estimatedCostTodayUSD.toFixed(2)})
+              </span>
+            </div>
+            <div>
+              Total: <strong>{matrixStats.totalCount}</strong>{' '}
+              <span style={{ color: '#888' }}>(${matrixStats.estimatedCostTotalUSD.toFixed(2)} lifetime)</span>
+            </div>
+            <label>
+              Daily max:{' '}
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                defaultValue={matrixStats.dailyMax}
+                disabled={savingBudget}
+                onBlur={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  if (!isNaN(v) && v !== matrixStats.dailyMax) updateMatrixBudget({ dailyMax: v });
+                }}
+                style={{ width: 80 }}
+              />
+            </label>
+            <button
+              disabled={savingBudget}
+              onClick={() => updateMatrixBudget({ paused: !matrixStats.paused })}
+              style={{
+                padding: '6px 14px',
+                background: matrixStats.paused ? '#c00' : '#080',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {matrixStats.paused ? '⏸ ZATRZYMANE (kliknij żeby wznowić)' : '▶ AKTYWNE (kliknij żeby zatrzymać)'}
+            </button>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: '#666' }}>
+            ~$0.12/duet. Limit chroni przed wybuchem rachunku. Dzień:{' '}
+            <strong>{matrixStats.currentDay || '(brak — pierwszy duet dzisiaj)'}</strong>
           </p>
         </div>
       )}

@@ -44,6 +44,16 @@ interface BudgetStats {
   estimatedCostTodayUSD: number;
 }
 
+interface MatrixBudgetStats {
+  dailyMax: number;
+  currentDay: string;
+  count: number;
+  totalCount: number;
+  paused: boolean;
+  estimatedCostTodayUSD: number;
+  estimatedCostTotalUSD: number;
+}
+
 const FAL_COST_PER_VIDEO = 0.20; // USD estimate
 const REPLICATE_COST_PER_VIDEO = 0.15;
 
@@ -115,7 +125,21 @@ export async function GET(req: NextRequest) {
     }
     stats.estimatedCostTodayUSD = todayFalCount * FAL_COST_PER_VIDEO + todayReplicateCount * REPLICATE_COST_PER_VIDEO;
 
-    return NextResponse.json({ success: true, videos, stats });
+    // Matrix 3D budget (fal Trellis ~$0.12/duet)
+    const matrixBudgetDoc = await firestore.collection('admin').doc('matrix3DBudget').get();
+    const mb = matrixBudgetDoc.exists ? (matrixBudgetDoc.data() || {}) : {};
+    const TRELLIS_COST_PER_MODEL = 0.12;
+    const matrixStats: MatrixBudgetStats = {
+      dailyMax: Number(mb.dailyMax || 50),
+      currentDay: String(mb.currentDay || ''),
+      count: Number(mb.count || 0),
+      totalCount: Number(mb.totalCount || 0),
+      paused: Boolean(mb.paused),
+      estimatedCostTodayUSD: Number(mb.count || 0) * TRELLIS_COST_PER_MODEL,
+      estimatedCostTotalUSD: Number(mb.totalCount || 0) * TRELLIS_COST_PER_MODEL,
+    };
+
+    return NextResponse.json({ success: true, videos, stats, matrixStats });
   } catch (e) {
     logger.error('vibe3d-admin GET failed:', e);
     return NextResponse.json({ success: false, error: String(e) }, { status: 500 });
@@ -166,6 +190,22 @@ export async function POST(req: NextRequest) {
         { currentDay: today, count: 0 },
         { merge: true }
       );
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'updateMatrix3DBudget') {
+      const { dailyMax, paused } = body;
+      const update: Record<string, unknown> = {};
+      if (typeof dailyMax === 'number' && dailyMax >= 0 && dailyMax <= 10000) {
+        update.dailyMax = dailyMax;
+      }
+      if (typeof paused === 'boolean') {
+        update.paused = paused;
+      }
+      if (Object.keys(update).length === 0) {
+        return NextResponse.json({ success: false, error: 'No valid fields' }, { status: 400 });
+      }
+      await firestore.collection('admin').doc('matrix3DBudget').set(update, { merge: true });
       return NextResponse.json({ success: true });
     }
 
