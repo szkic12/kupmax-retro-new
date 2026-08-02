@@ -1,12 +1,31 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getToken } from 'next-auth/jwt';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * Verify admin token from request
+ * Adresy e-mail z prawami administratora.
+ *
+ * WAŻNE: NextAuth loguje przez Google i przepuszcza KAŻDE konto Google.
+ * Bez tej listy dowolna osoba z internetu mogłaby publikować i kasować
+ * wpisy. Sesja NextAuth jest uznawana za adminowską tylko wtedy, gdy
+ * e-mail znajduje się poniżej.
+ *
+ * Listę można nadpisać zmienną ADMIN_EMAILS (adresy po przecinku).
+ */
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'investcrewe@gmail.com')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+/**
+ * Verify admin from request. Accepts either:
+ * - a NextAuth session belonging to an address on the admin list
+ * - a legacy token from the `admin_sessions` table
+ *
  * Token can be in:
  * - Authorization header: "Bearer <token>"
  * - Cookie: "admin_token=<token>"
@@ -14,18 +33,22 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  */
 export async function verifyAdminToken(request: NextRequest, body?: any): Promise<boolean> {
   try {
-    // 1. Check Authorization header
+    // 1. Sesja NextAuth — tak loguje się panelrudy.
+    //    Bez tego panel dostawał 401 przy każdej publikacji.
+    if (await hasAdminSession(request)) return true;
+
+    // 2. Check Authorization header
     const authHeader = request.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       if (await isValidToken(token)) return true;
     }
 
-    // 2. Check Cookie
+    // 3. Check Cookie
     const cookieToken = request.cookies.get('admin_token')?.value;
     if (cookieToken && await isValidToken(cookieToken)) return true;
 
-    // 3. Check body (if provided)
+    // 4. Check body (if provided)
     if (body?.adminToken && await isValidToken(body.adminToken)) return true;
 
     return false;
@@ -33,6 +56,19 @@ export async function verifyAdminToken(request: NextRequest, body?: any): Promis
     console.error('Admin auth error:', error);
     return false;
   }
+}
+
+/**
+ * Czy żądanie niesie sesję NextAuth należącą do administratora.
+ */
+async function hasAdminSession(request: NextRequest): Promise<boolean> {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) return false;
+
+  const token = await getToken({ req: request, secret });
+  const email = token?.email?.toLowerCase();
+
+  return !!email && ADMIN_EMAILS.includes(email);
 }
 
 /**

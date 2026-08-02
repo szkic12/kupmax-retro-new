@@ -880,6 +880,15 @@ export default function SecureAdminPanel() {
           category: 'Niesamowite Historie',
         });
         fetchData();
+      } else {
+        // Bez tej gałęzi błąd 401 znikał bez śladu — przycisk "Opublikuj"
+        // wyglądał, jakby nic nie robił.
+        const info = await res.json().catch(() => null);
+        setMessage(
+          res.status === 401
+            ? 'Brak uprawnień — zaloguj się ponownie.'
+            : `Nie udało się dodać: ${info?.error || res.status}`
+        );
       }
     } catch (error) {
       setMessage('Błąd sieci');
