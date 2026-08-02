@@ -119,6 +119,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
     }
 
+    // Bez tego pusty authorId leci do bazy i Postgres odrzuca zapis
+    // z "invalid input syntax for type uuid" - a panel pokazywal tylko
+    // ogolne "Failed to create post".
+    if (!ADMIN_AUTHOR_ID) {
+      logger.error('PANELRUDY_AUTHOR_ID nie jest ustawione na serwerze');
+      return NextResponse.json(
+        { error: 'Brak konfiguracji PANELRUDY_AUTHOR_ID na serwerze' },
+        { status: 500 }
+      );
+    }
+
     // Mapuj kategorię na format BlogPost
     const blogCategory = CATEGORY_REVERSE_MAP[category] || 'HISTORIA';
 
@@ -140,8 +151,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       logger.error('Error creating BlogPost:', error);
-      return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
+      // Bez szczegolow w odpowiedzi diagnoza sprowadzala sie do zgadywania -
+      // panel pokazywal tylko "Failed to create post" bez zadnej przyczyny.
+      return NextResponse.json(
+        { error: `Failed to create post: ${error.message}`, code: error.code },
+        { status: 500 }
+      );
     }
+
 
     // Zwróć w formacie news
     const news = {
