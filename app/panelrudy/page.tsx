@@ -8,6 +8,42 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 
 type MediaFolder = 'music' | 'video' | 'image';
 
+// Zamiana Markdown na HTML do podglądu. Świadomie prosta — ma pokazać układ
+// tekstu, a nie zastąpić prawdziwego renderera na stronie.
+function renderPreview(md: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const videos: string[] = [];
+  // <div class="video-embed">…</div> zostawiamy w spokoju
+  let s = md.replace(/<div class="video-embed">[\s\S]*?<\/div>/g, (m) => {
+    videos.push('<div style="padding:22px;background:#1a1a24;border-radius:6px;text-align:center;color:#8a8aaa;font-size:12px">🎬 film z YouTube</div>');
+    return `@@VIDEO${videos.length - 1}@@`;
+  });
+  s = s.replace(/<video[\s\S]*?<\/video>/g, () => {
+    videos.push('<div style="padding:22px;background:#1a1a24;border-radius:6px;text-align:center;color:#8a8aaa;font-size:12px">🎬 film</div>');
+    return `@@VIDEO${videos.length - 1}@@`;
+  });
+  s = esc(s);
+  s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+    '<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;margin:10px 0" />');
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" style="color:#5ab8ff">$1</a>');
+  s = s.replace(/^### (.+)$/gm, '<h3 style="font-size:16px;font-weight:700;margin:16px 0 6px;color:#fff">$1</h3>');
+  s = s.replace(/^## (.+)$/gm, '<h2 style="font-size:19px;font-weight:800;margin:20px 0 8px;color:#fff">$1</h2>');
+  s = s.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid #5ab8ff;padding-left:12px;margin:12px 0;color:#a8a8c0;font-style:italic">$1</blockquote>');
+  s = s.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #2a2a3a;margin:20px 0" />');
+  s = s.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  s = s.replace(/^- (.+)$/gm, '<li>$1</li>');
+  s = s.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul style="margin:10px 0 10px 20px">$1</ul>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#fff">$1</strong>');
+  s = s.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+  s = s.split(/\n\n+/).map((b) =>
+    /^<(h2|h3|ul|blockquote|hr|img|@@)/.test(b.trim()) || b.includes('@@VIDEO')
+      ? b : `<p style="margin:10px 0">${b.replace(/\n/g, '<br/>')}</p>`
+  ).join('');
+  s = s.replace(/@@VIDEO(\d+)@@/g, (_, i) => videos[Number(i)] || '');
+  return s;
+}
+
 function MediaTab() {
   const [folder, setFolder] = useState<MediaFolder>('music');
   const [uploading, setUploading] = useState(false);
@@ -275,6 +311,35 @@ export default function SecureAdminPanel() {
         newText = `\n> ${selectedText || 'Cytat lub ważna myśl'}\n`;
         cursorOffset = 3;
         break;
+      // ── Dodane 2026-08-20 (prośba Brata: zdjęcia, filmy, linkowanie) ──
+      case 'numlist':
+        newText = `\n1. ${selectedText || 'Pierwszy punkt'}\n2. Drugi punkt\n3. Trzeci punkt\n`;
+        cursorOffset = 4;
+        break;
+      case 'hr':
+        newText = `\n\n---\n\n`;
+        cursorOffset = 5;
+        break;
+      case 'image': {
+        // Wstawia zdjęcie w TREŚĆ wpisu — wcześniej dało się je wrzucić
+        // tylko do galerii, a nie w środek artykułu.
+        const url = prompt('Adres zdjęcia (wklej link albo najpierw wgraj plik przyciskiem 📤):');
+        if (!url) return;
+        const alt = prompt('Krótki opis zdjęcia (dla Google i osób niewidomych):') || 'zdjęcie';
+        newText = `\n![${alt}](${url})\n`;
+        cursorOffset = 3;
+        break;
+      }
+      case 'video': {
+        // YouTube — wystarczy wkleić zwykły link, sami wyciągamy identyfikator.
+        const raw = prompt('Wklej link do filmu na YouTube:');
+        if (!raw) return;
+        const m = raw.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([A-Za-z0-9_-]{11})/);
+        if (!m) { alert('To nie wygląda na link do YouTube. Spróbuj jeszcze raz.'); return; }
+        newText = `\n<div class="video-embed"><iframe src="https://www.youtube.com/embed/${m[1]}" title="film" frameborder="0" allowfullscreen loading="lazy"></iframe></div>\n`;
+        cursorOffset = 5;
+        break;
+      }
       default:
         return;
     }
@@ -287,6 +352,57 @@ export default function SecureAdminPanel() {
       textarea.focus();
       textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
     }, 10);
+  };
+
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Wgranie pliku z dysku PROSTO w treść wpisu (2026-08-20, prośba Brata).
+  // Wcześniej: zakładka Media → wgraj → kopiuj URL → wróć → wklej. Teraz jeden klik.
+  const uploadImageToContent = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/mp4';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Plik za duży — maksymalnie 15 MB. Zmniejsz zdjęcie i spróbuj ponownie.');
+        return;
+      }
+      const ta = document.querySelector<HTMLTextAreaElement>('#news-content');
+      const pos = ta ? ta.selectionStart : (newNews.content?.length || 0);
+      try {
+        setMessage('⏳ Wysyłanie pliku…');
+        const res = await fetch('/api/media/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name, fileType: file.type, fileSize: file.size, folder: 'blog',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Nie udało się przygotować wysyłki');
+
+        const s3 = await fetch(data.presignedUrl, {
+          method: 'PUT', headers: { 'Content-Type': file.type }, body: file,
+        });
+        if (!s3.ok) throw new Error('Nie udało się wysłać pliku');
+
+        const isVideo = file.type.startsWith('video');
+        const alt = prompt('Krótki opis (dla Google i osób niewidomych):') || file.name;
+        const snippet = isVideo
+          ? `\n<video controls src="${data.publicUrl}" style="max-width:100%"></video>\n`
+          : `\n![${alt}](${data.publicUrl})\n`;
+
+        const c = newNews.content || '';
+        setNewNews({ ...newNews, content: c.slice(0, pos) + snippet + c.slice(pos) });
+        setMessage('✅ Wstawione w treść');
+        setTimeout(() => setMessage(''), 2500);
+      } catch (err: unknown) {
+        setMessage('❌ ' + (err instanceof Error ? err.message : 'Błąd wysyłania'));
+      }
+    };
+    input.click();
   };
 
   // Check if user is admin
@@ -2408,14 +2524,36 @@ export default function SecureAdminPanel() {
                             <button type="button" onClick={() => insertFormatting('list')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Lista punktowana">• Lista</button>
                             <button type="button" onClick={() => insertFormatting('link')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Link">🔗 Link</button>
                             <button type="button" onClick={() => insertFormatting('quote')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Cytat">„ Cytat</button>
+                            {/* Dodane 2026-08-20 — zdjęcia, filmy, podgląd (prośba Brata) */}
+                            <button type="button" onClick={() => insertFormatting('numlist')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Lista numerowana">1. Lista</button>
+                            <button type="button" onClick={() => insertFormatting('hr')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px' }} title="Linia oddzielająca">— Linia</button>
+                            <button type="button" onClick={() => insertFormatting('image')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', background: '#1a3a2a', borderColor: '#2a5a3a' }} title="Wstaw zdjęcie w treść">🖼 Zdjęcie</button>
+                            <button type="button" onClick={() => insertFormatting('video')} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', background: '#3a1a1a', borderColor: '#5a2a2a' }} title="Wstaw film z YouTube">🎬 Film</button>
+                            <button type="button" onClick={uploadImageToContent} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', background: '#1a2a3a', borderColor: '#2a4a5a' }} title="Wgraj plik z dysku i wstaw w treść">📤 Wgraj</button>
+                            <button type="button" onClick={() => setShowPreview(!showPreview)} style={{ ...buttonStyle, padding: '3px 8px', fontSize: '11px', background: showPreview ? '#3a2a5a' : undefined, borderColor: showPreview ? '#5a4a8a' : undefined }} title="Zobacz, jak to będzie wyglądać">👁 Podgląd</button>
                           </div>
                           <textarea
                             data-news-content="true"
+                            id="news-content"
                             value={newNews.content}
                             onChange={(e) => setNewNews({ ...newNews, content: e.target.value })}
                             style={{ ...inputStyle, height: '200px', fontFamily: 'monospace', fontSize: '13px' }}
                             placeholder="Pisz swój artykuł tutaj...&#10;&#10;Używaj Markdown:&#10;## Nagłówek sekcji&#10;### Podtytuł&#10;**pogrubienie**&#10;*kursywa*&#10;- lista&#10;> cytat"
                           />
+
+                          {/* Podgląd — jak to będzie wyglądać po publikacji (2026-08-20) */}
+                          {showPreview && (
+                            <div style={{
+                              marginTop: '12px', padding: '16px', borderRadius: '6px',
+                              background: '#0d0d14', border: '1px solid #2a2a3a', maxHeight: '420px',
+                              overflowY: 'auto', color: '#d8d8e0', fontSize: '14px', lineHeight: 1.65,
+                            }}>
+                              <div style={{ fontSize: '11px', color: '#7a7a9a', marginBottom: '10px', letterSpacing: '.5px' }}>
+                                PODGLĄD — tak zobaczą to czytelnicy
+                              </div>
+                              <div dangerouslySetInnerHTML={{ __html: renderPreview(newNews.content || '') }} />
+                            </div>
+                          )}
                           <small style={{ color: '#666', display: 'block', marginTop: '3px' }}>
                             💡 Formatowanie: **pogrubienie**, *kursywa*, ## nagłówek, - lista, &gt; cytat, [link](url)
                           </small>
