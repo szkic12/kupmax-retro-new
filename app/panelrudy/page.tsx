@@ -10,6 +10,92 @@ type MediaFolder = 'music' | 'video' | 'image';
 
 // Zamiana Markdown na HTML do podglądu. Świadomie prosta — ma pokazać układ
 // tekstu, a nie zastąpić prawdziwego renderera na stronie.
+type ChatMsg = {
+  id: string; userId: string; nickname: string; avatar: string;
+  message: string; timestamp: string; type?: string;
+};
+
+// Podgląd czatu w panelu — Brat widzi, kto pisał i kiedy, bez wchodzenia
+// na stronę główną. Odświeża się co 20 s.
+function ChatTab() {
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hideSystem, setHideSystem] = useState(true);
+
+  const load = async () => {
+    try {
+      const r = await fetch('/api/chat/simple', { cache: 'no-store' });
+      const d = await r.json();
+      if (d?.messages) {
+        setMsgs(d.messages);
+        // Zapamiętujemy, co Brat już widział — reszta panelu liczy z tego nowe.
+        const last = d.messages[d.messages.length - 1];
+        if (last) localStorage.setItem('panelrudy_chat_seen', last.timestamp);
+        window.dispatchEvent(new Event('chat-seen'));
+      }
+    } catch { /* cisza */ }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    const i = setInterval(load, 20000);
+    return () => clearInterval(i);
+  }, []);
+
+  const shown = hideSystem ? msgs.filter((m) => m.type !== 'system') : msgs;
+
+  return (
+    <div style={{ padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>💬 Czat na stronie</h3>
+        <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <input type="checkbox" checked={hideSystem} onChange={(e) => setHideSystem(e.target.checked)} />
+          ukryj wejścia i wyjścia
+        </label>
+        <button
+          onClick={load}
+          style={{
+            marginLeft: 'auto', padding: '3px 10px', fontSize: '11px', cursor: 'pointer',
+            background: '#1e1e2e', color: '#d8d8e0', border: '1px solid #3a3a4a', borderRadius: '4px',
+          }}
+        >
+          ↻ Odśwież
+        </button>
+      </div>
+
+      {loading ? (
+        <p style={{ fontSize: '13px', color: '#888' }}>Wczytywanie…</p>
+      ) : shown.length === 0 ? (
+        <p style={{ fontSize: '13px', color: '#888' }}>Nikt jeszcze nic nie napisał.</p>
+      ) : (
+        <div style={{ maxHeight: '480px', overflowY: 'auto', border: '1px solid #2a2a3a', borderRadius: '6px', padding: '10px', background: '#0d0d14' }}>
+          {shown.slice().reverse().map((m) => (
+            <div key={m.id} style={{ padding: '8px 6px', borderBottom: '1px solid #1a1a26' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                <span style={{ fontSize: '15px' }}>{m.avatar || '👤'}</span>
+                <strong style={{ fontSize: '13px', color: m.type === 'system' ? '#7a7a9a' : '#5ab8ff' }}>
+                  {m.nickname}
+                </strong>
+                <span style={{ fontSize: '11px', color: '#6a6a80', marginLeft: 'auto' }}>
+                  {new Date(m.timestamp).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0 23px', fontSize: '13px', color: m.type === 'system' ? '#6a6a80' : '#d8d8e0', lineHeight: 1.5 }}>
+                {m.message}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p style={{ fontSize: '11px', color: '#6a6a80', marginTop: '10px' }}>
+        Odświeża się samo co 20 sekund. Żeby odpisać, wejdź na czat na stronie głównej.
+      </p>
+    </div>
+  );
+}
+
 function renderPreview(md: string): string {
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const videos: string[] = [];
@@ -355,6 +441,28 @@ export default function SecureAdminPanel() {
   };
 
   const [showPreview, setShowPreview] = useState(false);
+  const [newChatCount, setNewChatCount] = useState(0);
+
+  // Sprawdza co minutę, czy ktoś napisał na czacie od ostatniego zajrzenia.
+  // Brat: "ktoś wchodzi, pisze, a ja niczego nie wiem".
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch('/api/chat/simple', { cache: 'no-store' });
+        const d = await r.json();
+        const msgs: { timestamp: string; type?: string }[] = d?.messages || [];
+        const seen = localStorage.getItem('panelrudy_chat_seen') || '';
+        // Liczymy tylko prawdziwe wiadomości, nie wejścia i wyjścia z czatu.
+        const fresh = msgs.filter((m) => m.type !== 'system' && m.timestamp > seen);
+        setNewChatCount(fresh.length);
+      } catch { /* cisza */ }
+    };
+    check();
+    const i = setInterval(check, 60000);
+    const onSeen = () => setNewChatCount(0);
+    window.addEventListener('chat-seen', onSeen);
+    return () => { clearInterval(i); window.removeEventListener('chat-seen', onSeen); };
+  }, []);
 
   // Wgranie pliku z dysku PROSTO w treść wpisu (2026-08-20, prośba Brata).
   // Wcześniej: zakładka Media → wgraj → kopiuj URL → wróć → wklej. Teraz jeden klik.
@@ -1517,6 +1625,19 @@ export default function SecureAdminPanel() {
             </button>
             <button style={tabStyle(activeTab === 'vibe3d')} onClick={() => setActiveTab('vibe3d')}>
               ✨ Vibe3D
+            </button>
+            {/* Czat — z licznikiem nowych wiadomości (2026-08-20, prośba Brata:
+                "ktoś wchodzi, pisze, a ja niczego nie wiem") */}
+            <button style={tabStyle(activeTab === 'chat')} onClick={() => setActiveTab('chat')}>
+              💬 Czat
+              {newChatCount > 0 && (
+                <span style={{
+                  marginLeft: '6px', padding: '1px 6px', borderRadius: '10px',
+                  background: '#e74c3c', color: '#fff', fontSize: '10px', fontWeight: 700,
+                }}>
+                  {newChatCount}
+                </span>
+              )}
             </button>
           </div>
 
@@ -3172,6 +3293,8 @@ export default function SecureAdminPanel() {
                     </div>
                   </>
                 )}
+
+                {activeTab === 'chat' && <ChatTab />}
 
                 {activeTab === 'media' && (
                   <MediaTab />
