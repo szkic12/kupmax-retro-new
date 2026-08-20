@@ -1,3 +1,4 @@
+import { notify } from '@/lib/telegram';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../lib/aws-s3.js';
@@ -125,6 +126,13 @@ export async function POST(req: NextRequest) {
       timestamp: Date.now(),
       approved: true, // Auto-approve for now
     };
+
+    // Powiadomienie na Telegram (2026-08-20)
+    notify('guestbook',
+      (newEntry as { nickname?: string; name?: string })?.nickname ||
+      (newEntry as { name?: string })?.name || 'Anonim',
+      (newEntry as { message?: string })?.message || '',
+      'https://www.kupmax.pl').catch(() => {});
 
     guestbookEntries.push(newEntry);
 

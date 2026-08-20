@@ -1,3 +1,4 @@
+import { notify } from '@/lib/telegram';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
@@ -213,6 +214,12 @@ export async function POST(req: NextRequest) {
           timestamp: new Date().toISOString(),
           type: 'message'
         };
+
+    // Powiadomienie na Telegram — Brat chce wiedzieć od razu, kto pisze.
+    // Pomijamy wpisy systemowe (wejścia/wyjścia), inaczej telefon by wibrował bez przerwy.
+    if (newMessage.type !== 'system') {
+      notify('chat', newMessage.nickname, newMessage.message, 'https://www.kupmax.pl').catch(() => {});
+    }
 
         chatData.messages.push(newMessage);
         chatData = limitMessages(chatData);

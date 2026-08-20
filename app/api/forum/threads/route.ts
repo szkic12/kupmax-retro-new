@@ -1,3 +1,4 @@
+import { notify } from '@/lib/telegram';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import s3Service from '../../../../lib/aws-s3.js';
@@ -168,6 +169,12 @@ export async function POST(req: NextRequest) {
       isLocked: false,
       tags: []
     };
+
+    // Powiadomienie na Telegram (2026-08-20)
+    notify('forum',
+      newThread.author?.nickname || 'Anonim',
+      newThread.title || 'nowy wątek',
+      'https://www.kupmax.pl/forum').catch(() => {});
 
     // Dodaj wątek
     forumData.threads.unshift(newThread);

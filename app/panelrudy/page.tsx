@@ -92,6 +92,29 @@ function ChatTab() {
       <p style={{ fontSize: '11px', color: '#6a6a80', marginTop: '10px' }}>
         Odświeża się samo co 20 sekund. Żeby odpisać, wejdź na czat na stronie głównej.
       </p>
+
+      {/* Test powiadomień na Telegram (2026-08-20) */}
+      <div style={{ marginTop: '16px', padding: '12px', border: '1px solid #2a2a3a', borderRadius: '6px', background: '#12121a' }}>
+        <div style={{ fontSize: '12px', marginBottom: '8px', color: '#d8d8e0' }}>
+          📲 <strong>Powiadomienia na Telegram</strong>
+        </div>
+        <button
+          onClick={async () => {
+            const r = await fetch('/api/telegram-test', { method: 'POST' });
+            const d = await r.json();
+            alert(d.ok ? '✅ Wysłane — sprawdź Telegram na telefonie.' : '❌ ' + (d.error || 'Nie udało się.'));
+          }}
+          style={{
+            padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontWeight: 700,
+            background: '#2874a6', color: '#fff', border: '1px solid #3a92cc', borderRadius: '4px',
+          }}
+        >
+          Wyślij test
+        </button>
+        <span style={{ fontSize: '11px', color: '#6a6a80', marginLeft: '10px' }}>
+          Dostaniesz wiadomość, gdy ktoś napisze na czacie, w księdze gości albo na forum.
+        </span>
+      </div>
     </div>
   );
 }
