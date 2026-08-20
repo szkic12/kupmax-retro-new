@@ -46,6 +46,21 @@ type ProviderFilter = 'all' | 'fal' | 'replicate';
 type UserFilter = 'all' | 'users' | 'guests';
 
 export default function Vibe3DAdminTab() {
+  // Sprawdza nowych użytkowników Vibe3D i wysyła powiadomienie na Telegram
+  // (2026-08-20, prośba Brata: "żebym wiedział, czy ktoś nowy nie wszedł").
+  // Jedna zbiorcza wiadomość, nie po jednej na osobę.
+  useEffect(() => {
+    const since = localStorage.getItem('vibe3d_users_seen');
+    fetch('/api/vibe3d-newusers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ since }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d?.newest) localStorage.setItem('vibe3d_users_seen', d.newest); })
+      .catch(() => { /* cisza — to tylko powiadomienie */ });
+  }, []);
+
   const [videos, setVideos] = useState<WelcomeVideo[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [matrixStats, setMatrixStats] = useState<MatrixStats | null>(null);

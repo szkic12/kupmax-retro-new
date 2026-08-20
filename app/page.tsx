@@ -111,6 +111,15 @@ export default function Home() {
     bulletin: false,
   });
 
+  // Które okna otwierają się przy wejściu — ustawiane suwakami w panelrudy
+  // (2026-08-20). Wcześniej zaszyte na sztywno, zmiana wymagała wdrożenia.
+  useEffect(() => {
+    fetch('/api/window-settings', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setWindows((prev) => ({ ...prev, ...d })); })
+      .catch(() => { /* awaria = zostają domyślne, strona działa dalej */ });
+  }, []);
+
   const [minimized, setMinimized] = useState({
     reklama: false,
     news: false,

@@ -17,6 +17,119 @@ type ChatMsg = {
 
 // Podgląd czatu w panelu — Brat widzi, kto pisał i kiedy, bez wchodzenia
 // na stronę główną. Odświeża się co 20 s.
+// Sterowanie oknami, które otwierają się przy wejściu na kupmax.pl (2026-08-20).
+// Brat: "dziś forum, jutro zdjęcia, jak mi się znudzi, to znów reklamę".
+// ŚWIADOMIE bez zmiany kolejności — mogłaby popsuć układ na komórce.
+const WINDOW_LABELS: { key: string; label: string; icon: string }[] = [
+  { key: 'reklama',     label: 'Reklama',        icon: '📢' },
+  { key: 'news',        label: 'Aktualności',    icon: '📰' },
+  { key: 'shop',        label: 'Sklep',          icon: '🛒' },
+  { key: 'forum',       label: 'Forum',          icon: '💭' },
+  { key: 'photos',      label: 'Zdjęcia',        icon: '📷' },
+  { key: 'image',       label: 'Obrazek',        icon: '🖼️' },
+  { key: 'video',       label: 'Wideo',          icon: '🎬' },
+  { key: 'model3d',     label: 'Model 3D',       icon: '🧊' },
+  { key: 'character',   label: 'Postać',         icon: '🕺' },
+  { key: 'chat',        label: 'Czat',           icon: '💬' },
+  { key: 'privateChat', label: 'Czat prywatny',  icon: '🔒' },
+  { key: 'guestbook',   label: 'Księga gości',   icon: '📖' },
+  { key: 'webring',     label: 'Webring',        icon: '🔗' },
+  { key: 'downloads',   label: 'Pliki',          icon: '💾' },
+  { key: 'radio',       label: 'Radio',          icon: '📻' },
+  { key: 'tetris',      label: 'Tetris',         icon: '🎮' },
+  { key: 'bulletin',    label: 'Ogłoszenia',     icon: '📌' },
+];
+
+function WindowsTab() {
+  const [settings, setSettings] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/window-settings', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { setSettings(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const toggle = async (key: string) => {
+    const next = { ...settings, [key]: !settings[key] };
+    setSettings(next);
+    setSaving(true); setSaved(false);
+    try {
+      const r = await fetch('/api/window-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(next),
+      });
+      if (!r.ok) throw new Error();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setSettings(settings);          // cofamy, gdy zapis się nie udał
+      alert('Nie udało się zapisać. Spróbuj jeszcze raz.');
+    }
+    setSaving(false);
+  };
+
+  const onCount = Object.values(settings).filter(Boolean).length;
+
+  if (loading) return <div style={{ padding: '16px', fontSize: '13px', color: '#888' }}>Wczytywanie…</div>;
+
+  return (
+    <div style={{ padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🪟 Co otwiera się przy wejściu</h3>
+        {saving && <span style={{ fontSize: '11px', color: '#888' }}>zapisuję…</span>}
+        {saved && <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ zapisane</span>}
+      </div>
+      <p style={{ fontSize: '12px', color: '#7a7a9a', margin: '0 0 14px' }}>
+        Zmiana działa od razu — następna osoba, która wejdzie na kupmax.pl, zobaczy
+        to, co tu ustawisz. Włączonych: <strong style={{ color: '#d8d8e0' }}>{onCount}</strong>
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '8px' }}>
+        {WINDOW_LABELS.map(({ key, label, icon }) => {
+          const on = !!settings[key];
+          return (
+            <button
+              key={key}
+              onClick={() => toggle(key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                borderRadius: '6px', cursor: 'pointer', textAlign: 'left',
+                background: on ? '#1e3a2a' : '#15151f',
+                border: `1px solid ${on ? '#3f9e68' : '#2a2a3a'}`,
+                color: on ? '#fff' : '#8a8a9a',
+                fontSize: '13px', fontWeight: on ? 700 : 400,
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>{icon}</span>
+              <span style={{ flex: 1 }}>{label}</span>
+              {/* Suwak */}
+              <span style={{
+                width: '34px', height: '18px', borderRadius: '9px', position: 'relative',
+                background: on ? '#3f9e68' : '#3a3a4a', flexShrink: 0, transition: 'background .15s',
+              }}>
+                <span style={{
+                  position: 'absolute', top: '2px', left: on ? '18px' : '2px',
+                  width: '14px', height: '14px', borderRadius: '50%', background: '#fff',
+                  transition: 'left .15s',
+                }} />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p style={{ fontSize: '11px', color: '#6a6a80', marginTop: '14px' }}>
+        Kolejności okien świadomie nie ruszamy — mogłaby popsuć układ na telefonie.
+      </p>
+    </div>
+  );
+}
+
 function ChatTab() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1651,6 +1764,9 @@ export default function SecureAdminPanel() {
             </button>
             {/* Czat — z licznikiem nowych wiadomości (2026-08-20, prośba Brata:
                 "ktoś wchodzi, pisze, a ja niczego nie wiem") */}
+            <button style={tabStyle(activeTab === 'windows')} onClick={() => setActiveTab('windows')}>
+              🪟 Okna
+            </button>
             <button style={tabStyle(activeTab === 'chat')} onClick={() => setActiveTab('chat')}>
               💬 Czat
               {newChatCount > 0 && (
@@ -3316,6 +3432,8 @@ export default function SecureAdminPanel() {
                     </div>
                   </>
                 )}
+
+                {activeTab === 'windows' && <WindowsTab />}
 
                 {activeTab === 'chat' && <ChatTab />}
 
