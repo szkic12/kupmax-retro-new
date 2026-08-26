@@ -25,6 +25,15 @@ export default function PrivateChatroom() {
   } = usePrivateChat();
 
   const [nickname, setNickname] = useState('');
+
+  // Podpowiedź nicku zapamiętanego przy czacie publicznym — jedno pole mniej
+  // do wypełnienia. Hasła i numeru pokoju świadomie NIE zapamiętujemy.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kupmax_chat_nick');
+      if (saved && saved.trim()) setNickname(saved);
+    } catch { /* tryb prywatny przeglądarki */ }
+  }, []);
   const [messageInput, setMessageInput] = useState('');
   const [roomIdInput, setRoomIdInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');

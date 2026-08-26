@@ -22,6 +22,7 @@ export default function Chatroom() {
   } = useSimpleChat();
 
   const [nickname, setNickname] = useState('');
+  const autoJoinedRef = useRef(false);
   const [messageInput, setMessageInput] = useState('');
   const [showLogin, setShowLogin] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -66,6 +67,24 @@ export default function Chatroom() {
     }
   }, [showLogin]);
 
+  // Nick zapamiętany w przeglądarce — dzięki temu po otwarciu czatu
+  // w nowej karcie (zielony przycisk "pełny ekran") nie trzeba logować
+  // się drugi raz. Naprawa buga zgłoszonego 20.08.2026.
+  useEffect(() => {
+    if (autoJoinedRef.current || hasJoinedRef.current || currentUser) return;
+    let saved = null;
+    try { saved = localStorage.getItem('kupmax_chat_nick'); } catch { /* tryb prywatny */ }
+    if (!saved || !saved.trim()) return;
+
+    autoJoinedRef.current = true;
+    hasJoinedRef.current = true;
+    setNickname(saved);
+    joinChat({ nickname: saved.trim() });
+    setShowLogin(false);
+    // Celowo pusta lista zależności — ma zadziałać raz, przy wejściu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /**
    * Obsługa logowania do czatu
    */
@@ -79,6 +98,9 @@ export default function Chatroom() {
       return;
     }
     hasJoinedRef.current = true;
+
+    // Zapamiętujemy nick, żeby nowa karta go znalazła.
+    try { localStorage.setItem('kupmax_chat_nick', nickname.trim()); } catch { /* tryb prywatny */ }
 
     joinChat({ nickname: nickname.trim() });
     setShowLogin(false);
@@ -114,6 +136,9 @@ export default function Chatroom() {
    * Obsługa opuszczania czatu
    */
   const handleLeaveChat = () => {
+    // Czyścimy zapamiętany nick — inaczej po odświeżeniu wróciłby do czatu.
+    try { localStorage.removeItem('kupmax_chat_nick'); } catch { /* tryb prywatny */ }
+    autoJoinedRef.current = false;
     leaveChat();
     setShowLogin(true);
     setNickname('');
