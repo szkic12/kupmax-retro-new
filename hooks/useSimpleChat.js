@@ -49,8 +49,17 @@ export function useSimpleChat() {
 
     setIsLoading(true);
     try {
+      // Stałe id dla tej przeglądarki — bez tego każda karta pojawiała się
+      // na liście jako osobny użytkownik (ten sam nick dwa razy).
+      let stableId = null;
+      try { stableId = localStorage.getItem('kupmax_chat_uid'); } catch { /* tryb prywatny */ }
+      if (!stableId) {
+        stableId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        try { localStorage.setItem('kupmax_chat_uid', stableId); } catch { /* tryb prywatny */ }
+      }
+
       const user = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: stableId,
         nickname: userData.nickname?.trim() || `Użytkownik_${Date.now().toString().slice(-4)}`,
         avatar: userData.avatar || '👤',
         joinTime: new Date().toISOString()
