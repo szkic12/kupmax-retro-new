@@ -45,6 +45,187 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 // Playlista własnej stacji radiowej (2026-08-27).
 // Brat: "chciałbym mieć strumień, który mogę w panelrudy dodawać
 // w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
+type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
+
+function BossxdTab() {
+  const [leaves, setLeaves] = useState<Leaf[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState('');
+
+  const load = async () => {
+    try {
+      const r = await fetch('/api/bossxd/leaves', { cache: 'no-store' });
+      const d = await r.json();
+      setLeaves(d.leaves || []);
+    } catch { /* cisza */ }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const call = async (body: Record<string, unknown>) => {
+    const r = await fetch('/api/bossxd/leaves', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setLeaves(d.leaves || []);
+  };
+
+  /**
+   * Klatka z filmu robiona w przeglądarce — Brat nie musi jej szykować osobno.
+   * Bierzemy ujęcie z 1 sekundy; na samym początku często jest czarne.
+   */
+  const grabPoster = (file: File): Promise<Blob | null> =>
+    new Promise((resolve) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.muted = true;
+      v.src = URL.createObjectURL(file);
+      const fail = () => { URL.revokeObjectURL(v.src); resolve(null); };
+      v.onerror = fail;
+      v.onloadedmetadata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
+      v.onseeked = () => {
+        const c = document.createElement('canvas');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        const ctx = c.getContext('2d');
+        if (!ctx || !c.width) return fail();
+        ctx.drawImage(v, 0, 0, c.width, c.height);
+        c.toBlob((b) => { URL.revokeObjectURL(v.src); resolve(b); }, 'image/jpeg', 0.8);
+      };
+      setTimeout(fail, 15000);
+    });
+
+  const put = async (file: Blob, name: string, type: string, folder: string) => {
+    const res = await fetch('/api/media/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: name, fileType: type, fileSize: file.size, folder }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Błąd przygotowania');
+    const s3 = await fetch(data.presignedUrl, {
+      method: 'PUT', headers: { 'Content-Type': type }, body: file,
+    });
+    if (!s3.ok) throw new Error('Błąd wysyłania');
+    return data.publicUrl as string;
+  };
+
+  const upload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/mp4,video/webm,video/quicktime,video/*';
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files || []);
+      for (const file of files) {
+        if (file.size > 500 * 1024 * 1024) {
+          alert(`${file.name} — za duży (max 500 MB)`); continue;
+        }
+        try {
+          setBusy(`Wysyłam ${file.name}…`);
+          const videoUrl = await put(file, file.name, file.type || 'video/mp4', 'video');
+
+          setBusy(`Robię klatkę z ${file.name}…`);
+          let posterUrl = '';
+          const poster = await grabPoster(file);
+          if (poster) {
+            const pname = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+            posterUrl = await put(poster, pname, 'image/jpeg', 'image');
+          }
+
+          const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+          await call({ action: 'add', title, videoUrl, posterUrl });
+        } catch (e) {
+          alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
+        }
+      }
+      setBusy('');
+    };
+    input.click();
+  };
+
+  const total = leaves.length;
+  const stems = Math.ceil(total / 4) || 0;
+  const onLast = total % 4 === 0 ? (total ? 4 : 0) : total % 4;
+
+  return (
+    <div style={{ padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🍀 BOSSXD — koniczyna</h3>
+        <button
+          onClick={upload}
+          disabled={!!busy}
+          style={{
+            padding: '4px 12px', fontSize: '12px', cursor: busy ? 'wait' : 'pointer',
+            background: '#2d8a4e', color: '#fff', border: 'none', borderRadius: '4px',
+          }}
+        >
+          🎬 Dodaj film
+        </button>
+        {busy && <span style={{ fontSize: '12px', opacity: 0.75 }}>{busy}</span>}
+      </div>
+
+      <p style={{ fontSize: '12px', opacity: 0.7, margin: '0 0 12px' }}>
+        Każdy film to jeden listek na bossxd.com. Cztery listki = pełna koniczyna,
+        piąty zaczyna nową łodygę. Klatka na listek robi się sama.
+      </p>
+
+      {total > 0 && (
+        <div style={{ fontSize: '12px', marginBottom: '10px', opacity: 0.85 }}>
+          🌱 Łodyg: <strong>{stems}</strong> · na ostatniej listków: <strong>{onLast}/4</strong>
+          {onLast < 4 && <> — jeszcze {4 - onLast} do pełnej koniczyny</>}
+        </div>
+      )}
+
+      {loading ? (
+        <p style={{ fontSize: '13px' }}>Wczytuję…</p>
+      ) : total === 0 ? (
+        <p style={{ fontSize: '13px', opacity: 0.7 }}>
+          Nie ma jeszcze żadnego filmu. Kliknij „Dodaj film" — wyrośnie pierwszy listek.
+        </p>
+      ) : (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {leaves.map((l, i) => (
+            <div
+              key={l.id}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
+                border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+              }}
+            >
+              <span style={{ fontSize: '11px', opacity: 0.6, minWidth: '52px' }}>
+                🌱{Math.floor(i / 4) + 1} · 🍀{(i % 4) + 1}
+              </span>
+              {l.posterUrl ? (
+                <img
+                  src={l.posterUrl}
+                  alt=""
+                  style={{ width: '64px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                />
+              ) : (
+                <span style={{ fontSize: '11px', opacity: 0.5, width: '64px' }}>bez klatki</span>
+              )}
+              <span style={{ flex: 1, fontSize: '13px' }}>{l.title}</span>
+              <button onClick={() => call({ action: 'move', id: l.id, dir: 'up' })}
+                disabled={i === 0} title="wyżej"
+                style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>
+              <button onClick={() => call({ action: 'move', id: l.id, dir: 'down' })}
+                disabled={i === total - 1} title="niżej"
+                style={{ cursor: 'pointer', padding: '2px 6px' }}>↓</button>
+              <button
+                onClick={() => { if (confirm(`Usunąć „${l.title}"?`)) call({ action: 'remove', id: l.id }); }}
+                title="usuń"
+                style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MyRadioTab() {
   const [tracks, setTracks] = useState<PlTrack[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1908,6 +2089,9 @@ export default function SecureAdminPanel() {
             <button style={tabStyle(activeTab === 'myradio')} onClick={() => setActiveTab('myradio')}>
               🎵 Moje radio
             </button>
+            <button style={tabStyle(activeTab === 'bossxd')} onClick={() => setActiveTab('bossxd')}>
+              🍀 BOSSXD
+            </button>
             <button style={tabStyle(activeTab === 'windows')} onClick={() => setActiveTab('windows')}>
               🪟 Okna
             </button>
@@ -3578,6 +3762,7 @@ export default function SecureAdminPanel() {
                 )}
 
                 {activeTab === 'myradio' && <MyRadioTab />}
+                {activeTab === 'bossxd' && <BossxdTab />}
 
                 {activeTab === 'windows' && <WindowsTab />}
 
