@@ -31,7 +31,17 @@ const DEFAULT_STATIONS = [
 // Pobierz stacje z S3
 async function getStations() {
   const result = await s3Service.loadJsonData('stations', DEFAULT_STATIONS);
-  return result.data || DEFAULT_STATIONS;
+  const list = (result.data as any[]) || DEFAULT_STATIONS;
+
+  // Własna stacja Brata dopisywana z automatu — gra playlistę z panelrudy.
+  // Nie zapisujemy jej na stałe, żeby nie dało się jej przypadkiem usunąć.
+  const mine = {
+    id: 'kupmax-bossxd',
+    name: '🎧 Radio BOSSXD',
+    url: '__kupmax_playlist__',
+    genre: 'Moja muzyka',
+  };
+  return list.some((s) => s?.url === mine.url) ? list : [mine, ...list];
 }
 
 // Zapisz stacje do S3

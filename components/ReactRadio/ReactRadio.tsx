@@ -145,7 +145,7 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
       {currentStation && (
         <audio
           ref={audioRef}
-          src={currentTrack ? currentTrack.url : currentStation.url}
+          src={currentTrack ? `/api/radio/stream/${currentTrack.id}` : currentStation.url}
           onEnded={() => {
             // Własna stacja: lecimy do następnego utworu (efekt radia).
             // Zwykła stacja: zachowujemy dotychczasowe zachowanie.
