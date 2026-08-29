@@ -80,8 +80,8 @@ function MyRadioTab() {
     input.onchange = async () => {
       const files = Array.from(input.files || []);
       for (const file of files) {
-        if (file.size > 40 * 1024 * 1024) {
-          alert(`${file.name} — za duży (max 40 MB)`); continue;
+        if (file.size > 50 * 1024 * 1024) {
+          alert(`${file.name} — za duży (max 50 MB)`); continue;
         }
         setBusy(`Wysyłam ${file.name}…`);
         try {
@@ -90,7 +90,7 @@ function MyRadioTab() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               fileName: file.name, fileType: file.type || 'audio/mpeg',
-              fileSize: file.size, folder: 'radio',
+              fileSize: file.size, folder: 'music',
             }),
           });
           const data = await res.json();
