@@ -40,6 +40,147 @@ const WINDOW_LABELS: { key: string; label: string; icon: string }[] = [
   { key: 'bulletin',    label: 'Ogłoszenia',     icon: '📌' },
 ];
 
+type PlTrack = { id: string; title: string; artist: string; url: string; addedAt: string };
+
+// Playlista własnej stacji radiowej (2026-08-27).
+// Brat: "chciałbym mieć strumień, który mogę w panelrudy dodawać
+// w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
+function MyRadioTab() {
+  const [tracks, setTracks] = useState<PlTrack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState('');
+
+  const load = async () => {
+    try {
+      const r = await fetch('/api/radio/playlist', { cache: 'no-store' });
+      const d = await r.json();
+      setTracks(d.tracks || []);
+    } catch { /* cisza */ }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const call = async (body: Record<string, unknown>) => {
+    const r = await fetch('/api/radio/playlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setTracks(d.tracks || []);
+  };
+
+  // Wgranie mp3 z dysku prosto do playlisty
+  const upload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/mpeg,audio/mp3,audio/*';
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files || []);
+      for (const file of files) {
+        if (file.size > 40 * 1024 * 1024) {
+          alert(`${file.name} — za duży (max 40 MB)`); continue;
+        }
+        setBusy(`Wysyłam ${file.name}…`);
+        try {
+          const res = await fetch('/api/media/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: file.name, fileType: file.type || 'audio/mpeg',
+              fileSize: file.size, folder: 'radio',
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Błąd przygotowania');
+          const s3 = await fetch(data.presignedUrl, {
+            method: 'PUT', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: file,
+          });
+          if (!s3.ok) throw new Error('Błąd wysyłania');
+          // Tytuł z nazwy pliku — Brat może go potem poprawić
+          const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+          await call({ action: 'add', title, artist: 'BOSSXD', url: data.publicUrl });
+        } catch (e) {
+          alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
+        }
+      }
+      setBusy('');
+    };
+    input.click();
+  };
+
+  const total = tracks.length;
+
+  return (
+    <div style={{ padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🎵 Moje radio</h3>
+        <button
+          onClick={upload}
+          style={{
+            padding: '5px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+            background: '#2874a6', color: '#fff', border: '1px solid #3a92cc', borderRadius: '4px',
+          }}
+        >
+          + Wgraj utwory
+        </button>
+        {busy && <span style={{ fontSize: '11px', color: '#e8a63c' }}>{busy}</span>}
+      </div>
+      <p style={{ fontSize: '12px', color: '#7a7a9a', margin: '0 0 14px' }}>
+        Utworów: <strong style={{ color: '#d8d8e0' }}>{total}</strong> — grają w kółko
+        na kupmax.pl jako stacja <strong style={{ color: '#d8d8e0' }}>🎵 KUPMAX — moje utwory</strong>.
+        Możesz wgrać kilka plików naraz.
+      </p>
+
+      {loading ? (
+        <p style={{ fontSize: '13px', color: '#888' }}>Wczytywanie…</p>
+      ) : total === 0 ? (
+        <p style={{ fontSize: '13px', color: '#888' }}>
+          Playlista pusta. Kliknij „Wgraj utwory” i wybierz swoje mp3.
+        </p>
+      ) : (
+        <div style={{ border: '1px solid #2a2a3a', borderRadius: '6px', overflow: 'hidden' }}>
+          {tracks.map((tr, i) => (
+            <div key={tr.id} style={{
+              display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px',
+              background: i % 2 ? '#12121a' : '#161620', borderBottom: '1px solid #1e1e2a',
+            }}>
+              <span style={{ color: '#6a6a80', fontSize: '12px', width: '26px' }}>{i + 1}.</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', color: '#d8d8e0' }}>{tr.title}</div>
+                <div style={{ fontSize: '11px', color: '#6a6a80' }}>{tr.artist}</div>
+              </div>
+              <audio controls preload="none" src={tr.url} style={{ height: '30px', maxWidth: '190px' }} />
+              <button onClick={() => call({ action: 'move', id: tr.id, dir: 'up' })}
+                disabled={i === 0}
+                style={{ padding: '2px 7px', fontSize: '12px', cursor: 'pointer',
+                         background: '#1e1e2e', color: '#d8d8e0',
+                         border: '1px solid #3a3a4a', borderRadius: '3px',
+                         opacity: i === 0 ? 0.35 : 1 }}>↑</button>
+              <button onClick={() => call({ action: 'move', id: tr.id, dir: 'down' })}
+                disabled={i === total - 1}
+                style={{ padding: '2px 7px', fontSize: '12px', cursor: 'pointer',
+                         background: '#1e1e2e', color: '#d8d8e0',
+                         border: '1px solid #3a3a4a', borderRadius: '3px',
+                         opacity: i === total - 1 ? 0.35 : 1 }}>↓</button>
+              <button onClick={() => { if (confirm(`Usunąć „${tr.title}”?`)) call({ action: 'remove', id: tr.id }); }}
+                style={{ padding: '2px 8px', fontSize: '12px', cursor: 'pointer',
+                         background: '#3a1a1a', color: '#ff9a9a',
+                         border: '1px solid #5a2a2a', borderRadius: '3px' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p style={{ fontSize: '11px', color: '#6a6a80', marginTop: '12px' }}>
+        ⚠️ Wgrywaj tylko własne utwory — cudza muzyka to problem z prawami autorskimi.
+      </p>
+    </div>
+  );
+}
+
 function WindowsTab() {
   const [settings, setSettings] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -1764,6 +1905,9 @@ export default function SecureAdminPanel() {
             </button>
             {/* Czat — z licznikiem nowych wiadomości (2026-08-20, prośba Brata:
                 "ktoś wchodzi, pisze, a ja niczego nie wiem") */}
+            <button style={tabStyle(activeTab === 'myradio')} onClick={() => setActiveTab('myradio')}>
+              🎵 Moje radio
+            </button>
             <button style={tabStyle(activeTab === 'windows')} onClick={() => setActiveTab('windows')}>
               🪟 Okna
             </button>
@@ -3432,6 +3576,8 @@ export default function SecureAdminPanel() {
                     </div>
                   </>
                 )}
+
+                {activeTab === 'myradio' && <MyRadioTab />}
 
                 {activeTab === 'windows' && <WindowsTab />}
 

@@ -8,6 +8,13 @@ const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 // Domyślne stacje (używane gdy S3 jest puste)
 const DEFAULT_STATIONS = [
   {
+    // Własna stacja — gra playlistę z S3, nie zewnętrzny strumień (2026-08-27).
+    id: 'kupmax-mine',
+    name: '🎵 KUPMAX — moje utwory',
+    url: '__kupmax_playlist__',
+    genre: 'BOSSXD',
+  },
+  {
     id: '1',
     name: 'Fun Radio',
     url: 'https://vrt.streamabc.net/vrt-klaracontinuo-mp3-128-6851541',

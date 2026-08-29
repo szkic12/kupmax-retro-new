@@ -3,6 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './ReactRadio.module.scss';
 
+type Track = { id: string; title: string; artist: string; url: string };
+
+// Znacznik rozpoznawany przez odtwarzacz — stacja z tym url gra playlistę.
+export const MY_STATION_URL = '__kupmax_playlist__';
+
 interface Station {
   id: string | number;
   name: string;
@@ -22,6 +27,24 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
   const [volume, setVolume] = useState(0.7);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [playlist, setPlaylist] = useState<Track[]>([]);
+  const [trackIdx, setTrackIdx] = useState(0);
+
+  // Playlista własnej stacji — pobierana raz przy starcie.
+  useEffect(() => {
+    fetch('/api/radio/playlist', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.tracks?.length) setPlaylist(d.tracks); })
+      .catch(() => { /* brak playlisty = stacja po prostu nie zagra */ });
+  }, []);
+
+  const isMine = currentStation?.url === MY_STATION_URL;
+  const currentTrack = isMine && playlist.length ? playlist[trackIdx % playlist.length] : null;
+
+  // Koniec utworu → następny. To właśnie daje efekt radia.
+  const handleTrackEnd = () => {
+    if (isMine && playlist.length) setTrackIdx((i) => (i + 1) % playlist.length);
+  };
 
   useEffect(() => {
     if (!isPlayerPage) {
@@ -103,8 +126,13 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
       {currentStation && (
         <audio
           ref={audioRef}
-          src={currentStation.url}
-          onEnded={handleStop}
+          src={currentTrack ? currentTrack.url : currentStation.url}
+          onEnded={() => {
+            // Własna stacja: lecimy do następnego utworu (efekt radia).
+            // Zwykła stacja: zachowujemy dotychczasowe zachowanie.
+            if (isMine && playlist.length) handleTrackEnd();
+            else handleStop();
+          }}
           onError={handleAudioError}
         />
       )}
@@ -118,6 +146,14 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
                   {isPlaying ? '▶' : '⏸'}
                 </span>
                 <strong>{currentStation.name}</strong>
+                {currentTrack && (
+                  <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '2px' }}>
+                    ♪ {currentTrack.artist} — {currentTrack.title}
+                    <span style={{ opacity: 0.6 }}>
+                      {' '}({(trackIdx % playlist.length) + 1}/{playlist.length})
+                    </span>
+                  </div>
+                )}
                 <span className={styles.genre}>{currentStation.genre}</span>
               </div>
 
@@ -199,7 +235,7 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
       <div className={styles.footer}>
         <div className={styles.info}>
           <strong>React Radio v5.1 (Manual Play)</strong><br/>
-          Status: {currentStation ? (isPlaying ? `Playing: ${currentStation.name}`: 'Paused') : 'Ready'}<br/>
+          Status: {currentStation ? (isPlaying ? `Playing: ${currentTrack ? currentTrack.title : currentStation.name}`: 'Paused') : 'Ready'}<br/>
           Volume: {Math.round(volume * 100)}%
         </div>
       </div>
