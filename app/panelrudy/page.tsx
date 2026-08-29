@@ -46,9 +46,11 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 // Brat: "chciałbym mieć strumień, który mogę w panelrudy dodawać
 // w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
 type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
+type Shot = { id: string; title: string; imageUrl: string; addedAt: string };
 
 function BossxdTab() {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
+  const [shots, setShots] = useState<Shot[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
 
@@ -57,6 +59,9 @@ function BossxdTab() {
       const r = await fetch('/api/bossxd/leaves', { cache: 'no-store' });
       const d = await r.json();
       setLeaves(d.leaves || []);
+      const rw = await fetch('/api/bossxd/wings', { cache: 'no-store' });
+      const dw = await rw.json();
+      setShots(dw.shots || []);
     } catch { /* cisza */ }
     setLoading(false);
   };
@@ -146,6 +151,42 @@ function BossxdTab() {
     input.click();
   };
 
+  const callW = async (body: Record<string, unknown>) => {
+    const r = await fetch('/api/bossxd/wings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setShots(d.shots || []);
+  };
+
+  const uploadShot = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,image/*';
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files || []);
+      for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} — za duże (max 10 MB)`); continue;
+        }
+        try {
+          setBusy(`Wysyłam ${file.name}…`);
+          const imageUrl = await put(file, file.name, file.type || 'image/jpeg', 'image');
+          const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+          await callW({ action: 'add', title, imageUrl });
+        } catch (e) {
+          alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
+        }
+      }
+      setBusy('');
+    };
+    input.click();
+  };
+
   const total = leaves.length;
   const stems = Math.ceil(total / 4) || 0;
   const onLast = total % 4 === 0 ? (total ? 4 : 0) : total % 4;
@@ -221,6 +262,84 @@ function BossxdTab() {
             </div>
           ))}
         </div>
+      )}
+
+      <hr style={{ margin: '22px 0 16px', border: 0, borderTop: '1px solid rgba(128,128,128,0.3)' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🪽 Zdjęcia pod skrzydłami</h3>
+        <button
+          onClick={uploadShot}
+          disabled={!!busy}
+          style={{
+            padding: '4px 12px', fontSize: '12px', cursor: busy ? 'wait' : 'pointer',
+            background: '#2a7f9e', color: '#fff', border: 'none', borderRadius: '4px',
+          }}
+        >
+          🖼 Dodaj zdjęcie
+        </button>
+      </div>
+
+      <p style={{ fontSize: '12px', opacity: 0.7, margin: '0 0 12px' }}>
+        Zdjęcia przesuwają się pod nieruchomymi skrzydłami na bossxd.com.
+        Gdy ktoś siedzi spokojnie, skrzydła trzepocą i zmienia się zdjęcie —
+        a w dół opada piórko. Najlepiej 5–6 zdjęć lub więcej.
+      </p>
+
+      {shots.length === 0 ? (
+        <p style={{ fontSize: '13px', opacity: 0.7 }}>
+          Nie ma jeszcze zdjęć. Bez nich skrzydła się nie pokażą.
+        </p>
+      ) : (
+        <>
+          {shots.length < 5 && (
+            <div style={{ fontSize: '12px', marginBottom: '10px', opacity: 0.85 }}>
+              🪽 Zdjęć: <strong>{shots.length}</strong> — dorzuć jeszcze {5 - shots.length},
+              żeby nie powtarzały się za szybko.
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: '8px' }}>
+            {shots.map((s, i) => (
+              <div
+                key={s.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
+                  border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+                }}
+              >
+                <span style={{ fontSize: '11px', opacity: 0.6, minWidth: '24px' }}>{i + 1}</span>
+                <img
+                  src={s.imageUrl}
+                  alt=""
+                  style={{ width: '64px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                />
+                <input
+                  defaultValue={s.title}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && v !== s.title) callW({ action: 'title', id: s.id, title: v });
+                  }}
+                  placeholder="podpis pod zdjęciem"
+                  style={{
+                    flex: 1, fontSize: '13px', padding: '4px 6px',
+                    background: 'transparent', color: 'inherit',
+                    border: '1px solid rgba(128,128,128,0.3)', borderRadius: '4px',
+                  }}
+                />
+                <button onClick={() => callW({ action: 'move', id: s.id, dir: 'up' })}
+                  disabled={i === 0} title="wyżej"
+                  style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>
+                <button onClick={() => callW({ action: 'move', id: s.id, dir: 'down' })}
+                  disabled={i === shots.length - 1} title="niżej"
+                  style={{ cursor: 'pointer', padding: '2px 6px' }}>↓</button>
+                <button
+                  onClick={() => { if (confirm(`Usunąć „${s.title}"?`)) callW({ action: 'remove', id: s.id }); }}
+                  title="usuń"
+                  style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
