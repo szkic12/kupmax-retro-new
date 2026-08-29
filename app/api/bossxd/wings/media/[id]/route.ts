@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import s3Service from '../../../../../../lib/aws-s3.js';
 
 export const dynamic = 'force-dynamic';
 
 type Shot = { id: string; title: string; imageUrl: string };
 
+const BUCKET = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
+const REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
+
 /**
- * Stały adres zdjęcia spod skrzydeł.
- * Kubełek jest prywatny (bezpośredni link = 403), a podpis żyje godzinę,
- * więc podpisujemy na świeżo przy każdym wyświetleniu.
+ * Zdjęcie spod skrzydeł — podawane przez nas, nie przekierowaniem.
+ *
+ * Przekierowanie do podpisanego adresu S3 nie działa dla strony na innej
+ * domenie: podpis jest związany z tym, kto pyta (przeglądarka dostawała 403),
+ * a przy przekierowaniu ginie zgoda CORS. Dlatego pobieramy plik u siebie
+ * i oddajemy go z właściwymi nagłówkami.
  */
 export async function GET(
   _req: NextRequest,
@@ -25,11 +32,27 @@ export async function GET(
   }
 
   const key = decodeURIComponent(new URL(shot.imageUrl).pathname.replace(/^\//, ''));
-  const signed = await s3Service.getDownloadUrl(key, key.split('/').pop() || 'zdjecie', 3600);
 
-  if (!signed?.success || !signed.url) {
-    return NextResponse.json({ error: 'Nie udało się otworzyć zdjęcia' }, { status: 500 });
+  const client = new S3Client({
+    region: REGION,
+    credentials: {
+      accessKeyId: (process.env.AWS_ACCESS_KEY_ID || '').trim(),
+      secretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY || '').trim(),
+    },
+  });
+
+  try {
+    const obj = await client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+    const bytes = await obj.Body!.transformToByteArray();
+
+    return new NextResponse(Buffer.from(bytes), {
+      headers: {
+        'Content-Type': obj.ContentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch {
+    return NextResponse.json({ error: 'Nie udało się odczytać zdjęcia' }, { status: 500 });
   }
-
-  return NextResponse.redirect(signed.url, 302);
 }
