@@ -29,6 +29,8 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [trackIdx, setTrackIdx] = useState(0);
+  // Pętla jednego utworu — przydatna, gdy playlista ma tylko kilka pozycji.
+  const [loopOne, setLoopOne] = useState(false);
 
   // Playlista własnej stacji — pobierana raz przy starcie.
   useEffect(() => {
@@ -38,12 +40,29 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
       .catch(() => { /* brak playlisty = stacja po prostu nie zagra */ });
   }, []);
 
+  // Po przejściu do kolejnego utworu trzeba ręcznie wznowić grę —
+  // przeglądarka wczytuje nowy plik, ale sama go nie odpala.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a && isPlaying && currentStation?.url === MY_STATION_URL) {
+      a.play().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackIdx]);
+
   const isMine = currentStation?.url === MY_STATION_URL;
   const currentTrack = isMine && playlist.length ? playlist[trackIdx % playlist.length] : null;
 
   // Koniec utworu → następny. To właśnie daje efekt radia.
   const handleTrackEnd = () => {
-    if (isMine && playlist.length) setTrackIdx((i) => (i + 1) % playlist.length);
+    if (!isMine || !playlist.length) return;
+    if (playlist.length === 1 || loopOne) {
+      // Jeden utwór (albo włączona pętla) — przewijamy i gramy od nowa.
+      const a = audioRef.current;
+      if (a) { a.currentTime = 0; a.play().catch(() => {}); }
+      return;
+    }
+    setTrackIdx((i) => (i + 1) % playlist.length);
   };
 
   useEffect(() => {
@@ -152,6 +171,23 @@ const ReactRadio: React.FC<ReactRadioProps> = ({ initialStation = null, isPlayer
                     <span style={{ opacity: 0.6 }}>
                       {' '}({(trackIdx % playlist.length) + 1}/{playlist.length})
                     </span>
+                    {playlist.length > 1 && (
+                      <button
+                        onClick={() => setLoopOne((v) => !v)}
+                        title={loopOne ? 'Powtarzaj ten utwór — WŁĄCZONE' : 'Powtarzaj ten utwór'}
+                        style={{
+                          marginLeft: '8px', padding: '0 6px', fontSize: '11px', cursor: 'pointer',
+                          background: loopOne ? '#2874a6' : 'transparent',
+                          color: loopOne ? '#fff' : 'inherit',
+                          border: '1px solid currentColor', borderRadius: '3px', opacity: 0.9,
+                        }}
+                      >
+                        🔁
+                      </button>
+                    )}
+                    {playlist.length === 1 && (
+                      <span style={{ marginLeft: '8px', opacity: 0.7 }}>🔁 w pętli</span>
+                    )}
                   </div>
                 )}
                 <span className={styles.genre}>{currentStation.genre}</span>
