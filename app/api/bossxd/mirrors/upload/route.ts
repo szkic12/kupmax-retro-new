@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getClientIP, checkRateLimit } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +7,7 @@ export const dynamic = 'force-dynamic';
 const BUCKET = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
 const REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
 const MAX = 15 * 1024 * 1024;   // 15 MB — bruminacja to kilkadziesiąt sekund
+export const maxDuration = 30;
 const OK_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-m4a'];
 
 const CORS = {
@@ -23,6 +23,11 @@ export async function OPTIONS() {
 /**
  * Osobne wejście na nagrania z bossxd.com — bez uprawnień admina.
  * Trzyma się wąsko: tylko dźwięk, tylko do folderu z głosami, z limitem.
+ *
+ * Plik idzie PRZEZ NAS, a nie prosto do S3: kubełek nie przyjmuje wysyłek
+ * z domeny bossxd.com (brak reguły CORS po stronie Amazona), więc przeglądarka
+ * dostawała 'Failed to fetch'. Nagrania są małe, więc przepuszczenie ich
+ * przez serwer nic nie kosztuje.
  */
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
@@ -30,7 +35,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Zbyt wiele prób. Spróbuj za godzinę.' }, { status: 429, headers: CORS });
   }
 
-  const { fileType, fileSize } = await req.json().catch(() => ({}));
+  const form = await req.formData().catch(() => null);
+  const file = form?.get('file');
+
+  if (!(file instanceof Blob)) {
+    return NextResponse.json({ error: 'Brak nagrania' }, { status: 400, headers: CORS });
+  }
+
+  const fileType = file.type || 'audio/webm';
+  const fileSize = file.size;
 
   if (!OK_TYPES.includes(String(fileType))) {
     return NextResponse.json({ error: 'To nie jest nagranie dźwiękowe' }, { status: 400, headers: CORS });
@@ -56,12 +69,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const presignedUrl = await getSignedUrl(
-    s3,
-    new PutObjectCommand({ Bucket: BUCKET, Key: s3Key, ContentType: String(fileType) }),
-    { expiresIn: 300 }
-  );
+  try {
+    const bytes = Buffer.from(await file.arrayBuffer());
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET, Key: s3Key, Body: bytes, ContentType: String(fileType),
+    }));
+  } catch {
+    return NextResponse.json({ error: 'Nie udało się zapisać nagrania' }, { status: 500, headers: CORS });
+  }
 
   const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;
-  return NextResponse.json({ success: true, presignedUrl, publicUrl }, { headers: CORS });
+  return NextResponse.json({ success: true, publicUrl }, { headers: CORS });
 }
