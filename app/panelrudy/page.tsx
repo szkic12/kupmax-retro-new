@@ -47,12 +47,14 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 // w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
 type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
 type Shot = { id: string; title: string; imageUrl: string; addedAt: string };
+type Pending = { id: string; kind: 'image' | 'video'; url: string; posterUrl?: string; title: string; author: string; addedAt: string };
 type Voice = { id: string; title: string; audioUrl: string; wave: number[]; addedAt: string; bio?: string; approved?: boolean };
 
 function BossxdTab() {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [shots, setShots] = useState<Shot[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
+  const [pending, setPending] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
 
@@ -67,6 +69,8 @@ function BossxdTab() {
       const rm = await fetch('/api/bossxd/mirrors', { cache: 'no-store' });
       const dm = await rm.json();
       setVoices(dm.voices || []);
+      const rp = await fetch('/api/bossxd/pending', { cache: 'no-store' });
+      if (rp.ok) { const dp = await rp.json(); setPending(dp.pending || []); }
     } catch { /* cisza */ }
     setLoading(false);
   };
@@ -154,6 +158,18 @@ function BossxdTab() {
       setBusy('');
     };
     input.click();
+  };
+
+  const decide = async (id: string, action: 'approve' | 'reject') => {
+    const r = await fetch('/api/bossxd/pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, id }),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setPending(d.pending || []);
+    load();   // przyjęte od razu widać na listach niżej
   };
 
   const callW = async (body: Record<string, unknown>) => {
@@ -265,6 +281,61 @@ function BossxdTab() {
 
   return (
     <div style={{ padding: '16px' }}>
+      {pending.length > 0 && (
+        <div style={{
+          marginBottom: '20px', padding: '12px',
+          border: '2px solid #c07000', borderRadius: '8px', background: 'rgba(192,112,0,0.08)',
+        }}>
+          <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>
+            ⏳ Poczekalnia — {pending.length} {pending.length === 1 ? 'wrzutka' : 'wrzutki'} od ludzi
+          </h3>
+          <p style={{ fontSize: '12px', opacity: 0.75, margin: '0 0 12px' }}>
+            Nic z tego nie jest na stronie. Obejrzyj i zdecyduj — przyjęte trafi
+            na koniczynę (filmy) albo na motyla (zdjęcia).
+          </p>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            {pending.map((p) => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '8px',
+                border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+                background: 'rgba(0,0,0,0.15)',
+              }}>
+                {p.kind === 'video' ? (
+                  <video src={p.url} poster={p.posterUrl || undefined} controls
+                    style={{ width: '160px', height: '96px', objectFit: 'cover', borderRadius: '4px', background: '#000' }} />
+                ) : (
+                  <a href={p.url} target="_blank" rel="noopener noreferrer">
+                    <img src={p.url} alt="" style={{ width: '160px', height: '96px', objectFit: 'cover', borderRadius: '4px' }} />
+                  </a>
+                )}
+                <div style={{ flex: 1, minWidth: '120px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600 }}>{p.title}</div>
+                  <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                    od: {p.author} · {p.kind === 'video' ? '🎬 film' : '🖼 zdjęcie'}
+                  </div>
+                  <div style={{ fontSize: '11px', opacity: 0.5 }}>
+                    {new Date(p.addedAt).toLocaleString('pl-PL')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { if (confirm(`Wpuścić „${p.title}" na stronę?`)) decide(p.id, 'approve'); }}
+                  style={{
+                    padding: '6px 14px', fontSize: '13px', cursor: 'pointer', fontWeight: 600,
+                    background: '#2d8a4e', color: '#fff', border: 'none', borderRadius: '4px',
+                  }}>✓ Wpuść</button>
+                <button
+                  onClick={() => { if (confirm(`Odrzucić „${p.title}"? Zniknie z poczekalni.`)) decide(p.id, 'reject'); }}
+                  style={{
+                    padding: '6px 14px', fontSize: '13px', cursor: 'pointer',
+                    background: 'transparent', color: '#c0392b',
+                    border: '1px solid #c0392b', borderRadius: '4px',
+                  }}>✕ Odrzuć</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
         <h3 style={{ margin: 0, fontSize: '15px' }}>🍀 BOSSXD — koniczyna</h3>
         <button
