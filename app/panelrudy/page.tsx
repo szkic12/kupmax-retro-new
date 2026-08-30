@@ -47,10 +47,12 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 // w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
 type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
 type Shot = { id: string; title: string; imageUrl: string; addedAt: string };
+type Voice = { id: string; title: string; audioUrl: string; wave: number[]; addedAt: string };
 
 function BossxdTab() {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [shots, setShots] = useState<Shot[]>([]);
+  const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
 
@@ -62,6 +64,9 @@ function BossxdTab() {
       const rw = await fetch('/api/bossxd/wings', { cache: 'no-store' });
       const dw = await rw.json();
       setShots(dw.shots || []);
+      const rm = await fetch('/api/bossxd/mirrors', { cache: 'no-store' });
+      const dm = await rm.json();
+      setVoices(dm.voices || []);
     } catch { /* cisza */ }
     setLoading(false);
   };
@@ -160,6 +165,73 @@ function BossxdTab() {
     if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
     const d = await r.json();
     setShots(d.shots || []);
+  };
+
+  const callM = async (body: Record<string, unknown>) => {
+    const r = await fetch('/api/bossxd/mirrors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setVoices(d.voices || []);
+  };
+
+  /**
+   * Kształt fali odczytany z nagrania — rysuje się potem w tafli lustra.
+   * Liczymy w przeglądarce, żeby serwer nie musiał ruszać dźwięku.
+   */
+  const readWave = (file: File): Promise<number[]> =>
+    new Promise((resolve) => {
+      const fr = new FileReader();
+      fr.onerror = () => resolve([]);
+      fr.onload = async () => {
+        try {
+          const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          const ctx = new Ctx();
+          const buf = await ctx.decodeAudioData(fr.result as ArrayBuffer);
+          const raw = buf.getChannelData(0);
+          const N = 48;
+          const step = Math.floor(raw.length / N) || 1;
+          const out: number[] = [];
+          for (let i = 0; i < N; i++) {
+            let sum = 0;
+            for (let j = 0; j < step; j += 16) sum += Math.abs(raw[i * step + j] || 0);
+            out.push(Math.min(1, (sum / (step / 16)) * 4));
+          }
+          ctx.close();
+          resolve(out);
+        } catch { resolve([]); }
+      };
+      fr.readAsArrayBuffer(file);
+    });
+
+  const uploadVoice = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/mpeg,audio/mp3,audio/wav,audio/*';
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files || []);
+      for (const file of files) {
+        if (file.size > 50 * 1024 * 1024) {
+          alert(`${file.name} — za duży (max 50 MB)`); continue;
+        }
+        try {
+          setBusy(`Wysyłam ${file.name}…`);
+          const audioUrl = await put(file, file.name, file.type || 'audio/mpeg', 'music');
+          setBusy(`Odczytuję falę z ${file.name}…`);
+          const wave = await readWave(file);
+          const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+          await callM({ action: 'add', title, audioUrl, wave });
+        } catch (e) {
+          alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
+        }
+      }
+      setBusy('');
+    };
+    input.click();
   };
 
   const uploadShot = () => {
@@ -334,6 +406,85 @@ function BossxdTab() {
                   style={{ cursor: 'pointer', padding: '2px 6px' }}>↓</button>
                 <button
                   onClick={() => { if (confirm(`Usunąć „${s.title}"?`)) callW({ action: 'remove', id: s.id }); }}
+                  title="usuń"
+                  style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <hr style={{ margin: '22px 0 16px', border: 0, borderTop: '1px solid rgba(128,128,128,0.3)' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🪞 Głosy w lustrach</h3>
+        <button
+          onClick={uploadVoice}
+          disabled={!!busy}
+          style={{
+            padding: '4px 12px', fontSize: '12px', cursor: busy ? 'wait' : 'pointer',
+            background: '#7a4fa3', color: '#fff', border: 'none', borderRadius: '4px',
+          }}
+        >
+          🎤 Dodaj głos
+        </button>
+      </div>
+
+      <p style={{ fontSize: '12px', opacity: 0.7, margin: '0 0 12px' }}>
+        Dwa głosy = jedno lustro, które wibruje i otwiera bramę do Vibe3D.
+        Jeden głos czeka na parę. Piąty zaczyna kolejne lustro.
+        Fala odczytuje się sama z nagrania.
+      </p>
+
+      {voices.length === 0 ? (
+        <p style={{ fontSize: '13px', opacity: 0.7 }}>
+          Nie ma jeszcze głosów. Bez nich lustro się nie pokaże.
+        </p>
+      ) : (
+        <>
+          <div style={{ fontSize: '12px', marginBottom: '10px', opacity: 0.85 }}>
+            🪞 Luster: <strong>{Math.ceil(voices.length / 2)}</strong>
+            {voices.length % 2 === 1 && <> — ostatnie czeka na drugi głos</>}
+            {voices.length % 2 === 0 && <> — wszystkie pełne, bramy otwarte</>}
+          </div>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            {voices.map((v, i) => (
+              <div
+                key={v.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
+                  border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+                  borderLeft: `3px solid ${i % 2 === 0 ? '#5ecfc0' : '#a06fd0'}`,
+                }}
+              >
+                <span style={{ fontSize: '11px', opacity: 0.6, minWidth: '58px' }}>
+                  🪞{Math.floor(i / 2) + 1} · {i % 2 === 0 ? 'lewy' : 'prawy'}
+                </span>
+                <audio src={v.audioUrl} controls style={{ height: '30px', maxWidth: '170px' }} />
+                <input
+                  defaultValue={v.title}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (val && val !== v.title) callM({ action: 'title', id: v.id, title: val });
+                  }}
+                  placeholder="czyj głos"
+                  style={{
+                    flex: 1, fontSize: '13px', padding: '4px 6px', minWidth: '80px',
+                    background: 'transparent', color: 'inherit',
+                    border: '1px solid rgba(128,128,128,0.3)', borderRadius: '4px',
+                  }}
+                />
+                <span style={{ fontSize: '10px', opacity: 0.5 }}>
+                  {v.wave?.length ? `fala ${v.wave.length}` : 'bez fali'}
+                </span>
+                <button onClick={() => callM({ action: 'move', id: v.id, dir: 'up' })}
+                  disabled={i === 0} title="wyżej"
+                  style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>
+                <button onClick={() => callM({ action: 'move', id: v.id, dir: 'down' })}
+                  disabled={i === voices.length - 1} title="niżej"
+                  style={{ cursor: 'pointer', padding: '2px 6px' }}>↓</button>
+                <button
+                  onClick={() => { if (confirm(`Usunąć głos „${v.title}"?`)) callM({ action: 'remove', id: v.id }); }}
                   title="usuń"
                   style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
               </div>
