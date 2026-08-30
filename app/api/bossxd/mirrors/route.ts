@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { notify } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Brak nagrania' }, { status: 400 });
     }
     data.voices.push(voice);
+
+    // Brat dostaje znać, gdy lustro dostaje głos — i czy czeka jeszcze na parę.
+    const n = data.voices.length;
+    const waiting = n % 2 === 1;
+    notify(
+      'voice',
+      voice.title || 'nowy głos',
+      waiting
+        ? `Lustro ${Math.ceil(n / 2)} czeka na drugi głos.`
+        : `Lustro ${n / 2} pełne — brama otwarta.`,
+      'https://bossxd.com/'
+    ).catch(() => { /* powiadomienie nie może wywrócić zapisu */ });
   } else if (action === 'remove') {
     data.voices = data.voices.filter((l) => l.id !== body.id);
   } else if (action === 'move') {

@@ -12,9 +12,10 @@
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
-export type AlertKind = 'chat' | 'question' | 'order' | 'guestbook' | 'forum' | 'test';
+export type AlertKind = 'chat' | 'question' | 'order' | 'guestbook' | 'forum' | 'voice' | 'test';
 
 const ICON: Record<AlertKind, string> = {
+  voice: '🪞',
   chat: '💬',
   question: '❓',
   order: '🛒',
@@ -24,6 +25,7 @@ const ICON: Record<AlertKind, string> = {
 };
 
 const LABEL: Record<AlertKind, string> = {
+  voice: 'Głos w lustrze',
   chat: 'Czat',
   question: 'Pytanie na bossxd',
   order: 'ZAMÓWIENIE',
