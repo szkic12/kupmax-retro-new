@@ -25,6 +25,22 @@ export async function OPTIONS() {
   return new NextResponse(null, { headers: CORS });
 }
 
+/**
+ * Sprawdzenie po zawartości, nie po deklaracji.
+ * Przeglądarka podaje typ pliku, ale każdy może go zmyślić — bez tego
+ * skrypt nazwany "image/png" wjeżdżałby do poczekalni.
+ */
+function realKind(b: Uint8Array): 'image' | 'video' | null {
+  const h = (...bytes: number[]) => bytes.every((v, i) => b[i] === v);
+  if (h(0xff, 0xd8, 0xff)) return 'image';                                   // jpg
+  if (h(0x89, 0x50, 0x4e, 0x47)) return 'image';                             // png
+  if (h(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45) return 'image';  // webp
+  if (h(0x1a, 0x45, 0xdf, 0xa3)) return 'video';                             // webm
+  // mp4 / mov: "ftyp" na pozycji 4
+  if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) return 'video';
+  return null;
+}
+
 type Pending = {
   id: string;
   kind: 'image' | 'video';
@@ -95,8 +111,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  // Deklarowany typ to za mało — patrzymy, czym plik jest naprawdę.
+  if (realKind(bytes) !== kind) {
+    return NextResponse.json(
+      { error: kind === 'video' ? 'That file is not a video' : 'That file is not an image' },
+      { status: 400, headers: CORS }
+    );
+  }
+
   try {
-    const bytes = Buffer.from(await file.arrayBuffer());
     await s3.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: bytes, ContentType: type }));
   } catch {
     return NextResponse.json({ error: 'Could not save the file' }, { status: 500, headers: CORS });
