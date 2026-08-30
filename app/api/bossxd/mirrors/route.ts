@@ -11,6 +11,11 @@ export type Voice = {
   audioUrl: string;
   wave: number[];   // kształt fali, rysowany w tafli
   addedAt: string;
+  /** Sekret właściciela. Tylko on otwiera lustro, w którym jest jego głos. */
+  key?: string;
+  /** Wizytówka — czym się dzieli. Widoczna dopiero po zatwierdzeniu. */
+  bio?: string;
+  approved?: boolean;
 };
 
 const EMPTY: { voices: Voice[] } = { voices: [] };
@@ -20,9 +25,24 @@ async function load() {
   return (r.data as { voices: Voice[] }) || EMPTY;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const data = await load();
-  return NextResponse.json(data, {
+  const mine = req.nextUrl.searchParams.get('key') || '';
+
+  // Sekret nigdy nie opuszcza serwera — odsyłamy tylko informację,
+  // czy dany głos należy do pytającego.
+  const voices = data.voices.map((v) => ({
+    id: v.id,
+    title: v.title,
+    audioUrl: v.audioUrl,
+    wave: v.wave,
+    addedAt: v.addedAt,
+    bio: v.approved ? v.bio || '' : '',
+    approved: !!v.approved,
+    isMine: !!mine && v.key === mine,
+  }));
+
+  return NextResponse.json({ voices }, {
     headers: { 'Access-Control-Allow-Origin': '*' },
   });
 }
@@ -32,7 +52,7 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
@@ -80,6 +100,13 @@ export async function POST(req: NextRequest) {
     if (i >= 0 && j >= 0 && j < data.voices.length) {
       [data.voices[i], data.voices[j]] = [data.voices[j], data.voices[i]];
     }
+  } else if (action === 'approve') {
+    // Wizytówka pokazuje się na stronie dopiero po kliknięciu Brata.
+    const v = data.voices.find((x) => x.id === body.id);
+    if (v) v.approved = body.value !== false;
+  } else if (action === 'bio') {
+    const v = data.voices.find((x) => x.id === body.id);
+    if (v) v.bio = String(body.bio || '').slice(0, 200);
   } else if (action === 'title') {
     // Podpis pojawia się pod lustrem.
     const s = data.voices.find((x) => x.id === body.id);

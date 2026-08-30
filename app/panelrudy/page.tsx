@@ -47,7 +47,7 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 // w umiejętny sposób". Wgrywasz mp3 → od razu leci w radiu na kupmax.pl.
 type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
 type Shot = { id: string; title: string; imageUrl: string; addedAt: string };
-type Voice = { id: string; title: string; audioUrl: string; wave: number[]; addedAt: string };
+type Voice = { id: string; title: string; audioUrl: string; wave: number[]; addedAt: string; bio?: string; approved?: boolean };
 
 function BossxdTab() {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
@@ -477,6 +477,21 @@ function BossxdTab() {
                 <span style={{ fontSize: '10px', opacity: 0.5 }}>
                   {v.wave?.length ? `fala ${v.wave.length}` : 'bez fali'}
                 </span>
+                {v.bio ? (
+                  <button
+                    onClick={() => callM({ action: 'approve', id: v.id, value: !v.approved })}
+                    title={v.approved ? 'Widoczna na stronie — kliknij, by ukryć' : 'Czeka na Twoją zgodę'}
+                    style={{
+                      cursor: 'pointer', padding: '2px 8px', fontSize: '11px', borderRadius: '4px',
+                      border: '1px solid ' + (v.approved ? '#2d8a4e' : '#c07000'),
+                      background: v.approved ? '#2d8a4e' : 'transparent',
+                      color: v.approved ? '#fff' : '#e0a000', maxWidth: '190px',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {v.approved ? '✓' : '⏳'} {v.bio}
+                  </button>
+                ) : null}
                 <button onClick={() => callM({ action: 'move', id: v.id, dir: 'up' })}
                   disabled={i === 0} title="wyżej"
                   style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>
