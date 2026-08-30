@@ -29,16 +29,16 @@ export async function OPTIONS() {
  */
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
-  if (!checkRateLimit(`voice:${ip}`, 3, 60 * 60 * 1000).allowed) {
+  if (!checkRateLimit(`voice:${ip}`, 10, 60 * 60 * 1000).allowed) {
     return NextResponse.json(
-      { error: 'Zbyt wiele nagrań z tego miejsca. Spróbuj za godzinę.' },
+      { error: 'Too many recordings from this network. Try again later.' },
       { status: 429, headers: CORS }
     );
   }
 
   const body = await req.json().catch(() => null);
   if (!body?.audioUrl) {
-    return NextResponse.json({ error: 'Brak nagrania' }, { status: 400, headers: CORS });
+    return NextResponse.json({ error: 'No recording received' }, { status: 400, headers: CORS });
   }
 
   const res = await s3Service.loadJsonData('bossxd-mirrors', { voices: [] });

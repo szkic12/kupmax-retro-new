@@ -31,25 +31,25 @@ export async function OPTIONS() {
  */
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
-  if (!checkRateLimit(`vupload:${ip}`, 5, 60 * 60 * 1000).allowed) {
-    return NextResponse.json({ error: 'Zbyt wiele prób. Spróbuj za godzinę.' }, { status: 429, headers: CORS });
+  if (!checkRateLimit(`vupload:${ip}`, 40, 60 * 60 * 1000).allowed) {
+    return NextResponse.json({ error: 'Too many attempts from this network. Try again later.' }, { status: 429, headers: CORS });
   }
 
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');
 
   if (!(file instanceof Blob)) {
-    return NextResponse.json({ error: 'Brak nagrania' }, { status: 400, headers: CORS });
+    return NextResponse.json({ error: 'No recording received' }, { status: 400, headers: CORS });
   }
 
   const fileType = file.type || 'audio/webm';
   const fileSize = file.size;
 
   if (!OK_TYPES.includes(String(fileType))) {
-    return NextResponse.json({ error: 'To nie jest nagranie dźwiękowe' }, { status: 400, headers: CORS });
+    return NextResponse.json({ error: 'That is not an audio recording' }, { status: 400, headers: CORS });
   }
   if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX) {
-    return NextResponse.json({ error: 'Nagranie jest za duże (max 15 MB)' }, { status: 400, headers: CORS });
+    return NextResponse.json({ error: 'Recording is too large (max 15 MB)' }, { status: 400, headers: CORS });
   }
 
   const ext = String(fileType).includes('webm') ? 'webm'
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       Bucket: BUCKET, Key: s3Key, Body: bytes, ContentType: String(fileType),
     }));
   } catch {
-    return NextResponse.json({ error: 'Nie udało się zapisać nagrania' }, { status: 500, headers: CORS });
+    return NextResponse.json({ error: 'Could not save the recording' }, { status: 500, headers: CORS });
   }
 
   const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;
