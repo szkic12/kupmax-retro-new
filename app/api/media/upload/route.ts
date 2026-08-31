@@ -12,7 +12,7 @@ const ADMIN_EMAILS = ['kontakt@kupmax.pl', 'investcrewe@gmail.com'];
 const ALLOWED_TYPES: Record<string, string[]> = {
   music: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/x-m4a'],
   video: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'],
-  image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
 };
 
 const MAX_SIZE: Record<string, number> = {

@@ -11,7 +11,7 @@ const BUCKET = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || '
 const REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
 
 const LIMITS = {
-  image: { max: 10 * 1024 * 1024, types: ['image/jpeg', 'image/png', 'image/webp'] },
+  image: { max: 10 * 1024 * 1024, types: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] },
   video: { max: 50 * 1024 * 1024, types: ['video/mp4', 'video/webm', 'video/quicktime'] },
 };
 
@@ -35,6 +35,9 @@ function realKind(b: Uint8Array): 'image' | 'video' | null {
   if (h(0xff, 0xd8, 0xff)) return 'image';                                   // jpg
   if (h(0x89, 0x50, 0x4e, 0x47)) return 'image';                             // png
   if (h(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45) return 'image';  // webp
+  // avif: "ftyp" na pozycji 4, potem marka "avif" albo "avis"
+  if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70 &&
+      b[8] === 0x61 && b[9] === 0x76 && b[10] === 0x69) return 'image';
   if (h(0x1a, 0x45, 0xdf, 0xa3)) return 'video';                             // webm
   // mp4 / mov: "ftyp" na pozycji 4
   if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) return 'video';
@@ -88,7 +91,7 @@ export async function POST(req: NextRequest) {
   const type = file.type || '';
   if (!rule.types.includes(type)) {
     return NextResponse.json(
-      { error: kind === 'video' ? 'Only MP4, WebM or MOV videos' : 'Only JPG, PNG or WebP images' },
+      { error: kind === 'video' ? 'Only MP4, WebM or MOV videos' : 'Only JPG, PNG, WebP or AVIF images' },
       { status: 400, headers: CORS }
     );
   }

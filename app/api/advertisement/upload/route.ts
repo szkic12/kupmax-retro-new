@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Walidacja typu pliku
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Nieprawidłowy typ pliku. Dozwolone: JPG, PNG, WebP, GIF' },

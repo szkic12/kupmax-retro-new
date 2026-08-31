@@ -31,6 +31,7 @@ const allowedMimeTypes = [
   'image/png',
   'image/gif',
   'image/webp',
+  'image/avif',
   'application/pdf',
   'application/zip',
   'text/plain',
@@ -65,7 +66,7 @@ function validateFile(file: File) {
     const ext = file.name.toLowerCase().split('.').pop();
     const mimeMap: Record<string, string> = {
       'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
-      'gif': 'image/gif', 'webp': 'image/webp', 'pdf': 'application/pdf',
+      'gif': 'image/gif', 'webp': 'image/webp', 'avif': 'image/avif', 'pdf': 'application/pdf',
       'zip': 'application/zip', 'txt': 'text/plain', 'md': 'text/markdown',
       'mp4': 'video/mp4', 'mp3': 'audio/mpeg', 'wav': 'audio/wav'
     };
