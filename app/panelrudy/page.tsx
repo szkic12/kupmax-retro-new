@@ -48,6 +48,7 @@ type PlTrack = { id: string; title: string; artist: string; url: string; addedAt
 type Leaf = { id: string; title: string; videoUrl: string; posterUrl: string; addedAt: string };
 type Shot = { id: string; title: string; imageUrl: string; addedAt: string };
 type Pending = { id: string; kind: 'image' | 'video'; url: string; posterUrl?: string; title: string; author: string; addedAt: string };
+type Partner = { id: string; title: string; imageUrl: string; linkUrl: string; addedAt: string };
 type Voice = { id: string; title: string; audioUrl: string; wave: number[]; addedAt: string; bio?: string; approved?: boolean };
 
 function BossxdTab() {
@@ -55,6 +56,7 @@ function BossxdTab() {
   const [shots, setShots] = useState<Shot[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [pending, setPending] = useState<Pending[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
 
@@ -69,6 +71,9 @@ function BossxdTab() {
       const rm = await fetch('/api/bossxd/mirrors', { cache: 'no-store' });
       const dm = await rm.json();
       setVoices(dm.voices || []);
+      const rpa = await fetch('/api/bossxd/partners', { cache: 'no-store' });
+      const dpa = await rpa.json();
+      setPartners(dpa.partners || []);
       const rp = await fetch('/api/bossxd/pending', { cache: 'no-store' });
       if (rp.ok) { const dp = await rp.json(); setPending(dp.pending || []); }
     } catch { /* cisza */ }
@@ -241,6 +246,38 @@ function BossxdTab() {
           const wave = await readWave(file);
           const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
           await callM({ action: 'add', title, audioUrl, wave });
+        } catch (e) {
+          alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
+        }
+      }
+      setBusy('');
+    };
+    input.click();
+  };
+
+  const callP = async (body: Record<string, unknown>) => {
+    const r = await fetch('/api/bossxd/partners', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Nie udało się — spróbuj ponownie.'); return; }
+    const d = await r.json();
+    setPartners(d.partners || []);
+  };
+
+  const uploadPartner = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/webp,image/svg+xml,image/jpeg,image/avif,image/*';
+    input.multiple = true;
+    input.onchange = async () => {
+      for (const file of Array.from(input.files || [])) {
+        if (file.size > 3 * 1024 * 1024) { alert(`${file.name} — logo max 3 MB`); continue; }
+        try {
+          setBusy(`Wysyłam ${file.name}…`);
+          const imageUrl = await put(file, file.name, file.type || 'image/png', 'image');
+          const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+          await callP({ action: 'add', title, imageUrl, linkUrl: '' });
         } catch (e) {
           alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
         }
@@ -483,6 +520,89 @@ function BossxdTab() {
             ))}
           </div>
         </>
+      )}
+
+      <hr style={{ margin: '22px 0 16px', border: 0, borderTop: '1px solid rgba(128,128,128,0.3)' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>🤝 Partnerzy — logo pod końmi</h3>
+        <button
+          onClick={uploadPartner}
+          disabled={!!busy}
+          style={{
+            padding: '4px 12px', fontSize: '12px', cursor: busy ? 'wait' : 'pointer',
+            background: '#3a6ea5', color: '#fff', border: 'none', borderRadius: '4px',
+          }}
+        >
+          🖼 Dodaj logo
+        </button>
+      </div>
+
+      <p style={{ fontSize: '12px', opacity: 0.7, margin: '0 0 12px' }}>
+        Siatka logotypów na stronie głównej, pod lustrami. Sześć w rzędzie na
+        szerokim ekranie, mniej na telefonie. Wpisz adres, żeby logo prowadziło
+        do strony partnera. Bez adresu logo tylko wisi.
+      </p>
+
+      {partners.length === 0 ? (
+        <p style={{ fontSize: '13px', opacity: 0.7 }}>
+          Nie ma jeszcze partnerów. Bez nich sekcja się nie pokaże.
+        </p>
+      ) : (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {partners.map((x, i) => (
+            <div key={x.id} style={{
+              display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
+              border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+            }}>
+              <span style={{ fontSize: '11px', opacity: 0.6, minWidth: '20px' }}>{i + 1}</span>
+              {x.imageUrl ? (
+                <img src={x.imageUrl} alt="" style={{
+                  width: '90px', height: '40px', objectFit: 'contain',
+                  background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '3px',
+                }} />
+              ) : (
+                <span style={{ width: '90px', fontSize: '11px', opacity: 0.5 }}>bez logo</span>
+              )}
+              <input
+                defaultValue={x.title}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v !== x.title) callP({ action: 'title', id: x.id, title: v });
+                }}
+                placeholder="nazwa firmy"
+                style={{
+                  width: '140px', fontSize: '13px', padding: '4px 6px',
+                  background: 'transparent', color: 'inherit',
+                  border: '1px solid rgba(128,128,128,0.3)', borderRadius: '4px',
+                }}
+              />
+              <input
+                defaultValue={x.linkUrl}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v !== x.linkUrl) callP({ action: 'link', id: x.id, linkUrl: v });
+                }}
+                placeholder="https://adres-partnera.pl"
+                style={{
+                  flex: 1, minWidth: '120px', fontSize: '12px', padding: '4px 6px',
+                  background: 'transparent', color: 'inherit',
+                  border: '1px solid rgba(128,128,128,0.3)', borderRadius: '4px',
+                }}
+              />
+              <button onClick={() => callP({ action: 'move', id: x.id, dir: 'up' })}
+                disabled={i === 0} title="wyżej"
+                style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>
+              <button onClick={() => callP({ action: 'move', id: x.id, dir: 'down' })}
+                disabled={i === partners.length - 1} title="niżej"
+                style={{ cursor: 'pointer', padding: '2px 6px' }}>↓</button>
+              <button
+                onClick={() => { if (confirm(`Usunąć „${x.title}"?`)) callP({ action: 'remove', id: x.id }); }}
+                title="usuń"
+                style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
+            </div>
+          ))}
+        </div>
       )}
 
       <hr style={{ margin: '22px 0 16px', border: 0, borderTop: '1px solid rgba(128,128,128,0.3)' }} />
