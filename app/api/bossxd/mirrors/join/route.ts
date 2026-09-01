@@ -41,6 +41,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No recording received' }, { status: 400, headers: CORS });
   }
 
+  // Adres przychodzi od użytkownika, więc musi wskazywać dokładnie na plik,
+  // który sami przed chwilą zapisaliśmy w media/voices/. Bez tego ktoś podałby
+  // adres cudzego pliku z kubełka i czytałby go przez naszą trasę.
+  const BUCKET = (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
+  const REGION = (process.env.AWS_REGION || 'eu-central-1').trim();
+  const allowed = new RegExp(
+    `^https://${BUCKET}\\.s3\\.${REGION}\\.amazonaws\\.com/media/voices/[A-Za-z0-9_-]+\\.(webm|ogg|m4a|mp3|wav)$`
+  );
+  if (!allowed.test(String(body.audioUrl))) {
+    return NextResponse.json({ error: 'Invalid recording' }, { status: 400, headers: CORS });
+  }
+
   const res = await s3Service.loadJsonData('bossxd-mirrors', { voices: [] });
   const data = (res.data as { voices: Voice[] }) || { voices: [] };
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { notify } from '@/lib/telegram';
+import { timingSafeEqual } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,17 @@ export async function GET(req: NextRequest) {
   const data = await load();
   const mine = req.nextUrl.searchParams.get('key') || '';
 
+  // Porównanie odporne na mierzenie czasu — zwykłe === kończy się na
+  // pierwszym różnym znaku, co pozwala zgadywać klucz znak po znaku.
+  const sameKey = (a?: string) => {
+    if (!a || !mine || a.length !== mine.length) return false;
+    try {
+      return timingSafeEqual(Buffer.from(a), Buffer.from(mine));
+    } catch {
+      return false;
+    }
+  };
+
   // Sekret nigdy nie opuszcza serwera — odsyłamy tylko informację,
   // czy dany głos należy do pytającego.
   const voices = data.voices.map((v) => ({
@@ -39,7 +51,7 @@ export async function GET(req: NextRequest) {
     addedAt: v.addedAt,
     bio: v.approved ? v.bio || '' : '',
     approved: !!v.approved,
-    isMine: !!mine && v.key === mine,
+    isMine: sameKey(v.key),
   }));
 
   return NextResponse.json({ voices }, {
