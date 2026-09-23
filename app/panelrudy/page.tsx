@@ -96,25 +96,77 @@ function BossxdTab() {
    * Klatka z filmu robiona w przeglądarce — Brat nie musi jej szykować osobno.
    * Bierzemy ujęcie z 1 sekundy; na samym początku często jest czarne.
    */
-  const grabPoster = (file: File): Promise<Blob | null> =>
-    new Promise((resolve) => {
-      const v = document.createElement('video');
-      v.preload = 'metadata';
-      v.muted = true;
-      v.src = URL.createObjectURL(file);
-      const fail = () => { URL.revokeObjectURL(v.src); resolve(null); };
-      v.onerror = fail;
-      v.onloadedmetadata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
-      v.onseeked = () => {
-        const c = document.createElement('canvas');
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        const ctx = c.getContext('2d');
-        if (!ctx || !c.width) return fail();
-        ctx.drawImage(v, 0, 0, c.width, c.height);
-        c.toBlob((b) => { URL.revokeObjectURL(v.src); resolve(b); }, 'image/jpeg', 0.8);
-      };
-      setTimeout(fail, 15000);
-    });
+  /**
+   * Wyciąga klatkę z filmu na miniaturkę listka w koniczynie.
+   *
+   * Filmy 4K/60fps z telefonu bywają za ciężkie dla przeglądarki — element
+   * <video> nie dojeżdża do klatki i zwraca pustkę. Dlatego:
+   *  - próbujemy trzech momentów (1/3 filmu, 1 s, sama pierwsza klatka),
+   *  - dajemy 40 s zamiast 15 (4K potrzebuje czasu na dekodowanie),
+   *  - miniaturkę skalujemy do 1280 px — nikt nie potrzebuje postera w 4K.
+   *
+   * Zwraca null tylko wtedy, gdy NAPRAWDĘ nie da się nic wyciągnąć.
+   * Wtedy panel musi o tym powiedzieć, nie milczeć.
+   */
+  const grabPoster = (file: File): Promise<Blob | null> => {
+    const SZEROKOSC = 1280;
+
+    const proba = (kiedy: (dl: number) => number): Promise<Blob | null> =>
+      new Promise((resolve) => {
+        const v = document.createElement('video');
+        v.preload = 'auto';
+        v.muted = true;
+        v.playsInline = true;
+        const url = URL.createObjectURL(file);
+        v.src = url;
+
+        let zrobione = false;
+        const koniec = (b: Blob | null) => {
+          if (zrobione) return;
+          zrobione = true;
+          URL.revokeObjectURL(url);
+          resolve(b);
+        };
+
+        const zlap = () => {
+          if (!v.videoWidth) return koniec(null);
+          // Poster w 4K to kilka MB bez potrzeby — skalujemy do 1280 px.
+          const skala = Math.min(1, SZEROKOSC / v.videoWidth);
+          const c = document.createElement('canvas');
+          c.width = Math.round(v.videoWidth * skala);
+          c.height = Math.round(v.videoHeight * skala);
+          const ctx = c.getContext('2d');
+          if (!ctx) return koniec(null);
+          try {
+            ctx.drawImage(v, 0, 0, c.width, c.height);
+          } catch {
+            return koniec(null);
+          }
+          c.toBlob((b) => koniec(b), 'image/jpeg', 0.82);
+        };
+
+        v.onerror = () => koniec(null);
+        v.onloadeddata = () => { v.currentTime = kiedy(v.duration || 2); };
+        v.onseeked = zlap;
+        // Gdy przeglądarka nie zgłosi onseeked (zdarza się przy 4K),
+        // bierzemy to, co jest w buforze.
+        setTimeout(() => { if (!zrobione && v.readyState >= 2) zlap(); }, 12000);
+        setTimeout(() => koniec(null), 40000);
+      });
+
+    // Od środka filmu, przez pierwszą sekundę, do samego początku.
+    return (async () => {
+      for (const kiedy of [
+        (dl: number) => Math.min(dl / 3, 10),
+        () => 1,
+        () => 0,
+      ]) {
+        const b = await proba(kiedy);
+        if (b && b.size > 1024) return b;
+      }
+      return null;
+    })();
+  };
 
   const put = async (file: Blob, name: string, type: string, folder: string) => {
     const res = await fetch('/api/media/upload', {
@@ -156,11 +208,52 @@ function BossxdTab() {
 
           const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
           await call({ action: 'add', title, videoUrl, posterUrl });
+
+          // Bez miniaturki listek w koniczynie zostaje pusty. Wcześniej panel
+          // milczał i film po prostu nie miał obrazka — teraz mówi wprost.
+          if (!posterUrl) {
+            alert(
+              `${file.name}\n\n` +
+              `Film jest na stronie, ale NIE UDAŁO SIĘ zrobić miniaturki.\n` +
+              `Listek w koniczynie będzie pusty.\n\n` +
+              `Dodaj ją przyciskiem "miniaturka" na liście filmów niżej, ` +
+              `albo wgraj film przepuszczony przez przygotuj.sh (1080p) — ` +
+              `z takiego klatka wychodzi zawsze.`
+            );
+          }
         } catch (e) {
           alert(`${file.name}: ${e instanceof Error ? e.message : 'błąd'}`);
         }
       }
       setBusy('');
+    };
+    input.click();
+  };
+
+  /** Dorobienie miniaturki do filmu, który trafił na stronę bez niej. */
+  const dorobPoster = (leafId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,video/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        setBusy('Wgrywam miniaturkę…');
+        // Można podać gotowy obrazek albo film — z filmu wyciągniemy klatkę.
+        const obraz = file.type.startsWith('video/') ? await grabPoster(file) : file;
+        if (!obraz) {
+          alert('Z tego pliku nie da się zrobić klatki. Podaj gotowy JPG.');
+          return;
+        }
+        const nazwa = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+        const posterUrl = await put(obraz, nazwa, 'image/jpeg', 'image');
+        await call({ action: 'poster', id: leafId, posterUrl });
+      } catch (e) {
+        alert(e instanceof Error ? e.message : 'Nie udało się');
+      } finally {
+        setBusy('');
+      }
     };
     input.click();
   };
@@ -426,9 +519,33 @@ function BossxdTab() {
                   style={{ width: '64px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
                 />
               ) : (
-                <span style={{ fontSize: '11px', opacity: 0.5, width: '64px' }}>bez klatki</span>
+                <span
+                  title="Listek w koniczynie będzie pusty"
+                  style={{
+                    width: '64px', height: '40px', borderRadius: '4px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '10px', lineHeight: 1.15, textAlign: 'center',
+                    color: '#c0392b', border: '1px dashed #c0392b',
+                    background: 'rgba(192,57,43,0.08)',
+                  }}
+                >
+                  brak<br />klatki
+                </span>
               )}
               <span style={{ flex: 1, fontSize: '13px' }}>{l.title}</span>
+              {!l.posterUrl && (
+                <button
+                  onClick={() => dorobPoster(l.id)}
+                  title="Wgraj obrazek albo film — wyciągnę z niego klatkę"
+                  style={{
+                    cursor: 'pointer', padding: '3px 9px', fontSize: '11px',
+                    color: '#fff', background: '#c0392b',
+                    border: 'none', borderRadius: '4px',
+                  }}
+                >
+                  + miniaturka
+                </button>
+              )}
               <button onClick={() => call({ action: 'move', id: l.id, dir: 'up' })}
                 disabled={i === 0} title="wyżej"
                 style={{ cursor: 'pointer', padding: '2px 6px' }}>↑</button>

@@ -58,6 +58,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Brak filmu' }, { status: 400 });
     }
     data.leaves.push(leaf);
+  } else if (action === 'poster') {
+    // Dorobienie miniaturki do filmu, który trafił tu bez niej.
+    // Bez tego listek w koniczynie zostaje pusty i nie da się tego naprawić
+    // inaczej niż kasując film i wgrywając od nowa.
+    const leaf = data.leaves.find((l) => l.id === body.id);
+    if (!leaf) {
+      return NextResponse.json({ error: 'Nie ma takiego filmu' }, { status: 404 });
+    }
+    leaf.posterUrl = String(body.posterUrl || '');
   } else if (action === 'remove') {
     data.leaves = data.leaves.filter((l) => l.id !== body.id);
   } else if (action === 'move') {
