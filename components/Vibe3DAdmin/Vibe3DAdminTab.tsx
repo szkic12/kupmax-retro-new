@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useStrony } from '@/components/panelrudy/Stronicowanie';
 
 interface WelcomeVideo {
   id: string;
@@ -156,6 +157,7 @@ export default function Vibe3DAdminTab() {
     if (providerFilter === 'replicate' && v.usedProvider !== 'replicate') return false;
     return true;
   });
+  const sVideos = useStrony(filtered, { najnowsze: true, podpowiedz: '🔍 Szukaj filmu…' });
 
   if (loading) {
     return <div style={{ padding: 20 }}>⏳ Ładowanie Vibe3D…</div>;
@@ -368,9 +370,9 @@ export default function Vibe3DAdminTab() {
           marginBottom: 16,
         }}
       >
-        {filtered.map((v) => (
+        <>{sVideos.pasek}{sVideos.kawalek.map(([v]) => (
           <VideoTile key={v.id} video={v} onClick={() => setSelectedVideo(v)} />
-        ))}
+        ))}{sVideos.strony}</>
         {filtered.length === 0 && (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, color: '#666' }}>
             Brak video w tym filtrze.

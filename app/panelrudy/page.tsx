@@ -1,6 +1,7 @@
 'use client';
 import { logger } from '@/lib/logger';
 import Vibe3DAdminTab from '@/components/Vibe3DAdmin/Vibe3DAdminTab';
+import { useStrony } from '@/components/panelrudy/Stronicowanie';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -59,6 +60,13 @@ function BossxdTab() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
+  // Strony po 20 + szukanie. Listki, zdjęcia, głosy i partnerzy zostają
+  // w kolejności ze strony (przyciski „wyżej/niżej" na niej działają).
+  const sPending = useStrony(pending, { najnowsze: true, podpowiedz: '🔍 Szukaj w czekających…' });
+  const sLeaves = useStrony(leaves, { szukaj: (l) => l.title, podpowiedz: '🔍 Szukaj filmu…' });
+  const sShots = useStrony(shots, { szukaj: (x) => x.title, podpowiedz: '🔍 Szukaj zdjęcia…' });
+  const sPartners = useStrony(partners, { szukaj: (x) => `${x.title} ${x.linkUrl}`, podpowiedz: '🔍 Szukaj partnera…' });
+  const sVoices = useStrony(voices, { szukaj: (v) => `${v.title} ${v.bio ?? ''}`, podpowiedz: '🔍 Szukaj głosu…' });
 
   const load = async () => {
     try {
@@ -411,6 +419,19 @@ function BossxdTab() {
 
   return (
     <div style={{ padding: '16px' }}>
+      {/* Ogłoszenia bossxd mają własny panel na bossxd.com — tam logujesz
+          się jako gospodarz, a baza sama pilnuje, kto może co zmienić. */}
+      <a href="https://bossxd.com/szukam/panel/" target="_blank" rel="noopener noreferrer"
+         style={{
+           display: 'block', marginBottom: '20px', padding: '12px 14px', borderRadius: '8px',
+           border: '2px solid #e0559b', background: 'rgba(224,85,155,0.08)', color: 'inherit',
+           textDecoration: 'none', fontSize: '14px',
+         }}>
+        <strong>📋 Ogłoszenia bossxd → Panel gospodarza</strong>
+        <span style={{ display: 'block', fontSize: '12px', opacity: 0.75, marginTop: '4px' }}>
+          Wszystkie ogłoszenia, zgłoszenia, ludzie, blokady, ustawienia i dziennik. Otwiera się na bossxd.com.
+        </span>
+      </a>
       {pending.length > 0 && (
         <div style={{
           marginBottom: '20px', padding: '12px',
@@ -424,7 +445,7 @@ function BossxdTab() {
             na koniczynę (filmy) albo na motyla (zdjęcia).
           </p>
           <div style={{ display: 'grid', gap: '10px' }}>
-            {pending.map((p) => (
+            <>{sPending.pasek}{sPending.kawalek.map(([p]) => (
               <div key={p.id} style={{
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '8px',
                 border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
@@ -461,7 +482,7 @@ function BossxdTab() {
                     border: '1px solid #c0392b', borderRadius: '4px',
                   }}>✕ Odrzuć</button>
               </div>
-            ))}
+            ))}{sPending.strony}</>
           </div>
         </div>
       )}
@@ -501,7 +522,7 @@ function BossxdTab() {
         </p>
       ) : (
         <div style={{ display: 'grid', gap: '8px' }}>
-          {leaves.map((l, i) => (
+          <>{sLeaves.pasek}{sLeaves.kawalek.map(([l, i]) => (
             <div
               key={l.id}
               style={{
@@ -557,7 +578,7 @@ function BossxdTab() {
                 title="usuń"
                 style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
             </div>
-          ))}
+          ))}{sLeaves.strony}</>
         </div>
       )}
 
@@ -596,7 +617,7 @@ function BossxdTab() {
             </div>
           )}
           <div style={{ display: 'grid', gap: '8px' }}>
-            {shots.map((s, i) => (
+            <>{sShots.pasek}{sShots.kawalek.map(([s, i]) => (
               <div
                 key={s.id}
                 style={{
@@ -634,7 +655,7 @@ function BossxdTab() {
                   title="usuń"
                   style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
               </div>
-            ))}
+            ))}{sShots.strony}</>
           </div>
         </>
       )}
@@ -667,7 +688,7 @@ function BossxdTab() {
         </p>
       ) : (
         <div style={{ display: 'grid', gap: '8px' }}>
-          {partners.map((x, i) => (
+          <>{sPartners.pasek}{sPartners.kawalek.map(([x, i]) => (
             <div key={x.id} style={{
               display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
               border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
@@ -718,7 +739,7 @@ function BossxdTab() {
                 title="usuń"
                 style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
             </div>
-          ))}
+          ))}{sPartners.strony}</>
         </div>
       )}
 
@@ -756,7 +777,7 @@ function BossxdTab() {
             {voices.length % 2 === 0 && <> — wszystkie pełne, bramy otwarte</>}
           </div>
           <div style={{ display: 'grid', gap: '8px' }}>
-            {voices.map((v, i) => (
+            <>{sVoices.pasek}{sVoices.kawalek.map(([v, i]) => (
               <div
                 key={v.id}
                 style={{
@@ -811,7 +832,7 @@ function BossxdTab() {
                   title="usuń"
                   style={{ cursor: 'pointer', padding: '2px 6px', color: '#c0392b' }}>✕</button>
               </div>
-            ))}
+            ))}{sVoices.strony}</>
           </div>
         </>
       )}
@@ -823,6 +844,7 @@ function MyRadioTab() {
   const [tracks, setTracks] = useState<PlTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
+  const sTracks = useStrony(tracks, { szukaj: (t) => `${t.title} ${t.artist}`, podpowiedz: '🔍 Szukaj utworu…' });
 
   const load = async () => {
     try {
@@ -916,7 +938,7 @@ function MyRadioTab() {
         </p>
       ) : (
         <div style={{ border: '1px solid #2a2a3a', borderRadius: '6px', overflow: 'hidden' }}>
-          {tracks.map((tr, i) => (
+          <>{sTracks.pasek}{sTracks.kawalek.map(([tr, i]) => (
             <div key={tr.id} style={{
               display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px',
               background: i % 2 ? '#12121a' : '#161620', borderBottom: '1px solid #1e1e2a',
@@ -944,7 +966,7 @@ function MyRadioTab() {
                          background: '#3a1a1a', color: '#ff9a9a',
                          border: '1px solid #5a2a2a', borderRadius: '3px' }}>✕</button>
             </div>
-          ))}
+          ))}{sTracks.strony}</>
         </div>
       )}
 
@@ -2471,6 +2493,17 @@ export default function SecureAdminPanel() {
   });
 
   // ============= LOADING STATE =============
+  // ============= STRONY PO 20 + SZUKANIE (wszystkie listy) =============
+  // Haki muszą stać przed wczesnymi „return" niżej.
+  const sAds = useStrony(allAds, { najnowsze: true, podpowiedz: '🔍 Szukaj reklamy…' });
+  const sGuestbook = useStrony(guestbookEntries, { najnowsze: true, podpowiedz: '🔍 Szukaj wpisu…' });
+  const sWebring = useStrony(webringSites, { podpowiedz: '🔍 Szukaj strony…' });
+  const sForum = useStrony(forumThreads, { najnowsze: true, podpowiedz: '🔍 Szukaj wątku…' });
+  const sNews = useStrony(newsList, { najnowsze: true, podpowiedz: '🔍 Szukaj newsa…' });
+  const sGallery = useStrony(galleryPhotos, { najnowsze: true, podpowiedz: '🔍 Szukaj zdjęcia…' });
+  const sModels = useStrony(models3d, { najnowsze: true, podpowiedz: '🔍 Szukaj modelu…' });
+  const sRss = useStrony(rssItems, { podpowiedz: '🔍 Szukaj artykułu…' });
+
   if (status === 'loading') {
     return (
       <div style={{
@@ -2906,7 +2939,7 @@ export default function SecureAdminPanel() {
                         {allAds.length === 0 ? (
                           <p style={{ color: '#666', textAlign: 'center' }}>Brak reklam. Utwórz pierwszą!</p>
                         ) : (
-                          allAds.map((ad) => (
+                          <>{sAds.pasek}{sAds.kawalek.map(([ad]) => (
                             <div key={ad.id} style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -2970,7 +3003,7 @@ export default function SecureAdminPanel() {
                                 🗑️
                               </button>
                             </div>
-                          ))
+                          ))}{sAds.strony}</>
                         )}
                       </fieldset>
                     )}
@@ -3073,7 +3106,7 @@ export default function SecureAdminPanel() {
                     {guestbookEntries.length === 0 ? (
                       <p style={{ color: '#666', textAlign: 'center' }}>Brak wpisów</p>
                     ) : (
-                      guestbookEntries.map((entry, i) => (
+                      <>{sGuestbook.pasek}{sGuestbook.kawalek.map(([entry, i]) => (
                         <div key={entry.id} style={{ background: i % 2 === 0 ? '#fff' : '#f0f0f0', padding: '10px', marginBottom: '5px', border: '1px solid #ccc' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <strong>{entry.name || entry.nickname || 'Anonim'}</strong>
@@ -3085,7 +3118,7 @@ export default function SecureAdminPanel() {
                           <p style={{ margin: '5px 0', color: '#333' }}>{entry.message}</p>
                           <small style={{ color: '#666' }}>{new Date(entry.timestamp || entry.date).toLocaleString('pl-PL')}</small>
                         </div>
-                      ))
+                      ))}{sGuestbook.strony}</>
                     )}
                   </div>
                 )}
@@ -3183,7 +3216,7 @@ export default function SecureAdminPanel() {
                       </form>
                     </fieldset>
 
-                    {webringSites.map((site) => (
+                    <>{sWebring.pasek}{sWebring.kawalek.map(([site]) => (
                       <div key={site.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: '#fff', border: '1px solid #ccc' }}>
                         <span style={{ fontSize: '18px' }}>{site.icon || '🌐'}</span>
                         <div style={{ flex: 1 }}>
@@ -3194,7 +3227,7 @@ export default function SecureAdminPanel() {
                         <button onClick={() => handleEditWebringSite(site)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '4px 8px' }}>✏️</button>
                         <button onClick={() => handleDeleteWebringSite(site.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
                       </div>
-                    ))}
+                    ))}{sWebring.strony}</>
                   </div>
                 )}
 
@@ -3243,7 +3276,7 @@ export default function SecureAdminPanel() {
                     {forumThreads.length === 0 ? (
                       <p style={{ color: '#666', textAlign: 'center' }}>Brak wątków</p>
                     ) : (
-                      forumThreads.map((thread) => (
+                      <>{sForum.pasek}{sForum.kawalek.map(([thread]) => (
                         <div key={thread.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: '#fff', border: '1px solid #ccc' }}>
                           <div style={{ flex: 1 }}>
                             <strong>{thread.title}</strong>
@@ -3253,7 +3286,7 @@ export default function SecureAdminPanel() {
                           <button onClick={() => handleEditThread(thread)} style={{ ...buttonStyle, background: '#87CEEB', fontSize: '11px', padding: '4px 8px' }}>✏️</button>
                           <button onClick={() => handleDeleteThread(thread.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
                         </div>
-                      ))
+                      ))}{sForum.strony}</>
                     )}
                   </div>
                 )}
@@ -3434,7 +3467,7 @@ export default function SecureAdminPanel() {
                       <fieldset style={{ border: '2px groove #fff', padding: '10px' }}>
                         <legend style={{ fontWeight: 'bold' }}>📰 Najnowsze artykuły ({rssItems.length})</legend>
                         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                          {rssItems.map((item, i) => (
+                          <>{sRss.pasek}{sRss.kawalek.map(([item, i]) => (
                             <div
                               key={i}
                               style={{
@@ -3470,7 +3503,7 @@ export default function SecureAdminPanel() {
                                 </button>
                               </div>
                             </div>
-                          ))}
+                          ))}{sRss.strony}</>
                         </div>
                       </fieldset>
                     )}
@@ -3754,7 +3787,7 @@ export default function SecureAdminPanel() {
                       </form>
                     </fieldset>
 
-                    {newsList.map((newsItem) => (
+                    <>{sNews.pasek}{sNews.kawalek.map(([newsItem]) => (
                       <div key={newsItem.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', marginBottom: '5px', background: newsItem.is_published ? '#fff' : '#f5f5f5', border: '1px solid #ccc' }}>
                         <div style={{ flex: 1 }}>
                           <strong>{newsItem.title}</strong>
@@ -3767,7 +3800,7 @@ export default function SecureAdminPanel() {
                         </button>
                         <button onClick={() => handleDeleteNews(newsItem.id)} style={{ ...buttonStyle, background: '#ff6666', fontSize: '11px', padding: '4px 8px' }}>🗑️</button>
                       </div>
-                    ))}
+                    ))}{sNews.strony}</>
                   </div>
                 )}
               </>
@@ -3843,7 +3876,7 @@ export default function SecureAdminPanel() {
                         <p style={{ color: '#666', fontStyle: 'italic' }}>Brak zdjec. Dodaj swoje pierwsze zdjecie!</p>
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
-                          {galleryPhotos.map((photo: any) => (
+                          <>{sGallery.pasek}{sGallery.kawalek.map(([photo]) => (
                             <div key={photo.id} style={{ border: '2px outset #808080', padding: '5px', background: '#f0f0f0' }}>
                               <div style={{ width: '100%', height: '100px', background: '#ddd', overflow: 'hidden', marginBottom: '5px' }}>
                                 {photo.image_url && (
@@ -3875,7 +3908,7 @@ export default function SecureAdminPanel() {
                                 🗑️ Usun
                               </button>
                             </div>
-                          ))}
+                          ))}{sGallery.strony}</>
                         </div>
                       )}
                     </div>
@@ -4305,7 +4338,7 @@ export default function SecureAdminPanel() {
                       <p style={{ fontSize: '12px', color: '#666' }}>Brak modeli. Dodaj pierwszy!</p>
                     )}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-                      {models3d.map((model: any) => (
+                      <>{sModels.pasek}{sModels.kawalek.map(([model]) => (
                         <div key={model.id} style={{ background: '#fff', border: '2px solid #003399', padding: '8px', fontSize: '11px' }}>
                           <div style={{ fontWeight: 'bold', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             🧊 {model.title || model.displayName}
@@ -4349,7 +4382,7 @@ export default function SecureAdminPanel() {
                             </button>
                           </div>
                         </div>
-                      ))}
+                      ))}{sModels.strony}</>
                     </div>
                   </>
                 )}
