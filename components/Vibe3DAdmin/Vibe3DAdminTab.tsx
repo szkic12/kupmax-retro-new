@@ -33,6 +33,15 @@ interface Stats {
   estimatedCostTodayUSD: number;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  isPublished: boolean;
+  timestamp: string | null;
+  translated: boolean;
+}
+
 interface MatrixStats {
   dailyMax: number;
   currentDay: string;
@@ -74,6 +83,9 @@ export default function Vibe3DAdminTab() {
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
   const [userFilter, setUserFilter] = useState<UserFilter>('all');
   const [savingBudget, setSavingBudget] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [annEdit, setAnnEdit] = useState<{ id?: string; title: string; message: string } | null>(null);
+  const [annSaving, setAnnSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,6 +97,7 @@ export default function Vibe3DAdminTab() {
         setVideos(data.videos);
         setStats(data.stats);
         setMatrixStats(data.matrixStats || null);
+        setAnnouncements(data.announcements || []);
       } else {
         setError(data.error || 'Load failed');
       }
@@ -116,6 +129,37 @@ export default function Vibe3DAdminTab() {
     } finally {
       setSavingBudget(false);
     }
+  };
+
+  const saveAnnouncement = async () => {
+    if (!annEdit) return;
+    setAnnSaving(true);
+    try {
+      const res = await fetch('/api/vibe3d-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveAnnouncement', ...annEdit }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert('Nie zapisano: ' + (data.error || 'błąd'));
+        return;
+      }
+      setAnnEdit(null);
+      await load();
+    } finally {
+      setAnnSaving(false);
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!confirm('Usunąć to ogłoszenie z apki? Tego nie da się cofnąć.')) return;
+    await fetch('/api/vibe3d-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteAnnouncement', id }),
+    });
+    await load();
   };
 
   const updateMatrixBudget = async (patch: Partial<Pick<MatrixStats, 'dailyMax' | 'paused' | 'forceProvider'>>) => {
@@ -279,6 +323,79 @@ export default function Vibe3DAdminTab() {
           </p>
         </div>
       )}
+
+      {/* === OGŁOSZENIA (dzwonek w apce) — Brat 18.10.2026 === */}
+      <div style={{ border: '2px solid #6a5acd', background: '#f4f2ff', padding: 12, marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 6px', color: '#3d2e8c' }}>🔔 Ogłoszenia w apce (dzwonek)</h3>
+        <p style={{ margin: '0 0 10px', fontSize: 12, color: '#666' }}>
+          Piszesz po polsku — apka sama przetłumaczy na 15 języków (ok. 30 s po zapisaniu).
+        </p>
+        {annEdit ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input
+              placeholder="Tytuł"
+              value={annEdit.title}
+              maxLength={200}
+              onChange={(e) => setAnnEdit({ ...annEdit, title: e.target.value })}
+              style={{ padding: 6 }}
+            />
+            <textarea
+              placeholder="Treść (emoji, nowe linie, linki — wszystko zostaje)"
+              value={annEdit.message}
+              maxLength={5000}
+              rows={8}
+              onChange={(e) => setAnnEdit({ ...annEdit, message: e.target.value })}
+              style={{ padding: 6, fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                disabled={annSaving || !annEdit.title.trim() || !annEdit.message.trim()}
+                onClick={saveAnnouncement}
+                style={{ padding: '6px 14px', background: '#3d2e8c', color: '#fff', border: 'none' }}
+              >
+                {annSaving ? 'Zapisuję…' : annEdit.id ? '💾 Zapisz zmiany' : '📣 Opublikuj'}
+              </button>
+              <button onClick={() => setAnnEdit(null)} style={{ padding: '6px 12px' }}>
+                Anuluj
+              </button>
+            </div>
+            {annEdit.id && (
+              <p style={{ margin: 0, fontSize: 11, color: '#a33' }}>
+                Po zapisaniu ogłoszenie zostanie przetłumaczone od nowa.
+              </p>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setAnnEdit({ title: '', message: '' })}
+            style={{ padding: '6px 14px', marginBottom: 10 }}
+          >
+            ➕ Nowe ogłoszenie
+          </button>
+        )}
+        {!annEdit &&
+          announcements.map((a) => (
+            <div key={a.id} style={{ borderTop: '1px solid #ddd', padding: '8px 0' }}>
+              <strong>{a.title}</strong>{' '}
+              <span style={{ fontSize: 11, color: '#888' }}>
+                {a.timestamp ? new Date(a.timestamp).toLocaleString('pl-PL') : ''}
+                {a.translated ? ' · 🌍 przetłumaczone' : ' · ⏳ tłumaczy się…'}
+              </span>
+              <div style={{ fontSize: 12, color: '#555', whiteSpace: 'pre-wrap', maxHeight: 60, overflow: 'hidden' }}>
+                {a.message}
+              </div>
+              <button
+                onClick={() => setAnnEdit({ id: a.id, title: a.title, message: a.message })}
+                style={{ padding: '2px 10px', marginRight: 6 }}
+              >
+                ✏️ Edytuj
+              </button>
+              <button onClick={() => deleteAnnouncement(a.id)} style={{ padding: '2px 10px', color: '#a00' }}>
+                🗑️ Usuń
+              </button>
+            </div>
+          ))}
+      </div>
 
       {/* === MATRIX 3D BUDGET === */}
       {matrixStats && (

@@ -151,7 +151,21 @@ export async function GET(req: NextRequest) {
     matrixStats.falCount3d = Number(pb.falCount_3d || 0);
     matrixStats.replicateCount3d = Number(pb.replicateCount_3d || 0);
 
-    return NextResponse.json({ success: true, videos, stats, matrixStats });
+    // Ogłoszenia Vibe3D (dzwonek w apce). Tłumaczy je serwer Vibe3D (translate_announcement).
+    const annSnap = await firestore.collection('announcements').orderBy('timestamp', 'desc').limit(30).get();
+    const announcements = annSnap.docs.map((d) => {
+      const a = d.data() || {};
+      return {
+        id: d.id,
+        title: String(a.title || ''),
+        message: String(a.message || ''),
+        isPublished: a.isPublished !== false,
+        timestamp: a.timestamp?.toDate?.()?.toISOString?.() ?? null,
+        translated: Boolean(a.titleTranslations),
+      };
+    });
+
+    return NextResponse.json({ success: true, videos, stats, matrixStats, announcements });
   } catch (e) {
     logger.error('vibe3d-admin GET failed:', e);
     return NextResponse.json({ success: false, error: String(e) }, { status: 500 });
@@ -202,6 +216,41 @@ export async function POST(req: NextRequest) {
         { currentDay: today, count: 0 },
         { merge: true }
       );
+      return NextResponse.json({ success: true });
+    }
+
+    // Ogłoszenia (Brat 18.10.2026). Edycja = nowy dokument z tą samą datą, bo
+    // tłumaczenie odpala się przy tworzeniu dokumentu; stary znika.
+    if (action === 'saveAnnouncement') {
+      const { id, title, message, isPublished } = body;
+      const t = String(title || '').trim();
+      const m = String(message || '').trim();
+      if (!t || !m || t.length > 200 || m.length > 5000) {
+        return NextResponse.json({ success: false, error: 'Tytuł i treść są wymagane' }, { status: 400 });
+      }
+      const col = firestore.collection('announcements');
+      let ts = new Date();
+      if (id) {
+        const old = await col.doc(String(id)).get();
+        if (old.exists) {
+          ts = old.data()?.timestamp?.toDate?.() ?? ts;
+          await old.ref.delete();
+        }
+      }
+      const ref = await col.add({
+        title: t,
+        message: m,
+        isPublished: isPublished !== false,
+        senderName: 'Vibe3D',
+        timestamp: ts,
+      });
+      return NextResponse.json({ success: true, id: ref.id });
+    }
+
+    if (action === 'deleteAnnouncement') {
+      const { id } = body;
+      if (!id) return NextResponse.json({ success: false, error: 'id required' }, { status: 400 });
+      await firestore.collection('announcements').doc(String(id)).delete();
       return NextResponse.json({ success: true });
     }
 
