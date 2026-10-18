@@ -41,6 +41,9 @@ interface MatrixStats {
   paused: boolean;
   estimatedCostTodayUSD: number;
   estimatedCostTotalUSD: number;
+  forceProvider: string | null;
+  falCount3d: number;
+  replicateCount3d: number;
 }
 
 type ProviderFilter = 'all' | 'fal' | 'replicate';
@@ -115,7 +118,7 @@ export default function Vibe3DAdminTab() {
     }
   };
 
-  const updateMatrixBudget = async (patch: Partial<Pick<MatrixStats, 'dailyMax' | 'paused'>>) => {
+  const updateMatrixBudget = async (patch: Partial<Pick<MatrixStats, 'dailyMax' | 'paused' | 'forceProvider'>>) => {
     setSavingBudget(true);
     try {
       const res = await fetch('/api/vibe3d-admin', {
@@ -329,9 +332,28 @@ export default function Vibe3DAdminTab() {
             >
               {matrixStats.paused ? '⏸ ZATRZYMANE (kliknij żeby wznowić)' : '▶ AKTYWNE (kliknij żeby zatrzymać)'}
             </button>
+            <label>
+              3D i obrazek z AI robi:{' '}
+              <select
+                value={matrixStats.forceProvider || ''}
+                disabled={savingBudget}
+                onChange={(e) =>
+                  updateMatrixBudget({
+                    forceProvider: (e.target.value === '' ? null : e.target.value) as 'fal' | 'replicate' | null,
+                  })
+                }
+              >
+                <option value="">na zmianę (fal, Replicate)</option>
+                <option value="fal">tylko fal</option>
+                <option value="replicate">tylko Replicate</option>
+              </select>
+            </label>
+            <div style={{ color: '#888' }}>
+              fal: <strong>{matrixStats.falCount3d}</strong> · Replicate: <strong>{matrixStats.replicateCount3d}</strong>
+            </div>
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 12, color: '#666' }}>
-            ~$0.12/duet. Limit chroni przed wybuchem rachunku. Dzień:{' '}
+            Gdy wybrany serwis padnie, serwer sam spróbuje drugiego. ~$0.12/duet (szacunek z zapasem). Limit chroni przed wybuchem rachunku. Dzień:{' '}
             <strong>{matrixStats.currentDay || '(brak — pierwszy duet dzisiaj)'}</strong>
           </p>
         </div>

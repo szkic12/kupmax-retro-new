@@ -52,6 +52,10 @@ interface MatrixBudgetStats {
   paused: boolean;
   estimatedCostTodayUSD: number;
   estimatedCostTotalUSD: number;
+  // Kto robi 3D i obrazek z AI (admin/providersBudget, Brat 18.10.2026)
+  forceProvider: string | null;
+  falCount3d: number;
+  replicateCount3d: number;
 }
 
 const FAL_COST_PER_VIDEO = 0.20; // USD estimate
@@ -137,7 +141,15 @@ export async function GET(req: NextRequest) {
       paused: Boolean(mb.paused),
       estimatedCostTodayUSD: Number(mb.count || 0) * TRELLIS_COST_PER_MODEL,
       estimatedCostTotalUSD: Number(mb.totalCount || 0) * TRELLIS_COST_PER_MODEL,
+      forceProvider: null,
+      falCount3d: 0,
+      replicateCount3d: 0,
     };
+    const provDoc = await firestore.collection('admin').doc('providersBudget').get();
+    const pb = provDoc.exists ? (provDoc.data() || {}) : {};
+    matrixStats.forceProvider = (pb.forceProvider_3d as string) || null;
+    matrixStats.falCount3d = Number(pb.falCount_3d || 0);
+    matrixStats.replicateCount3d = Number(pb.replicateCount_3d || 0);
 
     return NextResponse.json({ success: true, videos, stats, matrixStats });
   } catch (e) {
@@ -194,7 +206,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'updateMatrix3DBudget') {
-      const { dailyMax, paused } = body;
+      const { dailyMax, paused, forceProvider } = body;
+      // Wybór serwisu dotyczy razem 3D i obrazka z AI (jeden przełącznik).
+      if (forceProvider === 'fal' || forceProvider === 'replicate' || forceProvider === null) {
+        await firestore.collection('admin').doc('providersBudget').set(
+          { forceProvider_3d: forceProvider, forceProvider_image: forceProvider },
+          { merge: true }
+        );
+        if (dailyMax === undefined && paused === undefined) {
+          return NextResponse.json({ success: true });
+        }
+      }
       const update: Record<string, unknown> = {};
       if (typeof dailyMax === 'number' && dailyMax >= 0 && dailyMax <= 10000) {
         update.dailyMax = dailyMax;
