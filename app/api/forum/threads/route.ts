@@ -1,38 +1,13 @@
 import { notify } from '@/lib/telegram';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 import { verifyRecaptcha } from '@/lib/recaptcha';
+import { forumDb, toThread, visibleCategories } from '@/lib/forum-db';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-const DEFAULT_CATEGORIES = [
-  { id: "1", name: "Pytania o produkty", description: "Zadawaj pytania", icon: "🛒", threadCount: 0, lastActivity: null, color: "#4CAF50", order: 1 },
-  { id: "2", name: "Wspomnienia retro", description: "Wspomnienia", icon: "📺", threadCount: 0, lastActivity: null, color: "#FF9800", order: 2 },
-  { id: "3", name: "Pomoc techniczna", description: "Pomoc", icon: "🔧", threadCount: 0, lastActivity: null, color: "#2196F3", order: 3 },
-  { id: "4", name: "Ogólne dyskusje", description: "Dyskusje", icon: "💬", threadCount: 0, lastActivity: null, color: "#9C27B0", order: 4 }
-];
-
-// Pobierz dane forum
-async function getForumData() {
-  const result = await s3Service.loadJsonData('forum', {
-    categories: DEFAULT_CATEGORIES,
-    threads: [],
-    posts: []
-  });
-  return result.data || { categories: DEFAULT_CATEGORIES, threads: [], posts: [] };
-}
-
-// Zapisz dane forum
-async function saveForumData(data: any) {
-  logger.log('💾 Saving forum data, threads:', data.threads?.length);
-  const result = await s3Service.saveJsonData('forum', data);
-  logger.log('💾 Forum save result:', result);
-  return result;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,35 +17,23 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const sort = searchParams.get('sort') || 'latest';
 
-    const forumData = await getForumData();
-    let threads = [...forumData.threads];
-
-    // Filtruj po kategorii
-    if (categoryId) {
-      threads = threads.filter((thread: any) => thread.categoryId === categoryId);
+    const cats = await visibleCategories();
+    const allowed = cats.map((c: any) => c.id);
+    if (categoryId && !allowed.includes(categoryId)) {
+      return NextResponse.json({ success: true, threads: [], pagination: { page, limit, total: 0, totalPages: 0 } });
     }
 
-    // Sortowanie
-    switch (sort) {
-      case 'latest':
-        threads.sort((a: any, b: any) =>
-          new Date(b.lastActivity || b.date).getTime() - new Date(a.lastActivity || a.date).getTime()
-        );
-        break;
-      case 'popular':
-        threads.sort((a: any, b: any) => (b.replyCount || 0) - (a.replyCount || 0));
-        break;
-      case 'views':
-        threads.sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
-        break;
-      default:
-        threads.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }
-
-    // Paginacja
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedThreads = threads.slice(startIndex, endIndex);
+    const order: Record<string, string> = { latest: 'last_activity', popular: 'reply_count', views: 'views' };
+    const from = (page - 1) * limit;
+    const { data, count, error } = await forumDb.from('forum_threads').select('*', { count: 'exact' })
+      .eq('status', 'widoczny')
+      .in('category_id', categoryId ? [categoryId] : allowed)
+      .order('is_pinned', { ascending: false })
+      .order(order[sort] || 'created_at', { ascending: false })
+      .range(from, from + limit - 1);
+    if (error) throw error;
+    const paginatedThreads = (data || []).map(toThread);
+    const total = count || 0;
 
     return NextResponse.json(
       {
@@ -79,8 +42,8 @@ export async function GET(req: NextRequest) {
         pagination: {
           page,
           limit,
-          total: threads.length,
-          totalPages: Math.ceil(threads.length / limit)
+          total,
+          totalPages: Math.ceil(total / limit)
         }
       },
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
@@ -140,11 +103,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
-
     // Sprawdź czy kategoria istnieje
-    const category = forumData.categories.find((cat: any) => cat.id === categoryId);
-    if (!category) {
+    const cats = await visibleCategories();
+    if (!cats.some((c: any) => c.id === categoryId)) {
       return NextResponse.json(
         { success: false, error: 'Category not found' },
         { status: 400 }
@@ -152,45 +113,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Utwórz nowy wątek
-    const newThread = {
-      id: `thread_${Date.now()}`,
-      categoryId,
+    const { data: row, error } = await forumDb.from('forum_threads').insert({
+      category_id: categoryId,
       title: title.substring(0, 100),
-      author: {
-        nickname: author.nickname?.substring(0, 40) || 'Anonim',
-        avatar: author.avatar || '👤'
-      },
-      message: message.substring(0, 5000),
-      date: new Date().toISOString(),
-      lastActivity: new Date().toISOString(),
-      replyCount: 0,
-      views: 0,
-      isSticky: false,
-      isLocked: false,
-      tags: []
-    };
+      author_nick: author.nickname?.substring(0, 40) || 'Anonim',
+      author_avatar: author.avatar || '👤',
+      body: message.substring(0, 5000),
+    }).select().single();
+    if (error) {
+      logger.error('Forum insert thread:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to save thread' },
+        { status: 500 }
+      );
+    }
+    const newThread = toThread(row);
 
     // Powiadomienie na Telegram (2026-08-20)
     notify('forum',
       newThread.author?.nickname || 'Anonim',
       newThread.title || 'nowy wątek',
       'https://www.kupmax.pl/forum').catch(() => {});
-
-    // Dodaj wątek
-    forumData.threads.unshift(newThread);
-
-    // Zaktualizuj kategorię
-    category.threadCount = (category.threadCount || 0) + 1;
-    category.lastActivity = new Date().toISOString();
-
-    // Zapisz
-    const saveResult = await saveForumData(forumData);
-    if (!saveResult.success) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to save thread' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
@@ -228,37 +171,28 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
+    const changes: Record<string, string> = {};
+    if (title !== undefined) changes.title = title.substring(0, 100);
+    if (message !== undefined) changes.body = message.substring(0, 5000);
 
-    // Znajdź wątek
-    const threadIndex = forumData.threads.findIndex((t: any) => String(t.id) === String(threadId));
-    if (threadIndex === -1) {
+    const { data: row, error } = await forumDb.from('forum_threads')
+      .update(changes).eq('id', threadId).select().maybeSingle();
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to update thread' },
+        { status: 500 }
+      );
+    }
+    if (!row) {
       return NextResponse.json(
         { success: false, error: 'Thread not found' },
         { status: 404 }
       );
     }
 
-    // Aktualizuj tylko podane pola
-    if (title !== undefined) {
-      forumData.threads[threadIndex].title = title.substring(0, 100);
-    }
-    if (message !== undefined) {
-      forumData.threads[threadIndex].message = message.substring(0, 5000);
-    }
-
-    // Zapisz
-    const saveResult = await saveForumData(forumData);
-    if (!saveResult.success) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to update thread' },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      thread: forumData.threads[threadIndex],
+      thread: toThread(row),
       message: 'Thread updated'
     });
   } catch (error) {
@@ -291,37 +225,20 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
-
-    // Znajdź wątek
-    const threadIndex = forumData.threads.findIndex((t: any) => String(t.id) === String(threadId));
-    if (threadIndex === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Thread not found' },
-        { status: 404 }
-      );
-    }
-
-    const thread = forumData.threads[threadIndex];
-
-    // Usuń wątek
-    forumData.threads.splice(threadIndex, 1);
-
-    // Usuń posty
-    forumData.posts = forumData.posts.filter((p: any) => p.threadId !== threadId);
-
-    // Zaktualizuj kategorię
-    const category = forumData.categories.find((cat: any) => cat.id === thread.categoryId);
-    if (category) {
-      category.threadCount = Math.max(0, (category.threadCount || 1) - 1);
-    }
-
-    // Zapisz
-    const saveResult = await saveForumData(forumData);
-    if (!saveResult.success) {
+    // Nie kasujemy z bazy: wątek dostaje status „usunięty” (ślad dla DSA i do cofnięcia)
+    const { data: row, error } = await forumDb.from('forum_threads')
+      .update({ status: 'usuniety', removed_reason: searchParams.get('reason') || 'usunięte przez moderację' })
+      .eq('id', threadId).select('id').maybeSingle();
+    if (error) {
       return NextResponse.json(
         { success: false, error: 'Failed to delete thread' },
         { status: 500 }
+      );
+    }
+    if (!row) {
+      return NextResponse.json(
+        { success: false, error: 'Thread not found' },
+        { status: 404 }
       );
     }
 

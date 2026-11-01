@@ -1,29 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import s3Service from '../../../../lib/aws-s3.js';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 import { sanitizeInput } from '@/lib/sanitize';
 import { verifyRecaptcha } from '@/lib/recaptcha';
+import { forumDb, toThread, toPost, visibleCategories } from '@/lib/forum-db';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const DEFAULT_DATA = {
-  categories: [],
-  threads: [],
-  posts: []
-};
-
-// Pobierz dane forum
-async function getForumData() {
-  const result = await s3Service.loadJsonData('forum', DEFAULT_DATA);
-  return result.data || DEFAULT_DATA;
-}
-
-// Zapisz dane forum
-async function saveForumData(data: any) {
-  return await s3Service.saveJsonData('forum', data);
+// Wątek widoczny i spoza ukrytych kategorii (18+ do czasu bramki wieku)
+async function findThread(threadId: string) {
+  const { data } = await forumDb.from('forum_threads').select('*')
+    .eq('id', threadId).eq('status', 'widoczny').maybeSingle();
+  if (!data) return null;
+  const cats = await visibleCategories();
+  return cats.some((c: any) => c.id === data.category_id) ? data : null;
 }
 
 export async function GET(req: NextRequest) {
@@ -40,31 +32,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
-
-    // Sprawdź czy wątek istnieje
-    const thread = forumData.threads.find((t: any) => t.id === threadId);
-    if (!thread) {
+    // Sprawdź czy wątek istnieje (stare linki thread_123 też działają)
+    const isUuid = /^[0-9a-f-]{36}$/i.test(threadId);
+    let row = isUuid ? await findThread(threadId) : null;
+    if (!isUuid) {
+      const { data } = await forumDb.from('forum_threads').select('id').eq('legacy_id', threadId).maybeSingle();
+      if (data) row = await findThread(data.id);
+    }
+    if (!row) {
       return NextResponse.json(
         { success: false, error: 'Thread not found' },
         { status: 404 }
       );
     }
 
-    // Pobierz posty
-    let posts = forumData.posts.filter((post: any) => post.threadId === threadId);
-
-    // Sortuj od najstarszych
-    posts.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Paginacja
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedPosts = posts.slice(startIndex, endIndex);
+    // Pobierz posty, od najstarszych
+    const from = (page - 1) * limit;
+    const { data: rows, count, error } = await forumDb.from('forum_posts').select('*', { count: 'exact' })
+      .eq('thread_id', row.id).eq('status', 'widoczny')
+      .order('created_at', { ascending: true })
+      .range(from, from + limit - 1);
+    if (error) throw error;
+    const paginatedPosts = (rows || []).map(toPost);
+    const total = count || 0;
 
     // Zwiększ licznik wyświetleń
-    thread.views = (thread.views || 0) + 1;
-    await saveForumData(forumData);
+    await forumDb.from('forum_threads').update({ views: (row.views || 0) + 1 }).eq('id', row.id);
+    const thread = toThread({ ...row, views: (row.views || 0) + 1 });
 
     return NextResponse.json(
       {
@@ -74,8 +68,8 @@ export async function GET(req: NextRequest) {
         pagination: {
           page,
           limit,
-          total: posts.length,
-          totalPages: Math.ceil(posts.length / limit)
+          total,
+          totalPages: Math.ceil(total / limit)
         }
       },
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
@@ -131,10 +125,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
-
     // Sprawdź czy wątek istnieje
-    const thread = forumData.threads.find((t: any) => t.id === threadId);
+    const thread = await findThread(threadId);
     if (!thread) {
       return NextResponse.json(
         { success: false, error: 'Thread not found' },
@@ -142,50 +134,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (thread.isLocked) {
-      return NextResponse.json(
-        { success: false, error: 'Thread is locked' },
-        { status: 400 }
-      );
-    }
-
     // Sanitize author nickname
     const sanitizedNickname = sanitizeInput(rawAuthor.nickname || 'Anonim', 40);
 
-    // Utwórz nowy post
-    const newPost = {
-      id: `post_${Date.now()}`,
-      threadId,
-      author: {
-        nickname: sanitizedNickname || 'Anonim',
-        avatar: rawAuthor.avatar || '👤'
-      },
-      message,
-      date: new Date().toISOString(),
-      isAnswer: false
-    };
-
-    // Dodaj post
-    forumData.posts.push(newPost);
-
-    // Zaktualizuj wątek
-    thread.replyCount = (thread.replyCount || 0) + 1;
-    thread.lastActivity = new Date().toISOString();
-
-    // Zaktualizuj kategorię
-    const category = forumData.categories.find((cat: any) => cat.id === thread.categoryId);
-    if (category) {
-      category.lastActivity = new Date().toISOString();
-    }
-
-    // Zapisz
-    const saveResult = await saveForumData(forumData);
-    if (!saveResult.success) {
+    // Utwórz nowy post (licznik odpowiedzi i ostatnią aktywność liczy baza)
+    const { data: row, error } = await forumDb.from('forum_posts').insert({
+      thread_id: thread.id,
+      author_nick: sanitizedNickname || 'Anonim',
+      author_avatar: rawAuthor.avatar || '👤',
+      body: message,
+    }).select().single();
+    if (error) {
+      logger.error('Forum insert post:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to save post' },
         { status: 500 }
       );
     }
+    const newPost = toPost(row);
 
     return NextResponse.json({
       success: true,
@@ -221,34 +187,20 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const forumData = await getForumData();
-
-    // Znajdź post
-    const postIndex = forumData.posts.findIndex((p: any) => String(p.id) === String(postId));
-    if (postIndex === -1) {
-      return NextResponse.json(
-        { success: false, error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    const post = forumData.posts[postIndex];
-
-    // Usuń post
-    forumData.posts.splice(postIndex, 1);
-
-    // Zaktualizuj licznik odpowiedzi w wątku
-    const thread = forumData.threads.find((t: any) => t.id === post.threadId);
-    if (thread) {
-      thread.replyCount = Math.max(0, (thread.replyCount || 1) - 1);
-    }
-
-    // Zapisz
-    const saveResult = await saveForumData(forumData);
-    if (!saveResult.success) {
+    // Nie kasujemy z bazy: post dostaje status „usunięty” (ślad dla DSA i do cofnięcia)
+    const { data: row, error } = await forumDb.from('forum_posts')
+      .update({ status: 'usuniety', removed_reason: searchParams.get('reason') || 'usunięte przez moderację' })
+      .eq('id', postId).select('id').maybeSingle();
+    if (error) {
       return NextResponse.json(
         { success: false, error: 'Failed to delete post' },
         { status: 500 }
+      );
+    }
+    if (!row) {
+      return NextResponse.json(
+        { success: false, error: 'Post not found' },
+        { status: 404 }
       );
     }
 

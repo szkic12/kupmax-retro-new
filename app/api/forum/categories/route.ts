@@ -1,74 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import s3Service from '../../../../lib/aws-s3.js';
+import { forumDb, toCategory, visibleCategories } from '@/lib/forum-db';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Domyślne kategorie
-const DEFAULT_CATEGORIES = [
-  {
-    id: "1",
-    name: "Pytania o produkty",
-    description: "Zadawaj pytania o nasze retro produkty",
-    icon: "🛒",
-    threadCount: 0,
-    lastActivity: null,
-    color: "#4CAF50",
-    order: 1
-  },
-  {
-    id: "2",
-    name: "Wspomnienia retro",
-    description: "Dziel się wspomnieniami z dawnych czasów",
-    icon: "📺",
-    threadCount: 0,
-    lastActivity: null,
-    color: "#FF9800",
-    order: 2
-  },
-  {
-    id: "3",
-    name: "Pomoc techniczna",
-    description: "Problemy techniczne i pytania o działanie strony",
-    icon: "🔧",
-    threadCount: 0,
-    lastActivity: null,
-    color: "#2196F3",
-    order: 3
-  },
-  {
-    id: "4",
-    name: "Ogólne dyskusje",
-    description: "Rozmowy na różne tematy",
-    icon: "💬",
-    threadCount: 0,
-    lastActivity: null,
-    color: "#9C27B0",
-    order: 4
-  }
-];
-
-// Pobierz dane forum z S3
-async function getForumData() {
-  const result = await s3Service.loadJsonData('forum', {
-    categories: DEFAULT_CATEGORIES,
-    threads: [],
-    posts: []
-  });
-  return result.data || { categories: DEFAULT_CATEGORIES, threads: [], posts: [] };
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const forumData = await getForumData();
+    const cats = await visibleCategories();
 
-    // Sortuj kategorie po kolejności
-    const sortedCategories = forumData.categories.sort((a: any, b: any) => a.order - b.order);
+    // Liczba wątków i ostatnia aktywność w każdej kategorii
+    const { data: rows, error } = await forumDb
+      .from('forum_threads').select('category_id, last_activity').eq('status', 'widoczny');
+    if (error) throw error;
+    const stats: Record<string, { count: number; last: string | null }> = {};
+    for (const r of rows || []) {
+      const s = (stats[r.category_id] ||= { count: 0, last: null });
+      s.count++;
+      if (!s.last || r.last_activity > s.last) s.last = r.last_activity;
+    }
 
     return NextResponse.json(
-      { success: true, categories: sortedCategories },
+      { success: true, categories: cats.map((c, i) => toCategory(c, i, stats[c.id])) },
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   } catch (error) {
