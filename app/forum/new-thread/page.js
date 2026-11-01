@@ -4,9 +4,12 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ForumAuth from '@/components/Forum/ForumAuth';
+import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function NewThreadPage() {
   const router = useRouter();
+  const me = useForumMe();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,16 +17,15 @@ export default function NewThreadPage() {
   const [formData, setFormData] = useState({
     categoryId: '',
     title: '',
-    message: '',
-    nickname: '',
-    avatar: '👤'
+    message: ''
   });
-
-  const avatars = ['👤', '😀', '😎', '🤓', '🧑‍💻', '👨‍🎤', '👩‍🔬', '🧙', '🤖', '👾', '🎮', '💀', '🐱', '🐶', '🦊'];
 
   useEffect(() => {
     document.body.style.overflow = 'auto';
     fetchCategories();
+  }, [me.profile?.adult_confirmed_at]);
+
+  useEffect(() => {
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -31,7 +33,7 @@ export default function NewThreadPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/forum/categories');
+      const response = await forumFetch('/api/forum/categories');
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -57,8 +59,8 @@ export default function NewThreadPage() {
       setError('Wpisz treść wątku!');
       return;
     }
-    if (!formData.nickname.trim()) {
-      setError('Wpisz swój nick!');
+    if (!me.profile) {
+      setError('Najpierw się zaloguj.');
       return;
     }
 
@@ -74,17 +76,13 @@ export default function NewThreadPage() {
         console.warn('reCAPTCHA failed to load:', e);
       }
 
-      const response = await fetch('/api/forum/threads', {
+      const response = await forumFetch('/api/forum/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           categoryId: formData.categoryId,
           title: formData.title,
           message: formData.message,
-          author: {
-            nickname: formData.nickname,
-            avatar: formData.avatar
-          },
           recaptchaToken,
         })
       });
@@ -128,7 +126,9 @@ export default function NewThreadPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <ForumAuth me={me} why="dodać wątek" />
+
+          {me.profile && <form onSubmit={handleSubmit}>
             <fieldset>
               <legend>Kategoria</legend>
               <div className="categories-grid">
@@ -148,37 +148,6 @@ export default function NewThreadPage() {
                     <span className="cat-name">{cat.name}</span>
                   </label>
                 ))}
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend>Twój profil</legend>
-              <div className="profile-row">
-                <div className="avatar-picker">
-                  <label>Avatar:</label>
-                  <div className="avatars">
-                    {avatars.map(av => (
-                      <button
-                        key={av}
-                        type="button"
-                        className={`avatar-btn ${formData.avatar === av ? 'selected' : ''}`}
-                        onClick={() => setFormData({ ...formData, avatar: av })}
-                      >
-                        {av}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="nickname-input">
-                  <label>Nick:</label>
-                  <input
-                    type="text"
-                    value={formData.nickname}
-                    onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                    placeholder="Twój nick..."
-                    maxLength={40}
-                  />
-                </div>
               </div>
             </fieldset>
 
@@ -217,7 +186,7 @@ export default function NewThreadPage() {
                 Anuluj
               </Link>
             </div>
-          </form>
+          </form>}
         </div>
 
         <div className="status-bar">

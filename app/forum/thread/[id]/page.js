@@ -4,10 +4,13 @@ import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import ForumAuth from '@/components/Forum/ForumAuth';
+import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
   const params = useParams();
   const threadId = params.id;
+  const me = useForumMe();
 
   const [thread, setThread] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -19,12 +22,8 @@ export default function ThreadPage() {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyLoading, setReplyLoading] = useState(false);
   const [replyData, setReplyData] = useState({
-    message: '',
-    nickname: '',
-    avatar: '👤'
+    message: ''
   });
-
-  const avatars = ['👤', '😀', '😎', '🤓', '🧑‍💻', '👨‍🎤', '👩‍🔬', '🧙', '🤖', '👾', '🎮', '💀', '🐱', '🐶', '🦊'];
 
   useEffect(() => {
     document.body.style.overflow = 'auto';
@@ -33,11 +32,11 @@ export default function ThreadPage() {
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [threadId]);
+  }, [threadId, me.profile?.adult_confirmed_at]);
 
   const fetchThread = async () => {
     try {
-      const response = await fetch(`/api/forum/posts?threadId=${threadId}`);
+      const response = await forumFetch(`/api/forum/posts?threadId=${threadId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -55,7 +54,7 @@ export default function ThreadPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/forum/categories');
+      const response = await forumFetch('/api/forum/categories');
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -73,8 +72,8 @@ export default function ThreadPage() {
       setError('Wpisz treść odpowiedzi!');
       return;
     }
-    if (!replyData.nickname.trim()) {
-      setError('Wpisz swój nick!');
+    if (!me.profile) {
+      setError('Najpierw się zaloguj.');
       return;
     }
 
@@ -90,16 +89,12 @@ export default function ThreadPage() {
         console.warn('reCAPTCHA failed to load:', e);
       }
 
-      const response = await fetch('/api/forum/posts', {
+      const response = await forumFetch('/api/forum/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           threadId,
           message: replyData.message,
-          author: {
-            nickname: replyData.nickname,
-            avatar: replyData.avatar
-          },
           recaptchaToken,
         })
       });
@@ -346,36 +341,9 @@ export default function ThreadPage() {
                 </button>
               ) : (
                 <div className="reply-form-container">
-                  <h3>✍️ Twoja odpowiedź</h3>
-                  <form onSubmit={handleReplySubmit}>
-                    <div className="profile-row">
-                      <div className="avatar-picker">
-                        <label>Avatar:</label>
-                        <div className="avatars">
-                          {avatars.map(av => (
-                            <button
-                              key={av}
-                              type="button"
-                              className={`avatar-btn ${replyData.avatar === av ? 'selected' : ''}`}
-                              onClick={() => setReplyData({ ...replyData, avatar: av })}
-                            >
-                              {av}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="nickname-input">
-                        <label>Nick:</label>
-                        <input
-                          type="text"
-                          value={replyData.nickname}
-                          onChange={(e) => setReplyData({ ...replyData, nickname: e.target.value })}
-                          placeholder="Twój nick..."
-                          maxLength={40}
-                        />
-                      </div>
-                    </div>
-
+                  <ForumAuth me={me} why="odpowiedzieć" />
+                  {me.profile && <h3>✍️ Twoja odpowiedź</h3>}
+                  {me.profile && <form onSubmit={handleReplySubmit}>
                     <div className="form-group">
                       <label>Wiadomość:</label>
                       <textarea
@@ -400,7 +368,7 @@ export default function ThreadPage() {
                         Anuluj
                       </button>
                     </div>
-                  </form>
+                  </form>}
                 </div>
               )}
             </div>

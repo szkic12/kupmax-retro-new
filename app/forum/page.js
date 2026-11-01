@@ -6,8 +6,11 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { EmojiParser } from '../../components/RetroEmoji';
 import RetroNavbar from '../../components/RetroNavbar';
+import ForumAuth from '../../components/Forum/ForumAuth';
+import { forumFetch, useForumMe } from '../../lib/forum-client';
 
 export default function ForumPage() {
+  const me = useForumMe();
   const [categories, setCategories] = useState([]);
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +47,11 @@ export default function ForumPage() {
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [activeCategory, sortBy]);
+  }, [activeCategory, sortBy, me.profile?.adult_confirmed_at]);
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/forum/categories');
+      const response = await forumFetch('/api/forum/categories');
       const data = await response.json();
       if (data.success) {
         setCategories(data.categories);
@@ -65,7 +68,7 @@ export default function ForumPage() {
       if (activeCategory) params.append('categoryId', activeCategory);
       params.append('sort', sortBy);
       
-      const response = await fetch(`/api/forum/threads?${params}`);
+      const response = await forumFetch(`/api/forum/threads?${params}`);
       const data = await response.json();
       if (data.success) {
         setThreads(data.threads);
@@ -286,6 +289,9 @@ export default function ForumPage() {
             </div>
           </div>
         )}
+
+        {/* Zalogowany widzi pasek „piszesz jako” (gość loguje się przy pisaniu) */}
+        {me.session && <ForumAuth me={me} />}
 
         {/* Kategorie */}
         <div className="categories-section">

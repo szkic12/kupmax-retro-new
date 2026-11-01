@@ -8,9 +8,6 @@ export const forumDb = createClient(
   { auth: { persistSession: false } }
 );
 
-// Strefa 18+ jest schowana, dopóki nie ma bramki wieku (K2)
-export const SHOW_ADULT = false;
-
 const COLORS = ['#4CAF50', '#FF9800', '#2196F3', '#9C27B0', '#E91E63', '#00BCD4', '#795548', '#607D8B'];
 
 export function toCategory(c: any, i: number, stats?: { count: number; last: string | null }) {
@@ -62,10 +59,10 @@ export function toPost(p: any) {
   };
 }
 
-// Kategorie, które wolno teraz pokazać (bez 18+, dopóki nie ma bramki)
-export async function visibleCategories() {
+// Kategorie, które wolno pokazać; strefa 18+ tylko dla zalogowanych po bramce wieku
+export async function visibleCategories(adult = false) {
   let q = forumDb.from('forum_categories').select('*').order('sort');
-  if (!SHOW_ADULT) q = q.eq('is_adult', false);
+  if (!adult) q = q.eq('is_adult', false);
   const { data, error } = await q;
   if (error) throw error;
   return data || [];

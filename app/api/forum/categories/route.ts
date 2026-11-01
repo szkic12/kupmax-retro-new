@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { forumDb, toCategory, visibleCategories } from '@/lib/forum-db';
+import { getForumUser, isAdult } from '@/lib/forum-auth';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,7 @@ export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const cats = await visibleCategories();
+    const cats = await visibleCategories(isAdult(await getForumUser(req)));
 
     // Liczba wątków i ostatnia aktywność w każdej kategorii
     const { data: rows, error } = await forumDb

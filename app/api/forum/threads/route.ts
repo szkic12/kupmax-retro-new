@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth';
 import { verifyRecaptcha } from '@/lib/recaptcha';
 import { forumDb, toThread, visibleCategories } from '@/lib/forum-db';
+import { getForumUser, isAdult } from '@/lib/forum-auth';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const sort = searchParams.get('sort') || 'latest';
 
-    const cats = await visibleCategories();
+    const cats = await visibleCategories(isAdult(await getForumUser(req)));
     const allowed = cats.map((c: any) => c.id);
     if (categoryId && !allowed.includes(categoryId)) {
       return NextResponse.json({ success: true, threads: [], pagination: { page, limit, total: 0, totalPages: 0 } });
@@ -70,7 +71,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, author, recaptchaToken } = await req.json();
+    // Pisać mogą tylko zalogowani z profilem forum
+    const me = await getForumUser(req);
+    if (!me?.profile) {
+      return NextResponse.json(
+        { success: false, error: 'Zaloguj się, żeby dodać wątek.' },
+        { status: 401 }
+      );
+    }
+
+    const { categoryId, title, message, recaptchaToken } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -82,9 +92,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Walidacja
-    if (!categoryId || !title || !message || !author) {
+    if (!categoryId || !title || !message) {
       return NextResponse.json(
-        { success: false, error: 'Category ID, title, message, and author are required' },
+        { success: false, error: 'Category ID, title and message are required' },
         { status: 400 }
       );
     }
@@ -103,8 +113,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sprawdź czy kategoria istnieje
-    const cats = await visibleCategories();
+    // Sprawdź czy kategoria istnieje (18+ tylko po bramce wieku)
+    const cats = await visibleCategories(isAdult(me));
     if (!cats.some((c: any) => c.id === categoryId)) {
       return NextResponse.json(
         { success: false, error: 'Category not found' },
@@ -116,8 +126,9 @@ export async function POST(req: NextRequest) {
     const { data: row, error } = await forumDb.from('forum_threads').insert({
       category_id: categoryId,
       title: title.substring(0, 100),
-      author_nick: author.nickname?.substring(0, 40) || 'Anonim',
-      author_avatar: author.avatar || '👤',
+      author_id: me.user.id,
+      author_nick: me.profile.nick,
+      author_avatar: me.profile.avatar,
       body: message.substring(0, 5000),
     }).select().single();
     if (error) {

@@ -4,17 +4,18 @@ import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth'
 import { sanitizeInput } from '@/lib/sanitize';
 import { verifyRecaptcha } from '@/lib/recaptcha';
 import { forumDb, toThread, toPost, visibleCategories } from '@/lib/forum-db';
+import { getForumUser, isAdult } from '@/lib/forum-auth';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Wątek widoczny i spoza ukrytych kategorii (18+ do czasu bramki wieku)
-async function findThread(threadId: string) {
+// Wątek widoczny i z kategorii, którą ten człowiek może oglądać (18+ tylko po bramce wieku)
+async function findThread(threadId: string, adult: boolean) {
   const { data } = await forumDb.from('forum_threads').select('*')
     .eq('id', threadId).eq('status', 'widoczny').maybeSingle();
   if (!data) return null;
-  const cats = await visibleCategories();
+  const cats = await visibleCategories(adult);
   return cats.some((c: any) => c.id === data.category_id) ? data : null;
 }
 
@@ -33,11 +34,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Sprawdź czy wątek istnieje (stare linki thread_123 też działają)
+    const adult = isAdult(await getForumUser(req));
     const isUuid = /^[0-9a-f-]{36}$/i.test(threadId);
-    let row = isUuid ? await findThread(threadId) : null;
+    let row = isUuid ? await findThread(threadId, adult) : null;
     if (!isUuid) {
       const { data } = await forumDb.from('forum_threads').select('id').eq('legacy_id', threadId).maybeSingle();
-      if (data) row = await findThread(data.id);
+      if (data) row = await findThread(data.id, adult);
     }
     if (!row) {
       return NextResponse.json(
@@ -96,7 +98,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { threadId, message: rawMessage, author: rawAuthor, recaptchaToken } = await req.json();
+    // Odpowiadać mogą tylko zalogowani z profilem forum
+    const me = await getForumUser(req);
+    if (!me?.profile) {
+      return NextResponse.json(
+        { success: false, error: 'Zaloguj się, żeby odpowiedzieć.' },
+        { status: 401 }
+      );
+    }
+
+    const { threadId, message: rawMessage, recaptchaToken } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -108,9 +119,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Walidacja
-    if (!threadId || !rawMessage || !rawAuthor) {
+    if (!threadId || !rawMessage) {
       return NextResponse.json(
-        { success: false, error: 'Thread ID, message, and author are required' },
+        { success: false, error: 'Thread ID and message are required' },
         { status: 400 }
       );
     }
@@ -126,7 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Sprawdź czy wątek istnieje
-    const thread = await findThread(threadId);
+    const thread = await findThread(threadId, isAdult(me));
     if (!thread) {
       return NextResponse.json(
         { success: false, error: 'Thread not found' },
@@ -134,14 +145,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sanitize author nickname
-    const sanitizedNickname = sanitizeInput(rawAuthor.nickname || 'Anonim', 40);
-
     // Utwórz nowy post (licznik odpowiedzi i ostatnią aktywność liczy baza)
     const { data: row, error } = await forumDb.from('forum_posts').insert({
       thread_id: thread.id,
-      author_nick: sanitizedNickname || 'Anonim',
-      author_avatar: rawAuthor.avatar || '👤',
+      author_id: me.user.id,
+      author_nick: me.profile.nick,
+      author_avatar: me.profile.avatar,
       body: message,
     }).select().single();
     if (error) {
