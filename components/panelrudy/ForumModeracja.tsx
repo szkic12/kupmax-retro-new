@@ -24,9 +24,9 @@ const link = (t: Item, type: string) =>
 const typeLabel = (type: string) => (type === 'thread' ? '🧵 wątek' : type === 'post' ? '💬 odpowiedź' : '🗂️ wpis na karcie');
 
 export default function ForumModeracja() {
-  const [data, setData] = useState<{ reports: Item[]; threads: Item[]; posts: Item[]; claims?: Item[] } | null>(null);
+  const [data, setData] = useState<{ reports: Item[]; threads: Item[]; posts: Item[]; claims?: Item[]; queue?: Item[] } | null>(null);
   const [err, setErr] = useState('');
-  const [view, setView] = useState<'zgloszenia' | 'wpisy'>('zgloszenia');
+  const [view, setView] = useState<'zgloszenia' | 'wpisy' | 'pieczec'>('zgloszenia');
 
   const load = useCallback(async () => {
     setErr('');
@@ -64,6 +64,9 @@ export default function ForumModeracja() {
           Zgłoszenia {open.length > 0 && <b style={{ color: '#c00' }}>({open.length} nowych)</b>}
         </button>
         <button style={{ ...btn, fontWeight: view === 'wpisy' ? 'bold' : 'normal' }} onClick={() => setView('wpisy')}>Ostatnie wpisy (też 18+)</button>
+        <button style={{ ...btn, fontWeight: view === 'pieczec' ? 'bold' : 'normal' }} onClick={() => setView('pieczec')}>
+          ✔ Pieczęć {data?.queue?.length ? `(${data.queue.length})` : ''}
+        </button>
         <button style={btn} onClick={load}>🔄</button>
         <a href="/forum/zasady" target="_blank" rel="noreferrer" style={{ fontSize: 12, alignSelf: 'center' }}>zasady forum</a>
       </div>
@@ -80,6 +83,17 @@ export default function ForumModeracja() {
               {done.map((r) => <Report key={r.id} r={r} act={act} />)}
             </details>
           )}
+        </>
+      )}
+
+      {data && view === 'pieczec' && (
+        <>
+          <p style={{ fontSize: 12, color: '#444', margin: '0 0 8px' }}>
+            Twoja pieczęć przebija głosy ludzi i uczy sito, komu ufać: kto głosował zgodnie z nią, zyskuje wagę, a kto przeciw, traci.
+            Do nauki modelu idzie tylko to, co ma ✔ albo przeszło sito. Najpierw sporne, potem tuż przy progu.
+          </p>
+          {(data.queue || []).length === 0 && <p style={{ color: '#060' }}>✅ Nic nie czeka na pieczęć.</p>}
+          {(data.queue || []).map((c) => <SealRow key={c.id} c={c} onDone={load} />)}
         </>
       )}
 
@@ -166,6 +180,41 @@ function Remove({ type, id, act, initial = 'inne', onDone }: { type: string; id:
       >
         🗑️ Usuń z powodem
       </button>
+    </div>
+  );
+}
+
+const VERDICT: Record<string, string> = { sprawdzone: '✅ sprawdzone', falsz: '❌ fałsz', praktyka: '👨‍🍳 sprawdzone w praktyce' };
+
+function SealRow({ c, onDone }: { c: Item; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const seal = async (v: 'tak' | 'nie') => {
+    setBusy(true);
+    const res = await fetch('/api/forum/moderacja', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pieczec', targetType: 'claim', targetId: c.id, seal: v }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!json.success) alert(json.error || 'Nie wyszło');
+    onDone();
+  };
+  const href = c.thread_id ? `/forum/thread/${c.thread_id}` : `/forum/karta/${c.forum_cards?.slug || ''}`;
+  return (
+    <div style={{ ...box, borderLeft: c.yes > 0 && c.no > 0 ? '4px solid #c90' : '4px solid #4070c0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <small>{c.kind === 'fakt' ? '📏 fakt' : '🎨 wariant'} · {c.is_ai ? '🤖 AI kupmax' : c.author_nick}{c.forum_cards ? ` · 🗂️ ${c.forum_cards.name}` : ''}</small>
+        <a href={href} target="_blank" rel="noreferrer">otwórz ↗</a>
+      </div>
+      <p style={{ margin: '6px 0' }}>{c.condition && <i>{c.condition}: </i>}{c.body}</p>
+      <small>
+        {c.kind === 'fakt' ? `✅ ${c.yes} (waga ${c.wyes}) · ❌ ${c.no} (waga ${c.wno})` : `👨‍🍳 ${c.done} (waga ${c.wdone})`}
+        {c.verdict ? ` · sito: ${VERDICT[c.verdict]}` : ' · sito: jeszcze nie rozstrzygnęło'}
+      </small>
+      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+        <button style={{ ...btn, background: '#b8f0b8' }} disabled={busy} onClick={() => seal('tak')}>{c.kind === 'fakt' ? '✔ Prawda' : '✔ Działa'}</button>
+        <button style={{ ...btn, background: '#ffb0b0' }} disabled={busy} onClick={() => seal('nie')}>{c.kind === 'fakt' ? '✖ Fałsz' : '✖ Zła rada'}</button>
+      </div>
     </div>
   );
 }

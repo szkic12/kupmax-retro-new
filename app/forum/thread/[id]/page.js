@@ -12,7 +12,7 @@ import PhotoGallery from '@/components/Forum/PhotoGallery';
 import ModelPicker from '@/components/Forum/ModelPicker';
 import ModelView from '@/components/Forum/Model3D';
 import ReportButton from '@/components/Forum/ReportButton';
-import { ClaimList, FullAnswer } from '@/components/Forum/Claims';
+import { ClaimList, FullAnswer, leafOf } from '@/components/Forum/Claims';
 import CardText from '@/components/Forum/CardText';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
@@ -386,7 +386,10 @@ export default function ThreadPage() {
                 <div key={post.id} id={`p-${post.id}`} className={`post reply-post${post.isAi ? ' ai-post' : ''}`}>
                   <div className="post-author">
                     <div className="author-avatar">{post.author?.avatar || '👤'}</div>
-                    <div className="author-name">{post.author?.nickname || 'Anonim'}</div>
+                    <div className="author-name">
+                      {post.author?.nickname || 'Anonim'}
+                      {post.authorTrust != null && <span className="leaf" title={leafOf(post.authorTrust).label}> {leafOf(post.authorTrust).icon}</span>}
+                    </div>
                     {post.isAi && <div className="ai-badge">🤖 AI, może się mylić</div>}
                     {post.authorWins > 0 && <div className="ai-wins" title="Ile razy AI przyznało mu rację">🏆 trafne poprawki AI: {post.authorWins}</div>}
                     <div className="reply-number">#{index + 1}</div>

@@ -11,7 +11,8 @@ const MAX_CLAIMS = 8;
 const MIN_BODY = 30; // krótsze wpisy („dzięki!”) nie mają czego rozbierać
 type Row = Record<string, any>;
 
-export const isDisputed = (c: Row) => c.kind === 'fakt' && c.no > c.yes;
+// Sporne: sito uznało za fałsz albo (bez werdyktu) ważone ❌ przeważa
+export const isDisputed = (c: Row) => c.verdict === 'falsz' || (!c.verdict && c.kind === 'fakt' && Number(c.wno ?? c.no) > Number(c.wyes ?? c.yes));
 
 const SPLIT_SYSTEM = `Rozbierasz odpowiedzi z polskiego forum na pojedyncze twierdzenia, żeby ludzie mogli je osobno ocenić.
 
@@ -187,6 +188,7 @@ export function toClaim(c: Row, mine?: string) {
     author: c.is_ai ? 'AI kupmax' : c.author_nick, isAi: c.is_ai, authorId: c.author_id,
     yes: c.yes, no: c.no, done: c.done, myVote: mine || null, disputed: isDisputed(c),
     cardId: c.card_id || null, drawer: c.drawer || null,
+    verdict: c.verdict || null, seal: c.seal || null,
   };
 }
 

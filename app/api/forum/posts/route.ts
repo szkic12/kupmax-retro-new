@@ -78,14 +78,15 @@ export async function GET(req: NextRequest) {
     // Licznik „poprawił AI” przy nickach autorów
     const authorIds = [...new Set((rows || []).map((p: any) => p.author_id).filter(Boolean))];
     const { data: profs } = authorIds.length
-      ? await forumDb.from('forum_profiles').select('user_id, ai_wins').in('user_id', authorIds)
+      ? await forumDb.from('forum_profiles').select('user_id, ai_wins, trust').in('user_id', authorIds)
       : { data: [] };
     const wins = new Map<string, number>((profs || []).map((p: any) => [p.user_id, p.ai_wins || 0]));
+    const trust = new Map<string, number>((profs || []).map((p: any) => [p.user_id, Number(p.trust) || 0]));
     const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
     const aiOff = !!cat?.is_adult;
     // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7)
     const { claims, summary, cards } = aiOff ? { claims: [], summary: null, cards: [] } : await claimsForThread(row, viewer?.user.id);
-    const paginatedPosts = (rows || []).map((p: any) => ({ ...toPost(p, wins), claims: claims.filter((c) => c.postId === p.id) }));
+    const paginatedPosts = (rows || []).map((p: any) => ({ ...toPost(p, wins, trust), claims: claims.filter((c) => c.postId === p.id) }));
     const total = count || 0;
 
     // Zwiększ licznik wyświetleń

@@ -50,7 +50,7 @@ export function toThread(t: any) {
   };
 }
 
-export function toPost(p: any, wins?: Map<string, number>) {
+export function toPost(p: any, wins?: Map<string, number>, trust?: Map<string, number>) {
   // Usunięty wpis: zostaje tylko ślad z powodem, bez treści, zdjęć i nagrań
   if (p.status === 'usuniety') {
     return { id: p.id, threadId: p.thread_id, removed: true, removedReason: p.removed_reason, date: p.created_at, author: { nickname: p.author_nick, avatar: p.author_avatar }, message: '', photos: [], model: null, voiceUrl: null };
@@ -63,6 +63,7 @@ export function toPost(p: any, wins?: Map<string, number>) {
     isAi: p.is_ai,
     aiAsks: !!p.ai_asks,
     authorWins: (p.author_id && wins?.get(p.author_id)) || 0,
+    authorTrust: p.author_id ? trust?.get(p.author_id) ?? null : null,
     correctsPostId: p.corrects_post_id || null,
     correctionStatus: p.correction_status || null,
     correctionNote: p.correction_note || null,

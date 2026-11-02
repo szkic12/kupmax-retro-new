@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { checkRateLimit } from '@/lib/admin-auth';
+import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
+import { ipHash, recountClaim, refreshTrust, setSeal } from '@/lib/forum-trust';
 import { forumDb, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { toClaim } from '@/lib/forum-claims';
@@ -47,20 +48,25 @@ export async function POST(req: NextRequest) {
     const { data: prev } = await forumDb.from('forum_claim_votes').select('vote').eq('claim_id', claimId).eq('user_id', me.user.id).maybeSingle();
     const next = vote === null || prev?.vote === vote ? null : vote;
     if (next) {
-      const { error } = await forumDb.from('forum_claim_votes').upsert({ claim_id: claimId, user_id: me.user.id, vote: next, created_at: new Date().toISOString() });
+      await refreshTrust(me.user.id); // waga rośnie z wiekiem konta, odświeżamy przy okazji
+      const { error } = await forumDb.from('forum_claim_votes').upsert({ claim_id: claimId, user_id: me.user.id, vote: next, created_at: new Date().toISOString(), ip_hash: ipHash(getClientIP(req)) });
       if (error) throw error;
     } else if (prev) {
+      // Cofnięty głos na kawałku z pieczęcią: odejmij go z trafności, zanim zniknie
+      if (claim.seal) {
+        const { data: v } = await forumDb.from('forum_claim_votes').select('scored').eq('claim_id', claimId).eq('user_id', me.user.id).maybeSingle();
+        if (v?.scored) {
+          const { data: p } = await forumDb.from('forum_profiles').select('seal_hits, seal_total').eq('user_id', me.user.id).single();
+          if (p) await forumDb.from('forum_profiles').update({ seal_hits: Math.max(0, p.seal_hits - (v.scored === 'hit' ? 1 : 0)), seal_total: Math.max(0, p.seal_total - 1) }).eq('user_id', me.user.id);
+          await refreshTrust(me.user.id);
+        }
+      }
       await forumDb.from('forum_claim_votes').delete().eq('claim_id', claimId).eq('user_id', me.user.id);
     }
 
-    // Liczniki przeliczamy z głosów, więc zawsze się zgadzają
-    const { data: all } = await forumDb.from('forum_claim_votes').select('vote').eq('claim_id', claimId);
-    const count = (v: string) => (all || []).filter((x) => x.vote === v).length;
-    const { data: updated, error } = await forumDb.from('forum_claims')
-      .update({ yes: count('tak'), no: count('nie'), done: count('dziala') })
-      .eq('id', claimId).select('*').single();
-    if (error) throw error;
-
+    // Sito: ważone głosy, werdykt, kara za fałsz (lib/forum-trust)
+    // Kawałek z pieczęcią: rozlicz zmieniony głos z trafnością (setSeal przelicza też werdykt)
+    const updated = claim.seal && next ? await setSeal(claimId, claim.seal) : await recountClaim(claimId);
     return NextResponse.json({ success: true, claim: toClaim(updated, next || undefined) });
   } catch (error) {
     logger.error('forum claim vote:', error);

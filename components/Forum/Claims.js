@@ -5,6 +5,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { forumFetch } from '@/lib/forum-client';
 
+// Listek zaufania (sito K9): pokazujemy poziom, nie liczbę
+export function leafOf(trust) {
+  const t = Number(trust) || 0;
+  if (t >= 1.5) return { icon: '🌳', label: 'sprawdzony: jego oceny często trafiają' };
+  if (t >= 0.5) return { icon: '🌿', label: 'pewny' };
+  return { icon: '🌱', label: 'nowy: jego głos waży jeszcze mało' };
+}
+
+function VerdictBadge({ claim }) {
+  if (claim.seal === 'tak') return <span className="cl-verdict ok" title="Zatwierdzone przez moderatora kupmax">✔ zatwierdzone</span>;
+  if (claim.seal === 'nie') return <span className="cl-verdict bad" title="Moderator kupmax uznał za nieprawdę">✖ fałsz (zatwierdzone)</span>;
+  if (claim.verdict === 'sprawdzone') return <span className="cl-verdict ok" title="Potwierdziło kilka niezależnych osób">✅ sprawdzone przez ludzi</span>;
+  if (claim.verdict === 'praktyka') return <span className="cl-verdict ok" title="Kilka osób zrobiło i działa">👨‍🍳 sprawdzone w praktyce</span>;
+  if (claim.verdict === 'falsz') return <span className="cl-verdict bad" title="Kilka niezależnych osób uznało za nieprawdę">❌ uznane za fałsz</span>;
+  return null;
+}
+
 export function ClaimRow({ claim, me, onVoted, showAuthor, card, children }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -50,7 +67,8 @@ export function ClaimRow({ claim, me, onVoted, showAuthor, card, children }) {
           {card && <Link className="cl-card" href={`/forum/karta/${card.slug}`} title="Karta wiedzy">🗂️ {card.name}</Link>}
         </div>
         {children}
-        {claim.disputed && <div className="cl-warn">⚠️ Sporne: więcej osób uważa to za nieprawdę.</div>}
+        <VerdictBadge claim={claim} />
+        {claim.disputed && !claim.verdict && !claim.seal && <div className="cl-warn">⚠️ Sporne: więcej osób uważa to za nieprawdę.</div>}
         <div className="cl-votes">
           {claim.kind === 'fakt' ? (
             <>
@@ -125,6 +143,9 @@ export function ClaimStyles() {
       .cl-card { display: inline-block; margin-left: 6px; font-size: 11px; color: #005000; background: #e6f4e6; border: 1px solid #9c9; border-radius: 10px; padding: 0 6px; text-decoration: none; white-space: nowrap; }
       .cl-card:hover { text-decoration: underline; }
       .cl-warn { font-size: 12px; color: #a00; margin-top: 2px; }
+      .cl-verdict { display: inline-block; font-size: 11px; margin-top: 3px; padding: 1px 6px; border-radius: 8px; border: 1px solid; }
+      .cl-verdict.ok { background: #e6f7e6; border-color: #6b6; color: #040; }
+      .cl-verdict.bad { background: #fde8e8; border-color: #d88; color: #800; }
       .cl-votes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
       .cl-vote { background: #e8e8e8; border: 1px solid #aaa; border-radius: 12px; padding: 2px 10px; font-size: 12px; cursor: pointer; color: #000; }
       .cl-vote.on { background: #fff3b0; border-color: #c90; }
