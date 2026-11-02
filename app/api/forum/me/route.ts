@@ -13,7 +13,20 @@ const AVATARS = ['👤', '😀', '😎', '🤓', '🧑‍💻', '👨‍🎤', '
 export async function GET(req: NextRequest) {
   const me = await getForumUser(req);
   if (!me) return NextResponse.json({ success: false, error: 'Nie zalogowano' }, { status: 401 });
-  return NextResponse.json({ success: true, email: me.user.email, profile: me.profile });
+  return NextResponse.json({ success: true, email: me.user.email, profile: me.profile, notices: me.profile ? await notices(me.user.id, (me.profile as any).notices_seen_at) : [] });
+}
+
+// Usunięte wpisy autora, których jeszcze nie widział (powód usunięcia, DSA art. 17)
+async function notices(userId: string, seenAt: string | null) {
+  const since = seenAt || '1970-01-01';
+  const [t, p] = await Promise.all([
+    forumDb.from('forum_threads').select('id, title, removed_reason, removed_at').eq('author_id', userId).eq('status', 'usuniety').gt('removed_at', since),
+    forumDb.from('forum_posts').select('id, thread_id, body, removed_reason, removed_at').eq('author_id', userId).eq('status', 'usuniety').gt('removed_at', since),
+  ]);
+  return [
+    ...(t.data || []).map((x) => ({ kind: 'wątek', what: x.title, reason: x.removed_reason, at: x.removed_at })),
+    ...(p.data || []).map((x) => ({ kind: 'odpowiedź', what: String(x.body || '').slice(0, 80), reason: x.removed_reason, at: x.removed_at, threadId: x.thread_id })),
+  ].sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }
 
 // POST: zakłada albo zmienia profil forum (nick, awatar, zgody, 18+)
@@ -22,7 +35,14 @@ export async function POST(req: NextRequest) {
     const me = await getForumUser(req);
     if (!me) return NextResponse.json({ success: false, error: 'Nie zalogowano' }, { status: 401 });
 
-    const { nick: rawNick, avatar, acceptTerms, consentTraining, adult } = await req.json();
+    const input = await req.json();
+    // Autor przeczytał powiadomienia o usuniętych wpisach
+    if (input.seenNotices) {
+      if (!me.profile) return NextResponse.json({ success: false }, { status: 400 });
+      await forumDb.from('forum_profiles').update({ notices_seen_at: new Date().toISOString() }).eq('user_id', me.user.id);
+      return NextResponse.json({ success: true });
+    }
+    const { nick: rawNick, avatar, acceptTerms, consentTraining, adult } = input;
     const nick = sanitizeInput(rawNick || '', 40).trim();
     if (nick.length < 2) {
       return NextResponse.json({ success: false, error: 'Nick musi mieć co najmniej 2 znaki.' }, { status: 400 });

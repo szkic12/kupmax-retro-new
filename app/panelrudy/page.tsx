@@ -1,4 +1,5 @@
 'use client';
+import ForumModeracja from '@/components/panelrudy/ForumModeracja';
 import { logger } from '@/lib/logger';
 import Vibe3DAdminTab from '@/components/Vibe3DAdmin/Vibe3DAdminTab';
 import { useStrony } from '@/components/panelrudy/Stronicowanie';
@@ -3234,6 +3235,7 @@ export default function SecureAdminPanel() {
                 {/* FORUM TAB */}
                 {activeTab === 'forum' && (
                   <div>
+                    <ForumModeracja />
                     <h3 style={{ margin: '0 0 15px 0', borderBottom: '1px solid #808080', paddingBottom: '5px' }}>
                       💬 Zarządzanie Forum ({forumThreads.length} wątków)
                     </h3>

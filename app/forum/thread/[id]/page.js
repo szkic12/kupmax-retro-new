@@ -11,6 +11,7 @@ import PhotoPicker from '@/components/Forum/PhotoPicker';
 import PhotoGallery from '@/components/Forum/PhotoGallery';
 import ModelPicker from '@/components/Forum/ModelPicker';
 import ModelView from '@/components/Forum/Model3D';
+import ReportButton from '@/components/Forum/ReportButton';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -52,6 +53,8 @@ export default function ThreadPage() {
       if (data.success) {
         setThread(data.thread);
         setPosts(data.posts);
+      } else if (data.removed) {
+        setError(`Wątek „${data.title}” usunęła moderacja. Powód: ${data.reason || 'złamanie zasad forum'}`);
       } else {
         setError(data.error || 'Nie znaleziono wątku');
       }
@@ -314,6 +317,7 @@ export default function ThreadPage() {
             <div className="post-content">
               <div className="post-date">
                 📅 {formatDate(thread?.date)}
+                <ReportButton targetType="thread" targetId={thread?.id} email={me.email} />
               </div>
               <VoicePlayer url={thread?.voiceUrl} mode={thread?.voiceMode} seconds={thread?.voiceSeconds} />
               <div className="post-message">
@@ -335,9 +339,18 @@ export default function ThreadPage() {
                     <div className="author-name">{post.author?.nickname || 'Anonim'}</div>
                     <div className="reply-number">#{index + 1}</div>
                   </div>
+                  {post.removed ? (
+                  <div className="post-content">
+                    <div className="post-removed">
+                      🚫 Wpis usunięty przez moderację.<br />
+                      <small>Powód: {post.removedReason || 'złamanie zasad forum'}</small>
+                    </div>
+                  </div>
+                  ) : (
                   <div className="post-content">
                     <div className="post-date">
                       📅 {formatDate(post.date)}
+                      <ReportButton targetType="post" targetId={post.id} email={me.email} />
                     </div>
                     <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
                     <div className="post-message">
@@ -346,6 +359,7 @@ export default function ThreadPage() {
                     <PhotoGallery photos={post.photos} />
                     <ModelView model={post.model} />
                   </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -551,12 +565,17 @@ export default function ThreadPage() {
           margin-top: 5px;
         }
 
+        .post-removed { color: #666; font-style: italic; padding: 8px 0; font-size: 14px; }
         .post-content {
           flex: 1;
           padding: 15px;
         }
 
         .post-date {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
           font-size: 11px;
           color: #666;
           margin-bottom: 10px;

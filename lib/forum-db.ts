@@ -50,6 +50,10 @@ export function toThread(t: any) {
 }
 
 export function toPost(p: any) {
+  // Usunięty wpis: zostaje tylko ślad z powodem, bez treści, zdjęć i nagrań
+  if (p.status === 'usuniety') {
+    return { id: p.id, threadId: p.thread_id, removed: true, removedReason: p.removed_reason, date: p.created_at, author: { nickname: p.author_nick, avatar: p.author_avatar }, message: '', photos: [], model: null, voiceUrl: null };
+  }
   return {
     id: p.id,
     threadId: p.thread_id,

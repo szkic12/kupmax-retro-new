@@ -23,6 +23,14 @@ async function findThread(threadId: string, adult: boolean) {
   return cats.some((c: any) => c.id === data.category_id) ? data : null;
 }
 
+async function removedThread(threadId: string, adult: boolean) {
+  const { data } = await forumDb.from('forum_threads').select('title, category_id, removed_reason')
+    .eq('id', threadId).eq('status', 'usuniety').maybeSingle();
+  if (!data) return null;
+  const cats = await visibleCategories(adult);
+  return cats.some((c: any) => c.id === data.category_id) ? data : null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -46,16 +54,21 @@ export async function GET(req: NextRequest) {
       if (data) row = await findThread(data.id, adult);
     }
     if (!row) {
+      // Wątek usunięty przez moderację: pokazujemy powód zamiast pustego 404 (DSA art. 17)
+      const removed = isUuid ? await removedThread(threadId, adult) : null;
+      if (removed) {
+        return NextResponse.json({ success: false, removed: true, reason: removed.removed_reason, title: removed.title }, { status: 410 });
+      }
       return NextResponse.json(
         { success: false, error: 'Thread not found' },
         { status: 404 }
       );
     }
 
-    // Pobierz posty, od najstarszych
+    // Pobierz posty, od najstarszych (usunięte zostają jako ślad z powodem)
     const from = (page - 1) * limit;
     const { data: rows, count, error } = await forumDb.from('forum_posts').select('*', { count: 'exact' })
-      .eq('thread_id', row.id).eq('status', 'widoczny')
+      .eq('thread_id', row.id).in('status', ['widoczny', 'usuniety'])
       .order('created_at', { ascending: true })
       .range(from, from + limit - 1);
     if (error) throw error;

@@ -15,6 +15,8 @@ export default function ForumAuth({ me, why = 'pisać i nagrywać' }) {
     return <ProfileBox me={me} onDone={() => { setEditing(false); me.refresh(); }} />;
   }
   return (
+    <>
+    {me.notices?.length > 0 && <Notices me={me} />}
     <div className="forum-auth forum-auth-bar">
       <span>Piszesz jako <b>{me.profile.avatar} {me.profile.nick}</b></span>
       <span className="forum-auth-actions">
@@ -22,6 +24,32 @@ export default function ForumAuth({ me, why = 'pisać i nagrywać' }) {
         <button type="button" onClick={() => supabase.auth.signOut()}>wyloguj</button>
       </span>
       <Styles />
+    </div>
+    </>
+  );
+}
+
+// Powiadomienie: moderacja usunęła wpis autora, z powodem i drogą odwołania (DSA art. 17)
+function Notices({ me }) {
+  const seen = async () => {
+    await forumFetch('/api/forum/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seenNotices: true }) });
+    me.refresh();
+  };
+  return (
+    <div className="forum-auth forum-notice" role="alert">
+      <h3>⚠️ Moderacja usunęła {me.notices.length === 1 ? 'twój wpis' : `twoje wpisy (${me.notices.length})`}</h3>
+      {me.notices.map((n, i) => (
+        <div key={i} className="forum-notice-item">
+          <b>{n.kind}:</b> „{n.what}”<br />
+          <b>Powód:</b> {n.reason}<br />
+          <small>{new Date(n.at).toLocaleString('pl-PL')}</small>
+        </div>
+      ))}
+      <p className="forum-auth-hint">
+        Nie zgadzasz się? Napisz na <a href="mailto:kontakt@kupmax.pl?subject=Odwołanie od usunięcia wpisu na forum">kontakt@kupmax.pl</a>, sprawdzimy jeszcze raz.
+        Masz też prawo do sądu i pozasądowego rozstrzygania sporów. Więcej w <a href="/forum/zasady">zasadach forum</a>.
+      </p>
+      <div className="forum-auth-actions"><button type="button" onClick={seen}>Rozumiem</button></div>
     </div>
   );
 }
@@ -125,7 +153,7 @@ function ProfileBox({ me, onDone }) {
 
       <label>
         <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
-        Akceptuję <a href="/bulletin" target="_blank" rel="noreferrer">regulamin</a> i zasady forum: bez obrażania, bez cudzych danych, bez pornografii. Wpisy łamiące zasady usuwamy z podaniem powodu.
+        Akceptuję <a href="/forum/zasady" target="_blank" rel="noreferrer">zasady forum</a>: bez obrażania, bez cudzych danych, bez pornografii. Wpisy łamiące zasady usuwamy z podaniem powodu.
       </label>
       <label>
         <input type="checkbox" checked={consentTraining} onChange={(e) => setConsentTraining(e.target.checked)} />
@@ -193,6 +221,8 @@ function Styles() {
       .forum-auth-avatars button.on { border-color: #808080 #fff #fff #808080; background: #fff; }
       .forum-auth-err { color: #cc0000; font-size: 14px; }
       .forum-auth-ok { color: #006400; font-size: 14px; }
+      .forum-notice { background: #ffffcc; }
+      .forum-notice-item { background: #fff; border: 1px solid #c0c0c0; padding: 8px; font-size: 13px; line-height: 1.5; }
       .forum-auth-bar { flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 8px 12px; }
     `}</style>
   );

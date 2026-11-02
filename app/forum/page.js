@@ -195,7 +195,7 @@ export default function ForumPage() {
         {/* Nagłówek */}
         <div className="forum-header">
           <h1 className="forum-title">Forum Kupmax</h1>
-          <p className="forum-subtitle">Pytaj i odpowiadaj głosem albo tekstem. Możesz słuchać albo czytać.</p>
+          <p className="forum-subtitle">Pytaj i odpowiadaj głosem albo tekstem. Możesz słuchać albo czytać. <Link href="/forum/zasady" style={{ color: 'inherit', whiteSpace: 'nowrap' }}>📜 Zasady forum</Link></p>
           
           <div className="forum-actions">
             <button 
