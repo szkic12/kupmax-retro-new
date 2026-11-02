@@ -195,7 +195,7 @@ export default function ForumPage() {
         {/* Nagłówek */}
         <div className="forum-header">
           <h1 className="forum-title">Forum Kupmax</h1>
-          <p className="forum-subtitle">Miejsce spotkań miłośników retro</p>
+          <p className="forum-subtitle">Pytaj i odpowiadaj głosem albo tekstem. Możesz słuchać albo czytać.</p>
           
           <div className="forum-actions">
             <button 
@@ -309,7 +309,7 @@ export default function ForumPage() {
                   <h3 className="category-name">{category.name}</h3>
                   <p className="category-description">{category.description}</p>
                   <div className="category-stats">
-                    <span>{category.threadCount} wątków</span>
+                    <span>{category.threadCount} {watki(category.threadCount)}</span>
                     {category.lastActivity && (
                       <span>Ostatnio: {formatDate(category.lastActivity)}</span>
                     )}
@@ -360,7 +360,7 @@ export default function ForumPage() {
                     
                     <div className="thread-content">
                       <Link href={`/forum/thread/${thread.id}`} className="thread-title">
-                        {thread.title}
+                        {thread.voiceUrl && <span title="Wpis z nagraniem">🎤 </span>}{thread.title}
                       </Link>
                       <p className="thread-message">
                         <EmojiParser text={thread.message} emojiSize={28} />
@@ -799,4 +799,11 @@ export default function ForumPage() {
       `}</style>
     </>
   );
+}
+
+// 1 wątek, 2–4 wątki, 5+ wątków (12–14 też „wątków”)
+function watki(n) {
+  if (n === 1) return 'wątek';
+  const d = n % 10, s = n % 100;
+  return d >= 2 && d <= 4 && (s < 12 || s > 14) ? 'wątki' : 'wątków';
 }

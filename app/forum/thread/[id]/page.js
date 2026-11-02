@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ForumAuth from '@/components/Forum/ForumAuth';
+import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
+import VoicePlayer from '@/components/Forum/VoicePlayer';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -24,6 +26,8 @@ export default function ThreadPage() {
   const [replyData, setReplyData] = useState({
     message: ''
   });
+  const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
+  const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
 
   useEffect(() => {
     document.body.style.overflow = 'auto';
@@ -96,6 +100,7 @@ export default function ThreadPage() {
           threadId,
           message: replyData.message,
           recaptchaToken,
+          ...voicePayload(voice),
         })
       });
 
@@ -103,6 +108,7 @@ export default function ThreadPage() {
 
       if (data.success) {
         setReplyData({ ...replyData, message: '' });
+        setVoice({ mode: voice.mode, key: null, seconds: null });
         setShowReplyForm(false);
         fetchThread(); // Refresh posts
       } else {
@@ -299,6 +305,7 @@ export default function ThreadPage() {
               <div className="post-date">
                 📅 {formatDate(thread?.date)}
               </div>
+              <VoicePlayer url={thread?.voiceUrl} mode={thread?.voiceMode} seconds={thread?.voiceSeconds} />
               <div className="post-message">
                 {parseEmojis(thread?.message)}
               </div>
@@ -320,6 +327,7 @@ export default function ThreadPage() {
                     <div className="post-date">
                       📅 {formatDate(post.date)}
                     </div>
+                    <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
                     <div className="post-message">
                       {parseEmojis(post.message)}
                     </div>
@@ -337,7 +345,7 @@ export default function ThreadPage() {
                   className="btn btn-reply"
                   onClick={() => setShowReplyForm(true)}
                 >
-                  ✍️ Napisz odpowiedź
+                  🎤 Odpowiedz głosem albo tekstem
                 </button>
               ) : (
                 <div className="reply-form-container">
@@ -345,15 +353,19 @@ export default function ThreadPage() {
                   {me.profile && <h3>✍️ Twoja odpowiedź</h3>}
                   {me.profile && <form onSubmit={handleReplySubmit}>
                     <div className="form-group">
+                      <label>Powiedz to głosem (albo pisz niżej):</label>
+                      <VoiceRecorder voice={voice} onChange={setVoice} onText={addSpoken} />
+                    </div>
+                    <div className="form-group">
                       <label>Wiadomość:</label>
                       <textarea
                         value={replyData.message}
                         onChange={(e) => setReplyData({ ...replyData, message: e.target.value })}
                         placeholder="Napisz swoją odpowiedź... Możesz używać emotikonów :) :D ;) :P :( <3"
-                        maxLength={5000}
+                        maxLength={12000}
                         rows={6}
                       />
-                      <span className="char-count">{replyData.message.length}/5000</span>
+                      <span className="char-count">{replyData.message.length}/12000</span>
                     </div>
 
                     <div className="form-actions">

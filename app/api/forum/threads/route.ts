@@ -5,10 +5,12 @@ import { verifyAdminToken, checkRateLimit, getClientIP } from '@/lib/admin-auth'
 import { verifyRecaptcha } from '@/lib/recaptcha';
 import { forumDb, toThread, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
+import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 60; // lektor czyta dłuższe wpisy kawałkami
 
 export async function GET(req: NextRequest) {
   try {
@@ -80,7 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, recaptchaToken } = await req.json();
+    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -106,9 +108,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (message.length > 5000) {
+    if (message.length > MAX_BODY) {
       return NextResponse.json(
-        { success: false, error: 'Message too long (max 5000 characters)' },
+        { success: false, error: 'Wpis za długi (najwyżej 12 000 znaków).' },
         { status: 400 }
       );
     }
@@ -122,6 +124,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Głos: klucz nagrania albo lektor czytający tekst
+    const voice = await voiceFields(me.user.id, { voiceKey, voiceMode, voiceSeconds }, message.substring(0, MAX_BODY));
+    if ('error' in voice) {
+      return NextResponse.json({ success: false, error: voice.error }, { status: 400 });
+    }
+
     // Utwórz nowy wątek
     const { data: row, error } = await forumDb.from('forum_threads').insert({
       category_id: categoryId,
@@ -129,7 +137,8 @@ export async function POST(req: NextRequest) {
       author_id: me.user.id,
       author_nick: me.profile.nick,
       author_avatar: me.profile.avatar,
-      body: message.substring(0, 5000),
+      body: message.substring(0, MAX_BODY),
+      ...voice,
     }).select().single();
     if (error) {
       logger.error('Forum insert thread:', error);

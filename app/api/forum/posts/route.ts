@@ -5,10 +5,12 @@ import { sanitizeInput } from '@/lib/sanitize';
 import { verifyRecaptcha } from '@/lib/recaptcha';
 import { forumDb, toThread, toPost, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
+import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 60; // lektor czyta dłuższe wpisy kawałkami
 
 // Wątek widoczny i z kategorii, którą ten człowiek może oglądać (18+ tylko po bramce wieku)
 async function findThread(threadId: string, adult: boolean) {
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { threadId, message: rawMessage, recaptchaToken } = await req.json();
+    const { threadId, message: rawMessage, recaptchaToken, voiceKey, voiceMode, voiceSeconds } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -127,7 +129,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Sanitize message input
-    const message = sanitizeInput(rawMessage, 5000);
+    const message = sanitizeInput(rawMessage, MAX_BODY);
 
     if (!message) {
       return NextResponse.json(
@@ -145,6 +147,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Głos: klucz nagrania albo lektor czytający tekst
+    const voice = await voiceFields(me.user.id, { voiceKey, voiceMode, voiceSeconds }, message);
+    if ('error' in voice) {
+      return NextResponse.json({ success: false, error: voice.error }, { status: 400 });
+    }
+
     // Utwórz nowy post (licznik odpowiedzi i ostatnią aktywność liczy baza)
     const { data: row, error } = await forumDb.from('forum_posts').insert({
       thread_id: thread.id,
@@ -152,6 +160,7 @@ export async function POST(req: NextRequest) {
       author_nick: me.profile.nick,
       author_avatar: me.profile.avatar,
       body: message,
+      ...voice,
     }).select().single();
     if (error) {
       logger.error('Forum insert post:', error);

@@ -1,6 +1,7 @@
 // Forum na Supabase (tabele forum_*). Zastępuje stary plik data/forum.json na S3.
 // Mapuje wiersze z bazy na dawny kształt odpowiedzi, więc strony forum działają bez zmian.
 import { createClient } from '@supabase/supabase-js';
+import { publicVoiceUrl } from '@/lib/forum-voice';
 
 export const forumDb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -31,8 +32,9 @@ export function toThread(t: any) {
     title: t.title,
     author: { nickname: t.author_nick, avatar: t.author_avatar },
     message: t.body,
-    voiceUrl: t.voice_url,
+    voiceUrl: publicVoiceUrl(t.voice_url),
     voiceMode: t.voice_mode,
+    voiceSeconds: t.voice_seconds,
     photos: t.photos || [],
     date: t.created_at,
     lastActivity: t.last_activity,
@@ -51,8 +53,9 @@ export function toPost(p: any) {
     author: { nickname: p.author_nick, avatar: p.author_avatar },
     message: p.body,
     isAi: p.is_ai,
-    voiceUrl: p.voice_url,
+    voiceUrl: publicVoiceUrl(p.voice_url),
     voiceMode: p.voice_mode,
+    voiceSeconds: p.voice_seconds,
     photos: p.photos || [],
     date: p.created_at,
     isAnswer: false,

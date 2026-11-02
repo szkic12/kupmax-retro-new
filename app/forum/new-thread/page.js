@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ForumAuth from '@/components/Forum/ForumAuth';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
+import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
 
 export default function NewThreadPage() {
   const router = useRouter();
@@ -18,6 +19,13 @@ export default function NewThreadPage() {
     categoryId: '',
     title: '',
     message: ''
+  });
+  const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
+
+  // Tekst z nagrania dopisuje się do wiadomości; pusty tytuł bierze pierwsze zdanie
+  const addSpoken = (text) => setFormData((f) => {
+    const title = f.title || (text.split(/(?<=[.!?])\s/)[0] || '').slice(0, 100).replace(/[.!?]$/, '');
+    return { ...f, title, message: f.message ? `${f.message}\n\n${text}` : text };
   });
 
   useEffect(() => {
@@ -84,6 +92,7 @@ export default function NewThreadPage() {
           title: formData.title,
           message: formData.message,
           recaptchaToken,
+          ...voicePayload(voice),
         })
       });
 
@@ -154,6 +163,11 @@ export default function NewThreadPage() {
             <fieldset>
               <legend>Treść wątku</legend>
               <div className="form-group">
+                <label>Powiedz to głosem (albo pisz niżej):</label>
+                <VoiceRecorder voice={voice} onChange={setVoice} onText={addSpoken} />
+              </div>
+
+              <div className="form-group">
                 <label>Tytuł:</label>
                 <input
                   type="text"
@@ -171,10 +185,10 @@ export default function NewThreadPage() {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Napisz swoją wiadomość... Możesz używać emotikonów :) :D ;) :P :( <3"
-                  maxLength={5000}
+                  maxLength={12000}
                   rows={10}
                 />
-                <span className="char-count">{formData.message.length}/5000</span>
+                <span className="char-count">{formData.message.length}/12000</span>
               </div>
             </fieldset>
 
