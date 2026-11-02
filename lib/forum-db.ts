@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { publicVoiceUrl } from '@/lib/forum-voice';
 import { publicPhotoUrl } from '@/lib/forum-photos';
+import { publicModel } from '@/lib/forum-models';
 
 export const forumDb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -37,6 +38,7 @@ export function toThread(t: any) {
     voiceMode: t.voice_mode,
     voiceSeconds: t.voice_seconds,
     photos: (t.photos || []).map(publicPhotoUrl),
+    model: publicModel(t.model),
     date: t.created_at,
     lastActivity: t.last_activity,
     replyCount: t.reply_count,
@@ -58,6 +60,7 @@ export function toPost(p: any) {
     voiceMode: p.voice_mode,
     voiceSeconds: p.voice_seconds,
     photos: (p.photos || []).map(publicPhotoUrl),
+    model: publicModel(p.model),
     date: p.created_at,
     isAnswer: false,
   };

@@ -7,6 +7,7 @@ import { forumDb, toThread, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 import { photoKeys } from '@/lib/forum-photos';
+import { modelField } from '@/lib/forum-models';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos } = await req.json();
+    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos, model } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -131,6 +132,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: photoList.error }, { status: 400 });
     }
 
+    // Model 3D: tylko własny i naprawdę wgrany
+    const modelRow = await modelField(me.user.id, model);
+    if (modelRow && 'error' in modelRow) {
+      return NextResponse.json({ success: false, error: modelRow.error }, { status: 400 });
+    }
+
     // Głos: klucz nagrania albo lektor czytający tekst
     const voice = await voiceFields(me.user.id, { voiceKey, voiceMode, voiceSeconds }, message.substring(0, MAX_BODY));
     if ('error' in voice) {
@@ -147,6 +154,7 @@ export async function POST(req: NextRequest) {
       body: message.substring(0, MAX_BODY),
       ...voice,
       photos: photoList,
+      ...(modelRow ? { model: modelRow } : {}),
     }).select().single();
     if (error) {
       logger.error('Forum insert thread:', error);

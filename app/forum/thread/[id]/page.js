@@ -9,6 +9,8 @@ import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
 import VoicePlayer from '@/components/Forum/VoicePlayer';
 import PhotoPicker from '@/components/Forum/PhotoPicker';
 import PhotoGallery from '@/components/Forum/PhotoGallery';
+import ModelPicker from '@/components/Forum/ModelPicker';
+import ModelView from '@/components/Forum/Model3D';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -30,6 +32,7 @@ export default function ThreadPage() {
   });
   const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
   const [photos, setPhotos] = useState([]);
+  const [model, setModel] = useState(null);
   const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
 
   useEffect(() => {
@@ -105,6 +108,7 @@ export default function ThreadPage() {
           recaptchaToken,
           ...voicePayload(voice),
           photos: photos.map((p) => p.key),
+          model: model ? { key: model.key, name: model.name, size: model.size, pins: model.pins } : undefined,
         })
       });
 
@@ -114,6 +118,7 @@ export default function ThreadPage() {
         setReplyData({ ...replyData, message: '' });
         setVoice({ mode: voice.mode, key: null, seconds: null });
         setPhotos([]);
+        setModel(null);
         setShowReplyForm(false);
         fetchThread(); // Refresh posts
       } else {
@@ -315,6 +320,7 @@ export default function ThreadPage() {
                 {parseEmojis(thread?.message)}
               </div>
               <PhotoGallery photos={thread?.photos} />
+              <ModelView model={thread?.model} />
             </div>
           </div>
 
@@ -338,6 +344,7 @@ export default function ThreadPage() {
                       {parseEmojis(post.message)}
                     </div>
                     <PhotoGallery photos={post.photos} />
+                    <ModelView model={post.model} />
                   </div>
                 </div>
               ))}
@@ -377,6 +384,10 @@ export default function ThreadPage() {
                     <div className="form-group">
                       <label>Zdjęcia (do 5):</label>
                       <PhotoPicker photos={photos} onChange={setPhotos} />
+                    </div>
+                    <div className="form-group">
+                      <label>Model 3D z pinezkami:</label>
+                      <ModelPicker model={model} onChange={setModel} />
                     </div>
 
                     <div className="form-actions">
