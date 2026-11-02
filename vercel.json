@@ -4,5 +4,11 @@
       "maxDuration": 60,
       "memory": 3008
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/forum/export?cron=1",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

@@ -26,7 +26,7 @@ const typeLabel = (type: string) => (type === 'thread' ? '🧵 wątek' : type ==
 export default function ForumModeracja() {
   const [data, setData] = useState<{ reports: Item[]; threads: Item[]; posts: Item[]; claims?: Item[]; queue?: Item[] } | null>(null);
   const [err, setErr] = useState('');
-  const [view, setView] = useState<'zgloszenia' | 'wpisy' | 'pieczec'>('zgloszenia');
+  const [view, setView] = useState<'zgloszenia' | 'wpisy' | 'pieczec' | 'paczka'>('zgloszenia');
 
   const load = useCallback(async () => {
     setErr('');
@@ -67,6 +67,7 @@ export default function ForumModeracja() {
         <button style={{ ...btn, fontWeight: view === 'pieczec' ? 'bold' : 'normal' }} onClick={() => setView('pieczec')}>
           ✔ Pieczęć {data?.queue?.length ? `(${data.queue.length})` : ''}
         </button>
+        <button style={{ ...btn, fontWeight: view === 'paczka' ? 'bold' : 'normal' }} onClick={() => setView('paczka')}>📦 Paczka do nauki</button>
         <button style={btn} onClick={load}>🔄</button>
         <a href="/forum/zasady" target="_blank" rel="noreferrer" style={{ fontSize: 12, alignSelf: 'center' }}>zasady forum</a>
       </div>
@@ -85,6 +86,8 @@ export default function ForumModeracja() {
           )}
         </>
       )}
+
+      {view === 'paczka' && <ExportBox />}
 
       {data && view === 'pieczec' && (
         <>
@@ -180,6 +183,46 @@ function Remove({ type, id, act, initial = 'inne', onDone }: { type: string; id:
       >
         🗑️ Usuń z powodem
       </button>
+    </div>
+  );
+}
+
+const PACK_LABEL: Record<string, string> = { qa: 'pytanie → odpowiedź', karty: 'szuflady kart', warianty: 'warianty z warunkami' };
+
+// Paczka do nauki modelu (K10): co noc o 3:00 sama, tu podgląd, „zrób teraz” i pobieranie
+function ExportBox() {
+  const [d, setD] = useState<Item>(null);
+  const [busy, setBusy] = useState(false);
+  const show = async (res: Response) => { const j = await res.json().catch(() => ({})); setD(j.success ? j : { error: j.error || 'Błąd' }); };
+  useEffect(() => { fetch('/api/forum/export', { cache: 'no-store' }).then(show); }, []);
+  const now = async () => { setBusy(true); await show(await fetch('/api/forum/export', { method: 'POST' })); setBusy(false); };
+  const m = d?.manifest;
+  return (
+    <div style={box}>
+      <p style={{ marginTop: 0 }}>
+        Co noc o 3:00 forum samo pakuje wiedzę, która przeszła sito (✔ albo „sprawdzone”), od ludzi ze zgodą na naukę.
+        Bez kawałków AI i bez nagrań. 18+ osobno. Na laptopa: <code>node scripts/forum-pobierz-paczke.mjs</code>.
+      </p>
+      {!d && <p>⏳</p>}
+      {d?.error && <p style={{ color: '#c00' }}>⚠️ {d.error}</p>}
+      {d && !d.error && !m && <p>Jeszcze nie było paczki.</p>}
+      {m && (
+        <>
+          <p><b>Ostatnia paczka:</b> {m.date} ({when(m.at)})</p>
+          {Object.entries(m.counts as Item).map(([pack, files]: [string, any]) => (
+            <p key={pack} style={{ margin: '4px 0' }}>
+              <b>{pack === '18' ? '🔞 18+' : '📚 ogólna'}:</b>{' '}
+              {Object.entries(files).map(([f, n]: [string, any]) => `${PACK_LABEL[f]} ${n}`).join(' · ')}
+            </p>
+          ))}
+          <p style={{ margin: '6px 0' }}>
+            {Object.entries(d.links || {}).map(([name, url]: [string, any]) => (
+              <a key={name} href={url} style={{ marginRight: 12 }} download>⬇️ {name}</a>
+            ))}
+          </p>
+        </>
+      )}
+      <button style={btn} disabled={busy} onClick={now}>{busy ? '⏳ Pakuję…' : '📦 Zrób paczkę teraz'}</button>
     </div>
   );
 }
