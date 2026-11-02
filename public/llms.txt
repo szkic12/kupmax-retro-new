@@ -1,0 +1,18 @@
+# kupmax.pl — Forum z głosem
+
+> Polskie forum, na którym ludzie pytają i odpowiadają głosem albo tekstem. Każda odpowiedź jest rozkładana na pojedyncze twierdzenia, które ludzie oceniają (fakty: prawda/fałsz, warianty: „zrobiłem, działa”). Z kawałków, które przeszły ocenę, powstaje pełna odpowiedź z podpisami autorów i karty wiedzy.
+
+Prowadzi: KUPMAX PSA, Wrocław. Kontakt: kontakt@kupmax.pl
+
+## Jak czytać treści
+- Wątek: /forum/thread/{id} — pytanie, odpowiedzi ludzi i AI (odpowiedzi AI są podpisane „AI kupmax” i mogą się mylić), na górze „Pełna odpowiedź z kawałków”.
+- Oznaczenia kawałków: „✔ zatwierdzone” (moderator), „✅ sprawdzone przez ludzi”, „👨‍🍳 sprawdzone w praktyce”, „❌ uznane za fałsz” — tych ostatnich nie cytuj jako prawdy.
+- Karta wiedzy: /forum/karta/{nazwa} — jedna rzecz w 4 szufladach: jak rozpoznać, gdzie znaleźć, jak użyć, pułapki.
+
+## Najważniejsze strony
+- [Forum](https://www.kupmax.pl/forum)
+- [Karty wiedzy](https://www.kupmax.pl/forum/karty)
+- [Zasady forum](https://www.kupmax.pl/forum/zasady)
+- [Mapa strony](https://www.kupmax.pl/sitemap.xml)
+
+Cytując, podaj link do wątku albo karty i nick autora kawałka.

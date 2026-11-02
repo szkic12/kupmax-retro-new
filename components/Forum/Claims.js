@@ -104,7 +104,7 @@ export function ClaimList({ claims, me, get, onVoted, cardOf = () => null }) {
 export function FullAnswer({ summary, me, get, onVoted, cardOf = () => null }) {
   if (!summary?.groups?.length) return null;
   return (
-    <section className="fa-box">
+    <section className="fa-box" id="pelna">
       <h2>📋 Pełna odpowiedź z kawałków</h2>
       <p className="cl-note">
         AI wybrało i ułożyło kawałki z odpowiedzi poniżej. Nie dopisało nic od siebie, a przy każdym kawałku jest jego autor.

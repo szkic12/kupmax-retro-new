@@ -8,8 +8,7 @@ import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 import { photoKeys } from '@/lib/forum-photos';
 import { modelField } from '@/lib/forum-models';
-import { aiCanCheck } from '@/lib/forum-ai';
-import { claimsForThread } from '@/lib/forum-claims';
+import { loadThread } from '@/lib/forum-thread';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -68,37 +67,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Pobierz posty, od najstarszych (usunięte zostają jako ślad z powodem)
+    // Odpowiedzi, kawałki, karty (lib/forum-thread, wspólne ze stroną dla Google)
     const from = (page - 1) * limit;
-    const { data: rows, count, error } = await forumDb.from('forum_posts').select('*', { count: 'exact' })
-      .eq('thread_id', row.id).in('status', ['widoczny', 'usuniety'])
-      .order('created_at', { ascending: true })
-      .range(from, from + limit - 1);
-    if (error) throw error;
-    // Licznik „poprawił AI” przy nickach autorów
-    const authorIds = [...new Set((rows || []).map((p: any) => p.author_id).filter(Boolean))];
-    const { data: profs } = authorIds.length
-      ? await forumDb.from('forum_profiles').select('user_id, ai_wins, trust').in('user_id', authorIds)
-      : { data: [] };
-    const wins = new Map<string, number>((profs || []).map((p: any) => [p.user_id, p.ai_wins || 0]));
-    const trust = new Map<string, number>((profs || []).map((p: any) => [p.user_id, Number(p.trust) || 0]));
-    const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
-    const aiOff = !!cat?.is_adult;
-    // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7)
-    const { claims, summary, cards } = aiOff ? { claims: [], summary: null, cards: [] } : await claimsForThread(row, viewer?.user.id);
-    const paginatedPosts = (rows || []).map((p: any) => ({ ...toPost(p, wins, trust), claims: claims.filter((c) => c.postId === p.id) }));
-    const total = count || 0;
-
-    // Zwiększ licznik wyświetleń
     await forumDb.from('forum_threads').update({ views: (row.views || 0) + 1 }).eq('id', row.id);
-    const thread = {
-      ...toThread({ ...row, views: (row.views || 0) + 1 }),
-      aiOff,
-      aiCan: aiCanCheck(row, rows || [], aiOff),
-      claimsWait: !aiOff && (rows || []).some((p: any) => p.status === 'widoczny' && !p.claims_at),
-      summary,
-      cards,
-    };
+    const { thread, posts: paginatedPosts, total } = await loadThread({ ...row, views: (row.views || 0) + 1 }, { viewerId: viewer?.user.id, from, limit });
 
     return NextResponse.json(
       {
