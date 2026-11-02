@@ -25,6 +25,7 @@ export default function NewThreadPage() {
   const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
   const [photos, setPhotos] = useState([]);
   const [model, setModel] = useState(null);
+  const [ai, setAi] = useState(true); // AI odpowiada od razu (w strefie 18+ nigdy)
 
   // Tekst z nagrania dopisuje się do wiadomości; pusty tytuł bierze pierwsze zdanie
   const addSpoken = (text) => setFormData((f) => {
@@ -99,6 +100,7 @@ export default function NewThreadPage() {
           ...voicePayload(voice),
           photos: photos.map((p) => p.key),
           model: model ? { key: model.key, name: model.name, size: model.size, pins: model.pins } : undefined,
+          ai,
         })
       });
 
@@ -208,6 +210,13 @@ export default function NewThreadPage() {
               </div>
             </fieldset>
 
+            {!categories.find((c) => c.id === formData.categoryId)?.isAdult && (
+              <label className="ai-opt">
+                <input type="checkbox" checked={ai} onChange={(e) => setAi(e.target.checked)} />
+                <span>🤖 Niech AI odpowie od razu. Odpowiedź będzie podpisana „AI, może się mylić”, a każdy może ją poprawić.</span>
+              </label>
+            )}
+
             <div className="form-actions">
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 {loading ? '⏳ Wysyłanie...' : '📨 Utwórz wątek'}
@@ -225,6 +234,7 @@ export default function NewThreadPage() {
       </div>
 
       <style jsx>{`
+        .ai-opt { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0; font-size: 14px; line-height: 1.4; cursor: pointer; }
         .new-thread-page {
           min-height: 100vh;
           background: #008080;

@@ -46,10 +46,11 @@ export function toThread(t: any) {
     isSticky: t.is_pinned,
     isLocked: false,
     tags: [],
+    aiWait: t.ai_wait || null,
   };
 }
 
-export function toPost(p: any) {
+export function toPost(p: any, wins?: Map<string, number>) {
   // Usunięty wpis: zostaje tylko ślad z powodem, bez treści, zdjęć i nagrań
   if (p.status === 'usuniety') {
     return { id: p.id, threadId: p.thread_id, removed: true, removedReason: p.removed_reason, date: p.created_at, author: { nickname: p.author_nick, avatar: p.author_avatar }, message: '', photos: [], model: null, voiceUrl: null };
@@ -60,6 +61,11 @@ export function toPost(p: any) {
     author: { nickname: p.author_nick, avatar: p.author_avatar },
     message: p.body,
     isAi: p.is_ai,
+    aiAsks: !!p.ai_asks,
+    authorWins: (p.author_id && wins?.get(p.author_id)) || 0,
+    correctsPostId: p.corrects_post_id || null,
+    correctionStatus: p.correction_status || null,
+    correctionNote: p.correction_note || null,
     voiceUrl: publicVoiceUrl(p.voice_url),
     voiceMode: p.voice_mode,
     voiceSeconds: p.voice_seconds,

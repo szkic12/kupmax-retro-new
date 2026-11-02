@@ -1,7 +1,7 @@
 'use client';
 import { logger } from '@/lib/logger';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ForumAuth from '@/components/Forum/ForumAuth';
@@ -34,6 +34,11 @@ export default function ThreadPage() {
   const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
   const [photos, setPhotos] = useState([]);
   const [model, setModel] = useState(null);
+  const [correcting, setCorrecting] = useState(null); // { id, n }: poprawka odpowiedzi AI
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiMsg, setAiMsg] = useState('');
+  const aiRunning = useRef(false);
+  const formRef = useRef(null);
   const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
 
   useEffect(() => {
@@ -53,6 +58,8 @@ export default function ThreadPage() {
       if (data.success) {
         setThread(data.thread);
         setPosts(data.posts);
+        // Coś czeka na AI (nowy wątek, odpowiedź autora, poprawka do oceny): uruchom
+        if (data.thread.aiWait || data.posts.some((p) => ['czeka', 'sprawdza'].includes(p.correctionStatus))) runAi(false);
       } else if (data.removed) {
         setError(`Wątek „${data.title}” usunęła moderacja. Powód: ${data.reason || 'złamanie zasad forum'}`);
       } else {
@@ -63,6 +70,36 @@ export default function ThreadPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // AI w wątku: wykonuje to, co czeka, albo (ask) odpowiada na prośbę „czego brakuje”
+  const runAi = async (ask) => {
+    if (aiRunning.current) return;
+    aiRunning.current = true;
+    setAiBusy(true);
+    setAiMsg('');
+    try {
+      const res = await forumFetch('/api/forum/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId, ask }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!json.success) setAiMsg(json.error || 'AI chwilowo nie odpowiada.');
+      else if (json.nothingToAdd) setAiMsg('🤖 AI przeczytało odpowiedzi i nie ma nic do dodania.');
+    } catch {
+      setAiMsg('AI chwilowo nie odpowiada.');
+    } finally {
+      aiRunning.current = false;
+      setAiBusy(false);
+      fetchThread();
+    }
+  };
+
+  const startCorrection = (post, n) => {
+    setCorrecting({ id: post.id, n });
+    setShowReplyForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const fetchCategories = async () => {
@@ -112,6 +149,7 @@ export default function ThreadPage() {
           ...voicePayload(voice),
           photos: photos.map((p) => p.key),
           model: model ? { key: model.key, name: model.name, size: model.size, pins: model.pins } : undefined,
+          correctsPostId: correcting?.id,
         })
       });
 
@@ -122,6 +160,7 @@ export default function ThreadPage() {
         setVoice({ mode: voice.mode, key: null, seconds: null });
         setPhotos([]);
         setModel(null);
+        setCorrecting(null);
         setShowReplyForm(false);
         fetchThread(); // Refresh posts
       } else {
@@ -333,10 +372,12 @@ export default function ThreadPage() {
             <div className="replies-section">
               <h2>💬 Odpowiedzi ({posts.length})</h2>
               {posts.map((post, index) => (
-                <div key={post.id} className="post reply-post">
+                <div key={post.id} id={`p-${post.id}`} className={`post reply-post${post.isAi ? ' ai-post' : ''}`}>
                   <div className="post-author">
                     <div className="author-avatar">{post.author?.avatar || '👤'}</div>
                     <div className="author-name">{post.author?.nickname || 'Anonim'}</div>
+                    {post.isAi && <div className="ai-badge">🤖 AI, może się mylić</div>}
+                    {post.authorWins > 0 && <div className="ai-wins" title="Ile razy AI przyznało mu rację">🏆 trafne poprawki AI: {post.authorWins}</div>}
                     <div className="reply-number">#{index + 1}</div>
                   </div>
                   {post.removed ? (
@@ -352,16 +393,48 @@ export default function ThreadPage() {
                       📅 {formatDate(post.date)}
                       <ReportButton targetType="post" targetId={post.id} email={me.email} />
                     </div>
+                    {post.correctsPostId && (
+                      <a className="fix-ref" href={`#p-${post.correctsPostId}`}>
+                        ✏️ Poprawka do odpowiedzi AI #{posts.findIndex((x) => x.id === post.correctsPostId) + 1}
+                      </a>
+                    )}
                     <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
                     <div className="post-message">
                       {parseEmojis(post.message)}
                     </div>
                     <PhotoGallery photos={post.photos} />
                     <ModelView model={post.model} />
+                    {['czeka', 'sprawdza'].includes(post.correctionStatus) && <div className="fix-verdict wait">⏳ AI sprawdza tę poprawkę…</div>}
+                    {post.correctionStatus === 'przyjeta' && <div className="fix-verdict yes">✅ AI przyznało rację. {post.correctionNote}</div>}
+                    {post.correctionStatus === 'odrzucona' && <div className="fix-verdict no">🤔 AI się nie zgadza: {post.correctionNote} <small>Oceńcie sami.</small></div>}
+                    {post.isAi && (
+                      <div className="ai-actions">
+                        {post.aiAsks && <span className="ai-hint">👉 AI dopytuje. Gdy autor wątku odpisze, AI dopasuje odpowiedź do tego, co ma.</span>}
+                        {me.profile && <button type="button" className="btn-fix" onClick={() => startCorrection(post, index + 1)}>🎤 popraw AI</button>}
+                      </div>
+                    )}
                   </div>
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* AI w wątku */}
+          {!thread?.aiOff && (aiBusy || thread?.aiWait || aiMsg || (thread?.aiCan && me.profile)) && (
+            <div className="ai-bar">
+              {aiBusy || thread?.aiWait ? (
+                <span>🤖 AI czyta wątek i pisze… to trwa zwykle pół minuty.</span>
+              ) : (
+                <>
+                  {aiMsg && <span>{aiMsg}</span>}
+                  {thread?.aiCan && me.profile && (
+                    <button type="button" className="btn" onClick={() => runAi(true)}>
+                      {posts.some((p) => p.isAi) ? '🤖 Zapytaj AI, czego tu brakuje' : '🤖 Poproś AI o odpowiedź'}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -376,9 +449,16 @@ export default function ThreadPage() {
                   🎤 Odpowiedz głosem albo tekstem
                 </button>
               ) : (
-                <div className="reply-form-container">
+                <div className="reply-form-container" ref={formRef}>
                   <ForumAuth me={me} why="odpowiedzieć" />
-                  {me.profile && <h3>✍️ Twoja odpowiedź</h3>}
+                  {me.profile && <h3>{correcting ? `✏️ Poprawiasz odpowiedź AI #${correcting.n}` : '✍️ Twoja odpowiedź'}</h3>}
+                  {me.profile && correcting && (
+                    <p className="fix-info">
+                      Powiedz albo napisz, co AI pomyliło albo co w praktyce działa lepiej. AI przeczyta poprawkę i odpowie, czy przyznaje rację.
+                      Każda przyjęta poprawka to punkt dla ciebie: 🏆 przy twoim nicku.{' '}
+                      <button type="button" className="link-btn" onClick={() => setCorrecting(null)}>to nie poprawka</button>
+                    </p>
+                  )}
                   {me.profile && <form onSubmit={handleReplySubmit}>
                     <div className="form-group">
                       <label>Powiedz to głosem (albo pisz niżej):</label>
@@ -411,7 +491,7 @@ export default function ThreadPage() {
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => setShowReplyForm(false)}
+                        onClick={() => { setShowReplyForm(false); setCorrecting(null); }}
                       >
                         Anuluj
                       </button>
@@ -566,6 +646,20 @@ export default function ThreadPage() {
         }
 
         .post-removed { color: #666; font-style: italic; padding: 8px 0; font-size: 14px; }
+        .ai-post { background: #eef3ff; }
+        .ai-badge { font-size: 11px; background: #000080; color: #fff; padding: 2px 6px; margin-top: 4px; text-align: center; }
+        .ai-wins { font-size: 11px; color: #806000; margin-top: 4px; text-align: center; }
+        .ai-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+        .ai-hint { font-size: 13px; color: #333; flex: 1; min-width: 180px; }
+        .btn-fix { padding: 6px 12px; background: #c0c0c0; border: 2px solid; border-color: #fff #808080 #808080 #fff; cursor: pointer; font-size: 13px; color: #000; }
+        .fix-ref { display: inline-block; font-size: 12px; color: #000080; margin-bottom: 6px; }
+        .fix-verdict { margin-top: 10px; padding: 8px; font-size: 13px; border: 1px solid; line-height: 1.4; }
+        .fix-verdict.wait { background: #f4f4f4; border-color: #aaa; }
+        .fix-verdict.yes { background: #e8ffe8; border-color: #4a4; }
+        .fix-verdict.no { background: #fff6e0; border-color: #c90; }
+        .ai-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0; padding: 10px; background: #eef3ff; border: 2px inset #fff; font-size: 14px; }
+        .fix-info { font-size: 13px; background: #ffffcc; border: 1px solid #c0a000; padding: 8px; margin: 0 0 10px; line-height: 1.4; }
+        .link-btn { background: none; border: none; color: #000080; text-decoration: underline; cursor: pointer; padding: 0; font-size: 13px; }
         .post-content {
           flex: 1;
           padding: 15px;

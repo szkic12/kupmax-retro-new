@@ -54,6 +54,9 @@ export default function ZasadyForum() {
           <h2>§5. Sztuczna inteligencja</h2>
           <ul>
             <li>Wszystko, co tworzy AI, jest oznaczone: lektor AI czyta z oznaczeniem „📻 czyta lektor AI”, a odpowiedzi AI mają podpis, że pisała je AI.</li>
+            <li>Pod nowym wątkiem od razu odpowiada „🤖 AI kupmax” z podpisem „AI, może się mylić”. Możesz to wyłączyć przy pisaniu wątku. W strefie 18+ AI nie odpowiada.</li>
+            <li>AI może się mylić. Każdy może je poprawić guzikiem „🎤 popraw AI”. AI odpowiada, czy przyznaje rację, a trafne poprawki liczą się przy twoim nicku (🏆).</li>
+            <li>Odpowiedzi AI pisze model Claude firmy Anthropic. Trafia tam treść wątku i zdjęcia z wątku, tylko do napisania odpowiedzi. Nie wysyłamy tam twojego maila ani nagrań głosu.</li>
             <li>Mowę na tekst zamienia usługa OpenAI. Nagranie trafia tam tylko do zamiany.</li>
             <li>Twoje wpisy uczą model AI kupmax <b>tylko za twoją zgodą</b>, zaznaczoną w profilu. Dotyczy to samego tekstu, bez nagrań głosu. Zgodę cofasz w profilu w każdej chwili.</li>
           </ul>

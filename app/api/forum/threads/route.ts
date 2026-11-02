@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos, model } = await req.json();
+    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos, model, ai } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -155,6 +155,8 @@ export async function POST(req: NextRequest) {
       ...voice,
       photos: photoList,
       ...(modelRow ? { model: modelRow } : {}),
+      // AI odpowiada od razu, chyba że autor to wyłączył; w strefie 18+ AI nie pisze
+      ...(ai !== false && !cats.find((c: any) => c.id === categoryId)?.is_adult ? { ai_wait: 'odpowiedz' } : {}),
     }).select().single();
     if (error) {
       logger.error('Forum insert thread:', error);

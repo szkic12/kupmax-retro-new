@@ -18,7 +18,7 @@ export default function ForumAuth({ me, why = 'pisać i nagrywać' }) {
     <>
     {me.notices?.length > 0 && <Notices me={me} />}
     <div className="forum-auth forum-auth-bar">
-      <span>Piszesz jako <b>{me.profile.avatar} {me.profile.nick}</b></span>
+      <span>Piszesz jako <b>{me.profile.avatar} {me.profile.nick}</b>{me.profile.ai_wins > 0 && <> · 🏆 AI przyznało ci rację {me.profile.ai_wins}×</>}</span>
       <span className="forum-auth-actions">
         <button type="button" onClick={() => setEditing(true)}>✏️ profil</button>
         <button type="button" onClick={() => supabase.auth.signOut()}>wyloguj</button>

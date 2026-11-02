@@ -8,6 +8,7 @@ import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 import { photoKeys } from '@/lib/forum-photos';
 import { modelField } from '@/lib/forum-models';
+import { aiCanCheck } from '@/lib/forum-ai';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -72,12 +73,23 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: true })
       .range(from, from + limit - 1);
     if (error) throw error;
-    const paginatedPosts = (rows || []).map(toPost);
+    // Licznik „poprawił AI” przy nickach autorów
+    const authorIds = [...new Set((rows || []).map((p: any) => p.author_id).filter(Boolean))];
+    const { data: profs } = authorIds.length
+      ? await forumDb.from('forum_profiles').select('user_id, ai_wins').in('user_id', authorIds)
+      : { data: [] };
+    const wins = new Map<string, number>((profs || []).map((p: any) => [p.user_id, p.ai_wins || 0]));
+    const paginatedPosts = (rows || []).map((p: any) => toPost(p, wins));
     const total = count || 0;
 
     // Zwiększ licznik wyświetleń
     await forumDb.from('forum_threads').update({ views: (row.views || 0) + 1 }).eq('id', row.id);
-    const thread = toThread({ ...row, views: (row.views || 0) + 1 });
+    const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
+    const thread = {
+      ...toThread({ ...row, views: (row.views || 0) + 1 }),
+      aiOff: !!cat?.is_adult,
+      aiCan: aiCanCheck(row, rows || [], !!cat?.is_adult),
+    };
 
     return NextResponse.json(
       {
@@ -124,7 +136,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { threadId, message: rawMessage, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos, model } = await req.json();
+    const { threadId, message: rawMessage, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos, model, correctsPostId } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -180,6 +192,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: voice.error }, { status: 400 });
     }
 
+    // Poprawka odpowiedzi AI: musi wskazywać widoczną odpowiedź AI z tego wątku
+    let corrects: string | null = null;
+    if (correctsPostId) {
+      const { data: aiPost } = await forumDb.from('forum_posts').select('id')
+        .eq('id', String(correctsPostId)).eq('thread_id', thread.id).eq('is_ai', true).eq('status', 'widoczny').maybeSingle();
+      if (!aiPost) return NextResponse.json({ success: false, error: 'Ta odpowiedź AI już nie istnieje.' }, { status: 400 });
+      corrects = aiPost.id;
+    }
+
     // Utwórz nowy post (licznik odpowiedzi i ostatnią aktywność liczy baza)
     const { data: row, error } = await forumDb.from('forum_posts').insert({
       thread_id: thread.id,
@@ -190,6 +211,7 @@ export async function POST(req: NextRequest) {
       ...voice,
       photos: photoList,
       ...(modelRow ? { model: modelRow } : {}),
+      ...(corrects ? { corrects_post_id: corrects, correction_status: 'czeka' } : {}),
     }).select().single();
     if (error) {
       logger.error('Forum insert post:', error);
@@ -199,6 +221,16 @@ export async function POST(req: NextRequest) {
       );
     }
     const newPost = toPost(row);
+
+    // Autor odpisał na pytania AI („co masz pod ręką?”): AI odpowie mu jeszcze raz
+    if (!corrects && thread.author_id === me.user.id) {
+      const { data: prev } = await forumDb.from('forum_posts').select('is_ai, ai_asks')
+        .eq('thread_id', thread.id).eq('status', 'widoczny').neq('id', row.id)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (prev?.is_ai && prev.ai_asks) {
+        await forumDb.from('forum_threads').update({ ai_wait: 'odpowiedz' }).eq('id', thread.id);
+      }
+    }
 
     return NextResponse.json({
       success: true,
