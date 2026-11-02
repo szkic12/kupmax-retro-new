@@ -6,6 +6,7 @@ import { forumDb } from '@/lib/forum-db';
 import { signedPhotoUrl, isPhotoKey } from '@/lib/forum-photos';
 import { lektor } from '@/lib/forum-voice';
 import { logger } from '@/lib/logger';
+import { splitPending, buildSummary } from '@/lib/forum-claims';
 
 const MODEL = 'claude-opus-5-5';
 export const AI_ID = '00000000-0000-0000-0000-000000000000'; // folder nagrań lektora AI w S3
@@ -42,12 +43,14 @@ function client() {
   return new Anthropic({ apiKey });
 }
 
-async function ask(content: any[], system: string, maxTokens = 4000) {
+// Jedno wywołanie Claude. schema = odpowiedź w JSON według schematu (structured outputs)
+export async function ask(content: any[], system: string, maxTokens = 4000, opts: { model?: string; schema?: object } = {}) {
   const res: any = await client().messages.create({
-    model: MODEL,
+    model: opts.model || MODEL,
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content }],
+    ...(opts.schema ? { output_config: { format: { type: 'json_schema', schema: opts.schema } } } : {}),
   } as any);
   if (res.stop_reason === 'refusal') return '';
   return (res.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim();
@@ -169,8 +172,8 @@ Pierwsza linia: dokładnie PRZYJMUJĘ albo NIE ZGADZAM SIĘ. Potem 1–3 krótki
 }
 
 // Wszystko, co w wątku czeka na AI: odpowiedź i poprawki do oceny
-export async function runPendingAi(threadId: string) {
-  const result = { answered: false, nothingToAdd: false, judged: 0 };
+export async function runPendingAi(threadId: string, adult = false) {
+  const result = { answered: false, nothingToAdd: false, judged: 0, claims: 0, summary: false };
 
   const thread = await lockThread(threadId);
   if (thread) {
@@ -200,6 +203,17 @@ export async function runPendingAi(threadId: string) {
       } catch (e) {
         logger.error('forum ai judge:', e);
         await forumDb.from('forum_posts').update({ correction_status: null }).eq('id', fix.id);
+      }
+    }
+  }
+
+  // Rozbiór nowych odpowiedzi na twierdzenia, potem pełna odpowiedź z kawałków (K7). W 18+ AI nie pracuje.
+  if (!adult) {
+    const { data: t } = await forumDb.from('forum_threads').select('*').eq('id', threadId).maybeSingle();
+    if (t) {
+      result.claims = await splitPending(t);
+      if (result.claims) {
+        try { result.summary = await buildSummary(t); } catch (e) { logger.error('forum claims summary:', e); }
       }
     }
   }

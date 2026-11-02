@@ -9,6 +9,7 @@ import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 import { photoKeys } from '@/lib/forum-photos';
 import { modelField } from '@/lib/forum-models';
 import { aiCanCheck } from '@/lib/forum-ai';
+import { claimsForThread } from '@/lib/forum-claims';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -47,7 +48,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Sprawdź czy wątek istnieje (stare linki thread_123 też działają)
-    const adult = isAdult(await getForumUser(req));
+    const viewer = await getForumUser(req);
+    const adult = isAdult(viewer);
     const isUuid = /^[0-9a-f-]{36}$/i.test(threadId);
     let row = isUuid ? await findThread(threadId, adult) : null;
     if (!isUuid) {
@@ -79,16 +81,21 @@ export async function GET(req: NextRequest) {
       ? await forumDb.from('forum_profiles').select('user_id, ai_wins').in('user_id', authorIds)
       : { data: [] };
     const wins = new Map<string, number>((profs || []).map((p: any) => [p.user_id, p.ai_wins || 0]));
-    const paginatedPosts = (rows || []).map((p: any) => toPost(p, wins));
+    const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
+    const aiOff = !!cat?.is_adult;
+    // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7)
+    const { claims, summary } = aiOff ? { claims: [], summary: null } : await claimsForThread(row, viewer?.user.id);
+    const paginatedPosts = (rows || []).map((p: any) => ({ ...toPost(p, wins), claims: claims.filter((c) => c.postId === p.id) }));
     const total = count || 0;
 
     // Zwiększ licznik wyświetleń
     await forumDb.from('forum_threads').update({ views: (row.views || 0) + 1 }).eq('id', row.id);
-    const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
     const thread = {
       ...toThread({ ...row, views: (row.views || 0) + 1 }),
-      aiOff: !!cat?.is_adult,
-      aiCan: aiCanCheck(row, rows || [], !!cat?.is_adult),
+      aiOff,
+      aiCan: aiCanCheck(row, rows || [], aiOff),
+      claimsWait: !aiOff && (rows || []).some((p: any) => p.status === 'widoczny' && !p.claims_at),
+      summary,
     };
 
     return NextResponse.json(

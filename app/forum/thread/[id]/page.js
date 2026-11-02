@@ -12,6 +12,7 @@ import PhotoGallery from '@/components/Forum/PhotoGallery';
 import ModelPicker from '@/components/Forum/ModelPicker';
 import ModelView from '@/components/Forum/Model3D';
 import ReportButton from '@/components/Forum/ReportButton';
+import { ClaimList, FullAnswer } from '@/components/Forum/Claims';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -38,6 +39,10 @@ export default function ThreadPage() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiMsg, setAiMsg] = useState('');
   const aiRunning = useRef(false);
+  const aiAuto = useRef(0); // ile razy strona sama zawołała AI (bezpiecznik przed pętlą)
+  const [claimVotes, setClaimVotes] = useState({}); // świeże oceny twierdzeń po kliknięciu
+  const getClaim = (c) => claimVotes[c.id] || c;
+  const onVoted = (c) => setClaimVotes((v) => ({ ...v, [c.id]: c }));
   const formRef = useRef(null);
   const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
 
@@ -59,7 +64,9 @@ export default function ThreadPage() {
         setThread(data.thread);
         setPosts(data.posts);
         // Coś czeka na AI (nowy wątek, odpowiedź autora, poprawka do oceny): uruchom
-        if (data.thread.aiWait || data.posts.some((p) => ['czeka', 'sprawdza'].includes(p.correctionStatus))) runAi(false);
+        setClaimVotes({});
+        const pending = data.thread.aiWait || data.thread.claimsWait || data.posts.some((p) => ['czeka', 'sprawdza'].includes(p.correctionStatus));
+        if (pending && aiAuto.current < 3) { aiAuto.current += 1; runAi(false); }
       } else if (data.removed) {
         setError(`Wątek „${data.title}” usunęła moderacja. Powód: ${data.reason || 'złamanie zasad forum'}`);
       } else {
@@ -367,6 +374,8 @@ export default function ThreadPage() {
             </div>
           </div>
 
+          <FullAnswer summary={thread?.summary} me={me} get={getClaim} onVoted={onVoted} />
+
           {/* Replies */}
           {posts.length > 0 && (
             <div className="replies-section">
@@ -404,6 +413,7 @@ export default function ThreadPage() {
                     </div>
                     <PhotoGallery photos={post.photos} />
                     <ModelView model={post.model} />
+                    <ClaimList claims={post.claims} me={me} get={getClaim} onVoted={onVoted} />
                     {['czeka', 'sprawdza'].includes(post.correctionStatus) && <div className="fix-verdict wait">⏳ AI sprawdza tę poprawkę…</div>}
                     {post.correctionStatus === 'przyjeta' && <div className="fix-verdict yes">✅ AI przyznało rację. {post.correctionNote}</div>}
                     {post.correctionStatus === 'odrzucona' && <div className="fix-verdict no">🤔 AI się nie zgadza: {post.correctionNote} <small>Oceńcie sami.</small></div>}
@@ -424,7 +434,7 @@ export default function ThreadPage() {
           {!thread?.aiOff && (aiBusy || thread?.aiWait || aiMsg || (thread?.aiCan && me.profile)) && (
             <div className="ai-bar">
               {aiBusy || thread?.aiWait ? (
-                <span>🤖 AI czyta wątek i pisze… to trwa zwykle pół minuty.</span>
+                <span>{thread?.aiWait ? '🤖 AI czyta wątek i pisze… to trwa zwykle pół minuty.' : '🔬 AI rozkłada odpowiedzi na kawałki…'}</span>
               ) : (
                 <>
                   {aiMsg && <span>{aiMsg}</span>}

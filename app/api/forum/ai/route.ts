@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       await forumDb.from('forum_threads').update({ ai_wait: hasAi ? 'braki' : 'odpowiedz' }).eq('id', threadId).is('ai_wait', null);
     }
 
-    const result = await runPendingAi(threadId);
+    const result = await runPendingAi(threadId, !!cat.is_adult);
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     logger.error('forum ai:', error);
