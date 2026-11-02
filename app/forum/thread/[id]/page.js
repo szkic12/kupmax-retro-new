@@ -13,6 +13,7 @@ import ModelPicker from '@/components/Forum/ModelPicker';
 import ModelView from '@/components/Forum/Model3D';
 import ReportButton from '@/components/Forum/ReportButton';
 import { ClaimList, FullAnswer } from '@/components/Forum/Claims';
+import CardText from '@/components/Forum/CardText';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -42,6 +43,7 @@ export default function ThreadPage() {
   const aiAuto = useRef(0); // ile razy strona sama zawołała AI (bezpiecznik przed pętlą)
   const [claimVotes, setClaimVotes] = useState({}); // świeże oceny twierdzeń po kliknięciu
   const getClaim = (c) => claimVotes[c.id] || c;
+  const cardOf = (id) => (id && thread?.cards?.find((c) => c.id === id)) || null;
   const onVoted = (c) => setClaimVotes((v) => ({ ...v, [c.id]: c }));
   const formRef = useRef(null);
   const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
@@ -367,14 +369,14 @@ export default function ThreadPage() {
               </div>
               <VoicePlayer url={thread?.voiceUrl} mode={thread?.voiceMode} seconds={thread?.voiceSeconds} />
               <div className="post-message">
-                {parseEmojis(thread?.message)}
+                <CardText text={parseEmojis(thread?.message)} cards={thread?.cards} />
               </div>
               <PhotoGallery photos={thread?.photos} />
               <ModelView model={thread?.model} />
             </div>
           </div>
 
-          <FullAnswer summary={thread?.summary} me={me} get={getClaim} onVoted={onVoted} />
+          <FullAnswer summary={thread?.summary} me={me} get={getClaim} onVoted={onVoted} cardOf={cardOf} />
 
           {/* Replies */}
           {posts.length > 0 && (
@@ -409,11 +411,11 @@ export default function ThreadPage() {
                     )}
                     <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
                     <div className="post-message">
-                      {parseEmojis(post.message)}
+                      <CardText text={parseEmojis(post.message)} cards={thread?.cards} />
                     </div>
                     <PhotoGallery photos={post.photos} />
                     <ModelView model={post.model} />
-                    <ClaimList claims={post.claims} me={me} get={getClaim} onVoted={onVoted} />
+                    <ClaimList claims={post.claims} me={me} get={getClaim} onVoted={onVoted} cardOf={cardOf} />
                     {['czeka', 'sprawdza'].includes(post.correctionStatus) && <div className="fix-verdict wait">⏳ AI sprawdza tę poprawkę…</div>}
                     {post.correctionStatus === 'przyjeta' && <div className="fix-verdict yes">✅ AI przyznało rację. {post.correctionNote}</div>}
                     {post.correctionStatus === 'odrzucona' && <div className="fix-verdict no">🤔 AI się nie zgadza: {post.correctionNote} <small>Oceńcie sami.</small></div>}

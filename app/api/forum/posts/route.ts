@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     const { data: cat } = await forumDb.from('forum_categories').select('is_adult').eq('id', row.category_id).maybeSingle();
     const aiOff = !!cat?.is_adult;
     // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7)
-    const { claims, summary } = aiOff ? { claims: [], summary: null } : await claimsForThread(row, viewer?.user.id);
+    const { claims, summary, cards } = aiOff ? { claims: [], summary: null, cards: [] } : await claimsForThread(row, viewer?.user.id);
     const paginatedPosts = (rows || []).map((p: any) => ({ ...toPost(p, wins), claims: claims.filter((c) => c.postId === p.id) }));
     const total = count || 0;
 
@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
       aiCan: aiCanCheck(row, rows || [], aiOff),
       claimsWait: !aiOff && (rows || []).some((p: any) => p.status === 'widoczny' && !p.claims_at),
       summary,
+      cards,
     };
 
     return NextResponse.json(

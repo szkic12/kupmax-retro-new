@@ -25,13 +25,17 @@ export async function POST(req: NextRequest) {
 
     const { data: claim } = await forumDb.from('forum_claims').select('*').eq('id', claimId).maybeSingle();
     if (!claim) return NextResponse.json({ success: false, error: 'Nie ma takiego twierdzenia.' }, { status: 404 });
-    const [{ data: post }, { data: thread }] = await Promise.all([
-      forumDb.from('forum_posts').select('status').eq('id', claim.post_id).maybeSingle(),
-      forumDb.from('forum_threads').select('category_id, status').eq('id', claim.thread_id).maybeSingle(),
-    ]);
-    const cats = await visibleCategories(isAdult(me));
-    if (post?.status !== 'widoczny' || thread?.status !== 'widoczny' || !cats.some((c: any) => c.id === thread.category_id)) {
-      return NextResponse.json({ success: false, error: 'Ten wpis nie jest już widoczny.' }, { status: 404 });
+    // Kawałek z odpowiedzi: wpis i wątek muszą być widoczne dla tego człowieka. Wpis dorzucony na kartę: wystarczy jego status.
+    if (claim.status !== 'widoczny') return NextResponse.json({ success: false, error: 'Ten wpis nie jest już widoczny.' }, { status: 404 });
+    if (claim.post_id) {
+      const [{ data: post }, { data: thread }] = await Promise.all([
+        forumDb.from('forum_posts').select('status').eq('id', claim.post_id).maybeSingle(),
+        forumDb.from('forum_threads').select('category_id, status').eq('id', claim.thread_id).maybeSingle(),
+      ]);
+      const cats = await visibleCategories(isAdult(me));
+      if (post?.status !== 'widoczny' || thread?.status !== 'widoczny' || !cats.some((c: any) => c.id === thread.category_id)) {
+        return NextResponse.json({ success: false, error: 'Ten wpis nie jest już widoczny.' }, { status: 404 });
+      }
     }
     if (claim.author_id === me.user.id) {
       return NextResponse.json({ success: false, error: 'Swoich twierdzeń nie oceniasz. Niech ocenią inni.' }, { status: 403 });

@@ -19,13 +19,15 @@ export async function GET(req: NextRequest) {
 // Usunięte wpisy autora, których jeszcze nie widział (powód usunięcia, DSA art. 17)
 async function notices(userId: string, seenAt: string | null) {
   const since = seenAt || '1970-01-01';
-  const [t, p] = await Promise.all([
+  const [t, p, c] = await Promise.all([
     forumDb.from('forum_threads').select('id, title, removed_reason, removed_at').eq('author_id', userId).eq('status', 'usuniety').gt('removed_at', since),
     forumDb.from('forum_posts').select('id, thread_id, body, removed_reason, removed_at').eq('author_id', userId).eq('status', 'usuniety').gt('removed_at', since),
+    forumDb.from('forum_claims').select('id, body, removed_reason, removed_at').eq('author_id', userId).is('post_id', null).eq('status', 'usuniety').gt('removed_at', since),
   ]);
   return [
     ...(t.data || []).map((x) => ({ kind: 'wątek', what: x.title, reason: x.removed_reason, at: x.removed_at })),
     ...(p.data || []).map((x) => ({ kind: 'odpowiedź', what: String(x.body || '').slice(0, 80), reason: x.removed_reason, at: x.removed_at, threadId: x.thread_id })),
+    ...(c.data || []).map((x) => ({ kind: 'wpis na karcie wiedzy', what: String(x.body || '').slice(0, 80), reason: x.removed_reason, at: x.removed_at })),
   ].sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }
 

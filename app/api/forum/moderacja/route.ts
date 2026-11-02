@@ -9,31 +9,36 @@ export const revalidate = 0;
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const COLS = 'id, author_nick, author_avatar, body, status, removed_reason, removed_at, created_at, photos, model, voice_url';
+const CLAIM_COLS = 'id, author_nick, body, status, removed_reason, removed_at, created_at, photos, voice_url, drawer, forum_cards(slug, name)';
+const TABLE: Record<string, string> = { thread: 'forum_threads', post: 'forum_posts', claim: 'forum_claims' };
 
 // GET: zgłoszenia + ostatnie wpisy ze wszystkich kategorii (także 18+ i usunięte), tylko dla Brata
 export async function GET(req: NextRequest) {
   if (!(await verifyAdminToken(req))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
   try {
-    const [reports, threads, posts] = await Promise.all([
+    const [reports, threads, posts, claims] = await Promise.all([
       forumDb.from('forum_reports').select('*').order('status', { ascending: true }).order('created_at', { ascending: false }).limit(100),
       forumDb.from('forum_threads').select(`${COLS}, title, category_id`).order('created_at', { ascending: false }).limit(40),
       forumDb.from('forum_posts').select(`${COLS}, thread_id, is_ai`).order('created_at', { ascending: false }).limit(40),
+      forumDb.from('forum_claims').select(CLAIM_COLS).is('post_id', null).order('created_at', { ascending: false }).limit(40),
     ]);
     if (reports.error) throw reports.error;
 
     // Podgląd zgłoszonych wpisów (mogą być starsze niż ostatnie 40)
     const ids = (t: string) => [...new Set((reports.data || []).filter((r) => r.target_type === t).map((r) => r.target_id))];
-    const [rt, rp] = await Promise.all([
+    const [rt, rp, rc] = await Promise.all([
       ids('thread').length ? forumDb.from('forum_threads').select(`${COLS}, title, category_id`).in('id', ids('thread')) : { data: [] },
       ids('post').length ? forumDb.from('forum_posts').select(`${COLS}, thread_id`).in('id', ids('post')) : { data: [] },
+      ids('claim').length ? forumDb.from('forum_claims').select(CLAIM_COLS).in('id', ids('claim')) : { data: [] },
     ]);
-    const byId = new Map<string, any>([...(rt.data || []), ...(rp.data || [])].map((x: any) => [x.id, x]));
+    const byId = new Map<string, any>([...(rt.data || []), ...(rp.data || []), ...(rc.data || [])].map((x: any) => [x.id, x]));
 
     return NextResponse.json({
       success: true,
       reports: (reports.data || []).map((r) => ({ ...r, target: byId.get(r.target_id) || null })),
       threads: threads.data || [],
       posts: posts.data || [],
+      claims: claims.data || [],
     });
   } catch (error) {
     logger.error('forum moderacja GET:', error);
@@ -47,10 +52,10 @@ export async function POST(req: NextRequest) {
   if (!(await verifyAdminToken(req, body))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
   try {
     const { action, targetType, targetId, category, note } = body;
-    if (!['thread', 'post'].includes(targetType) || !UUID.test(targetId || '')) {
+    const table = TABLE[targetType];
+    if (!table || !UUID.test(targetId || '')) {
       return NextResponse.json({ success: false, error: 'Zły wpis' }, { status: 400 });
     }
-    const table = targetType === 'thread' ? 'forum_threads' : 'forum_posts';
     const now = new Date().toISOString();
     let decision = '';
 

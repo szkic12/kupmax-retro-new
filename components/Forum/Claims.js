@@ -2,9 +2,10 @@
 // Twierdzenia (K7): kawałki odpowiedzi z ocenami i pełna odpowiedź złożona z najlepszych kawałków.
 // 📏 fakt: ✅ prawda / ❌ fałsz. 🎨 wariant: 👨‍🍳 „zrobiłem, działa” (bez zwycięzcy, więc nie ma czego manipulować).
 import { useState } from 'react';
+import Link from 'next/link';
 import { forumFetch } from '@/lib/forum-client';
 
-function ClaimRow({ claim, me, onVoted, showAuthor }) {
+export function ClaimRow({ claim, me, onVoted, showAuthor, card, children }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const own = !!me.profile && claim.authorId && claim.authorId === me.profile.user_id;
@@ -46,7 +47,9 @@ function ClaimRow({ claim, me, onVoted, showAuthor }) {
           {claim.condition && <span className="cl-cond">{claim.condition}: </span>}
           {claim.body}
           {showAuthor && <span className="cl-author"> ({claim.isAi ? '🤖 ' : ''}{claim.author})</span>}
+          {card && <Link className="cl-card" href={`/forum/karta/${card.slug}`} title="Karta wiedzy">🗂️ {card.name}</Link>}
         </div>
+        {children}
         {claim.disputed && <div className="cl-warn">⚠️ Sporne: więcej osób uważa to za nieprawdę.</div>}
         <div className="cl-votes">
           {claim.kind === 'fakt' ? (
@@ -65,13 +68,13 @@ function ClaimRow({ claim, me, onVoted, showAuthor }) {
 }
 
 // Pod odpowiedzią: zwinięta lista kawałków
-export function ClaimList({ claims, me, get, onVoted }) {
+export function ClaimList({ claims, me, get, onVoted, cardOf = () => null }) {
   if (!claims?.length) return null;
   return (
     <details className="cl-box">
       <summary>🔬 Rozłożone na kawałki ({claims.length}): oceń każdy osobno</summary>
       <ul className="cl-list">
-        {claims.map((c) => <ClaimRow key={c.id} claim={get(c)} me={me} onVoted={onVoted} />)}
+        {claims.map((c) => <ClaimRow key={c.id} claim={get(c)} me={me} onVoted={onVoted} card={cardOf(c.cardId)} />)}
       </ul>
       <p className="cl-note">Na kawałki rozłożyło AI. W razie wątpliwości liczy się oryginał wyżej.</p>
       <ClaimStyles />
@@ -80,7 +83,7 @@ export function ClaimList({ claims, me, get, onVoted }) {
 }
 
 // Nad odpowiedziami: pełna odpowiedź z najlepszych kawałków, z podpisami autorów
-export function FullAnswer({ summary, me, get, onVoted }) {
+export function FullAnswer({ summary, me, get, onVoted, cardOf = () => null }) {
   if (!summary?.groups?.length) return null;
   return (
     <section className="fa-box">
@@ -93,7 +96,7 @@ export function FullAnswer({ summary, me, get, onVoted }) {
         <div key={i} className="fa-group">
           <h3>{g.title}</h3>
           <ul className="cl-list">
-            {g.claims.map((c) => <ClaimRow key={c.id} claim={get(c)} me={me} onVoted={onVoted} showAuthor />)}
+            {g.claims.map((c) => <ClaimRow key={c.id} claim={get(c)} me={me} onVoted={onVoted} showAuthor card={cardOf(c.cardId)} />)}
           </ul>
         </div>
       ))}
@@ -103,7 +106,7 @@ export function FullAnswer({ summary, me, get, onVoted }) {
   );
 }
 
-function ClaimStyles() {
+export function ClaimStyles() {
   return (
     <style jsx global>{`
       .cl-box { margin-top: 12px; border: 1px solid #b0b0b0; background: #fafafa; padding: 6px 8px; }
@@ -119,6 +122,8 @@ function ClaimStyles() {
       .cl-text { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
       .cl-cond { color: #803080; font-style: italic; }
       .cl-author { color: #666; font-size: 12px; }
+      .cl-card { display: inline-block; margin-left: 6px; font-size: 11px; color: #005000; background: #e6f4e6; border: 1px solid #9c9; border-radius: 10px; padding: 0 6px; text-decoration: none; white-space: nowrap; }
+      .cl-card:hover { text-decoration: underline; }
       .cl-warn { font-size: 12px; color: #a00; margin-top: 2px; }
       .cl-votes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
       .cl-vote { background: #e8e8e8; border: 1px solid #aaa; border-radius: 12px; padding: 2px 10px; font-size: 12px; cursor: pointer; color: #000; }

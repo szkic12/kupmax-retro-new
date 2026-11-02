@@ -19,10 +19,12 @@ const btn: React.CSSProperties = { padding: '4px 10px', background: '#c0c0c0', b
 const box: React.CSSProperties = { background: '#fff', border: '1px solid #999', padding: 8, marginBottom: 8, fontSize: 13 };
 const when = (d: string) => (d ? new Date(d).toLocaleString('pl-PL') : '');
 const snippet = (t: Item) => (t?.title ? `„${t.title}” ` : '') + String(t?.body || '').slice(0, 220);
-const link = (t: Item, type: string) => `/forum/thread/${type === 'thread' ? t.id : t.thread_id}`;
+const link = (t: Item, type: string) =>
+  type === 'claim' ? `/forum/karta/${t.forum_cards?.slug || ''}` : `/forum/thread/${type === 'thread' ? t.id : t.thread_id}`;
+const typeLabel = (type: string) => (type === 'thread' ? '🧵 wątek' : type === 'post' ? '💬 odpowiedź' : '🗂️ wpis na karcie');
 
 export default function ForumModeracja() {
-  const [data, setData] = useState<{ reports: Item[]; threads: Item[]; posts: Item[] } | null>(null);
+  const [data, setData] = useState<{ reports: Item[]; threads: Item[]; posts: Item[]; claims?: Item[] } | null>(null);
   const [err, setErr] = useState('');
   const [view, setView] = useState<'zgloszenia' | 'wpisy'>('zgloszenia');
 
@@ -51,6 +53,7 @@ export default function ForumModeracja() {
   const recent = data ? [
     ...data.threads.map((t) => ({ ...t, _type: 'thread' })),
     ...data.posts.map((p) => ({ ...p, _type: 'post' })),
+    ...(data.claims || []).map((c) => ({ ...c, _type: 'claim', title: c.forum_cards ? `karta: ${c.forum_cards.name}` : '' })),
   ].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))) : [];
 
   return (
@@ -84,7 +87,7 @@ export default function ForumModeracja() {
         <div key={t.id} style={{ ...box, opacity: t.status === 'usuniety' ? 0.6 : 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
             <span>
-              <b>{t._type === 'thread' ? '🧵 wątek' : '💬 odpowiedź'}</b>
+              <b>{typeLabel(t._type)}</b>
               {t.category_id === 'strefa-18' && ' 🔞'} · {t.author_avatar} {t.author_nick} · {when(t.created_at)}
               {t.is_ai && ' · 🤖 AI'}{t.voice_url && ' · 🎤'}{t.photos?.length > 0 && ` · 📷${t.photos.length}`}{t.model && ' · 🧊'}
             </span>
@@ -120,7 +123,7 @@ function Report({ r, act }: { r: Item; act: any }) {
       <div style={{ background: '#f6f6f6', padding: 6, margin: '6px 0' }}>
         {t ? (
           <>
-            <small>{r.target_type === 'thread' ? '🧵 wątek' : '💬 odpowiedź'} · {t.author_avatar} {t.author_nick} · status: <b>{t.status}</b> · <a href={link(t, r.target_type)} target="_blank" rel="noreferrer">otwórz ↗</a></small>
+            <small>{typeLabel(r.target_type)} · {t.author_avatar} {t.author_nick} · status: <b>{t.status}</b> · <a href={link(t, r.target_type)} target="_blank" rel="noreferrer">otwórz ↗</a></small>
             <p style={{ margin: '4px 0' }}>{snippet(t)}</p>
           </>
         ) : <small>Wpis już nie istnieje.</small>}

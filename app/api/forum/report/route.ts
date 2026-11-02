@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const captcha = await verifyRecaptcha(recaptchaToken);
     if (!captcha.success) return NextResponse.json({ success: false, error: 'Weryfikacja reCAPTCHA nie powiodła się. Odśwież stronę.' }, { status: 403 });
 
-    if (!['thread', 'post'].includes(targetType) || !UUID.test(targetId || '') || !isCategory(category)) {
+    if (!['thread', 'post', 'claim'].includes(targetType) || !UUID.test(targetId || '') || !isCategory(category)) {
       return NextResponse.json({ success: false, error: 'Złe zgłoszenie.' }, { status: 400 });
     }
     const details = sanitizeInput(String(rawDetails || ''), 2000).trim();
@@ -39,10 +39,12 @@ export async function POST(req: NextRequest) {
       if (!goodFaith) return NextResponse.json({ success: false, error: 'Potwierdź, że zgłaszasz w dobrej wierze.' }, { status: 400 });
     }
 
-    const table = targetType === 'thread' ? 'forum_threads' : 'forum_posts';
-    const { data: target } = await forumDb.from(table).select(targetType === 'thread' ? 'id, title' : 'id, thread_id, body').eq('id', targetId).maybeSingle();
+    const table = targetType === 'thread' ? 'forum_threads' : targetType === 'post' ? 'forum_posts' : 'forum_claims';
+    const cols = targetType === 'thread' ? 'id, title' : targetType === 'post' ? 'id, thread_id, body' : 'id, thread_id, body, forum_cards(slug)';
+    const { data: target } = await forumDb.from(table).select(cols).eq('id', targetId).maybeSingle();
     if (!target) return NextResponse.json({ success: false, error: 'Nie ma takiego wpisu.' }, { status: 404 });
-    const threadId = targetType === 'thread' ? (target as any).id : (target as any).thread_id;
+    const threadId = targetType === 'thread' ? (target as any).id : (target as any).thread_id || null;
+    const link = threadId ? `https://www.kupmax.pl/forum/thread/${threadId}` : `https://www.kupmax.pl/forum/karta/${(target as any).forum_cards?.slug || ''}`;
 
     const { error } = await forumDb.from('forum_reports').insert({
       target_type: targetType,
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest) {
     });
     if (error) throw error;
 
-    notify('report', CATEGORIES[category], details || (target as any).title || '', `https://www.kupmax.pl/forum/thread/${threadId}`).catch(() => {});
+    notify('report', CATEGORIES[category], details || (target as any).title || (target as any).body || '', link).catch(() => {});
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('forum report:', error);
