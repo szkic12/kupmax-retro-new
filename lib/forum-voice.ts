@@ -9,9 +9,9 @@ export type VoiceMode = (typeof VOICE_MODES)[number];
 export const MAX_VOICE_SECONDS = 600;
 export const MAX_BODY = 12000; // 10 minut mowy to ok. 9 tys. znaków
 
-const bucket = () => (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
+export const bucket = () => (process.env.AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET || 'kupmax-downloads').trim();
 let s3: S3Client | null = null;
-function client() {
+export function client() {
   if (!s3) {
     s3 = new S3Client({
       region: (process.env.AWS_REGION || '').trim(),

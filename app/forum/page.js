@@ -360,7 +360,7 @@ export default function ForumPage() {
                     
                     <div className="thread-content">
                       <Link href={`/forum/thread/${thread.id}`} className="thread-title">
-                        {thread.voiceUrl && <span title="Wpis z nagraniem">🎤 </span>}{thread.title}
+                        {thread.voiceUrl && <span title="Wpis z nagraniem">🎤 </span>}{thread.photos?.length > 0 && <span title="Wpis ze zdjęciami">📷 </span>}{thread.title}
                       </Link>
                       <p className="thread-message">
                         <EmojiParser text={thread.message} emojiSize={28} />

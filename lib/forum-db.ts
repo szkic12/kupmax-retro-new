@@ -2,6 +2,7 @@
 // Mapuje wiersze z bazy na dawny kształt odpowiedzi, więc strony forum działają bez zmian.
 import { createClient } from '@supabase/supabase-js';
 import { publicVoiceUrl } from '@/lib/forum-voice';
+import { publicPhotoUrl } from '@/lib/forum-photos';
 
 export const forumDb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -35,7 +36,7 @@ export function toThread(t: any) {
     voiceUrl: publicVoiceUrl(t.voice_url),
     voiceMode: t.voice_mode,
     voiceSeconds: t.voice_seconds,
-    photos: t.photos || [],
+    photos: (t.photos || []).map(publicPhotoUrl),
     date: t.created_at,
     lastActivity: t.last_activity,
     replyCount: t.reply_count,
@@ -56,7 +57,7 @@ export function toPost(p: any) {
     voiceUrl: publicVoiceUrl(p.voice_url),
     voiceMode: p.voice_mode,
     voiceSeconds: p.voice_seconds,
-    photos: p.photos || [],
+    photos: (p.photos || []).map(publicPhotoUrl),
     date: p.created_at,
     isAnswer: false,
   };

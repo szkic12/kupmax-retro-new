@@ -7,6 +7,8 @@ import Link from 'next/link';
 import ForumAuth from '@/components/Forum/ForumAuth';
 import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
 import VoicePlayer from '@/components/Forum/VoicePlayer';
+import PhotoPicker from '@/components/Forum/PhotoPicker';
+import PhotoGallery from '@/components/Forum/PhotoGallery';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 export default function ThreadPage() {
@@ -27,6 +29,7 @@ export default function ThreadPage() {
     message: ''
   });
   const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
+  const [photos, setPhotos] = useState([]);
   const addSpoken = (text) => setReplyData((r) => ({ ...r, message: r.message ? `${r.message}\n\n${text}` : text }));
 
   useEffect(() => {
@@ -101,6 +104,7 @@ export default function ThreadPage() {
           message: replyData.message,
           recaptchaToken,
           ...voicePayload(voice),
+          photos: photos.map((p) => p.key),
         })
       });
 
@@ -109,6 +113,7 @@ export default function ThreadPage() {
       if (data.success) {
         setReplyData({ ...replyData, message: '' });
         setVoice({ mode: voice.mode, key: null, seconds: null });
+        setPhotos([]);
         setShowReplyForm(false);
         fetchThread(); // Refresh posts
       } else {
@@ -309,6 +314,7 @@ export default function ThreadPage() {
               <div className="post-message">
                 {parseEmojis(thread?.message)}
               </div>
+              <PhotoGallery photos={thread?.photos} />
             </div>
           </div>
 
@@ -331,6 +337,7 @@ export default function ThreadPage() {
                     <div className="post-message">
                       {parseEmojis(post.message)}
                     </div>
+                    <PhotoGallery photos={post.photos} />
                   </div>
                 </div>
               ))}
@@ -366,6 +373,10 @@ export default function ThreadPage() {
                         rows={6}
                       />
                       <span className="char-count">{replyData.message.length}/12000</span>
+                    </div>
+                    <div className="form-group">
+                      <label>Zdjęcia (do 5):</label>
+                      <PhotoPicker photos={photos} onChange={setPhotos} />
                     </div>
 
                     <div className="form-actions">

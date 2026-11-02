@@ -6,6 +6,7 @@ import { verifyRecaptcha } from '@/lib/recaptcha';
 import { forumDb, toThread, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
+import { photoKeys } from '@/lib/forum-photos';
 
 // Wyłącz cache
 export const dynamic = 'force-dynamic';
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds } = await req.json();
+    const { categoryId, title, message, recaptchaToken, voiceKey, voiceMode, voiceSeconds, photos } = await req.json();
 
     // reCAPTCHA v3 weryfikacja
     const captcha = await verifyRecaptcha(recaptchaToken);
@@ -124,6 +125,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Zdjęcia: tylko własne, najwyżej 5
+    const photoList = photoKeys(me.user.id, photos);
+    if (!Array.isArray(photoList)) {
+      return NextResponse.json({ success: false, error: photoList.error }, { status: 400 });
+    }
+
     // Głos: klucz nagrania albo lektor czytający tekst
     const voice = await voiceFields(me.user.id, { voiceKey, voiceMode, voiceSeconds }, message.substring(0, MAX_BODY));
     if ('error' in voice) {
@@ -139,6 +146,7 @@ export async function POST(req: NextRequest) {
       author_avatar: me.profile.avatar,
       body: message.substring(0, MAX_BODY),
       ...voice,
+      photos: photoList,
     }).select().single();
     if (error) {
       logger.error('Forum insert thread:', error);

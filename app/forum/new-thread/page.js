@@ -7,6 +7,7 @@ import Link from 'next/link';
 import ForumAuth from '@/components/Forum/ForumAuth';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
+import PhotoPicker from '@/components/Forum/PhotoPicker';
 
 export default function NewThreadPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function NewThreadPage() {
     message: ''
   });
   const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
+  const [photos, setPhotos] = useState([]);
 
   // Tekst z nagrania dopisuje się do wiadomości; pusty tytuł bierze pierwsze zdanie
   const addSpoken = (text) => setFormData((f) => {
@@ -93,6 +95,7 @@ export default function NewThreadPage() {
           message: formData.message,
           recaptchaToken,
           ...voicePayload(voice),
+          photos: photos.map((p) => p.key),
         })
       });
 
@@ -189,6 +192,11 @@ export default function NewThreadPage() {
                   rows={10}
                 />
                 <span className="char-count">{formData.message.length}/12000</span>
+              </div>
+
+              <div className="form-group">
+                <label>Zdjęcia (do 5):</label>
+                <PhotoPicker photos={photos} onChange={setPhotos} />
               </div>
             </fieldset>
 
