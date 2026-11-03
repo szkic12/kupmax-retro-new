@@ -112,6 +112,9 @@ export async function zaplanuj(opts: { dzien?: string; watkow?: number; naProble
   return { dzien, problemow: doZrobienia.length, rozmow: plan.length, plan };
 }
 
+// 1 rozmowa, 2–4 rozmowy (ale 12–14 rozmów), 5+ rozmów
+const rozmow = (n: number) => `${n} ${n === 1 ? 'rozmowa' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'rozmowy' : 'rozmów'}`;
+
 const esc = (s: string) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 
 // Poranny mail do Brata z listą na dziś (Resend)
@@ -132,19 +135,19 @@ export async function wyslijMail() {
   if (!grupy.size) return { sent: false, reason: 'nic do dzwonienia' };
   const n = [...grupy.values()].reduce((s, g) => s + g.firmy.length, 0);
   const html = `<div style="font-family:Arial,sans-serif;max-width:600px">
-    <h2 style="color:#000080">📞 Dzień dobry, Dziadek! ${n} rozmów na dziś</h2>
+    <h2 style="color:#000080">📞 Dzień dobry, Dziadek! ${rozmow(n)} na dziś</h2>
     <p style="background:#fffbe6;padding:8px;border:1px solid #d9a400">Na początku: przedstaw się, powiedz, że numer jest z publicznego rejestru firm, i że prosisz o fachową opinię do darmowego forum. Niczego nie sprzedajesz.</p>
     ${[...grupy.values()].map((g) => `<h3 style="margin:18px 0 6px">❓ <a href="https://www.kupmax.pl/forum/thread/${g.id}">${esc(g.title)}</a></h3>
       ${g.firmy.map((f: Row) => `<p style="margin:6px 0;padding:8px;border:1px solid #ccc">
         <b>${esc(f.name)}</b>${f.osoba ? ` · ${esc(f.osoba)}` : ''}${f.miasto ? ` · ${esc(f.miasto)}` : ''}${f.oddzwoni ? ' · 🔁 miał oddzwonić' : ''}<br>
         <small>${esc(String(f.branza || '').split(';')[0])}</small><br>
-        <a href="tel:+48${f.phone}" style="display:inline-block;margin-top:6px;padding:8px 14px;background:#b8f0b8;color:#000;text-decoration:none;font-weight:bold;border:1px solid #6b6">📞 Zadzwoń ${f.phone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}</a></p>`).join('')}`).join('')}
-    <p style="margin-top:20px"><a href="https://www.kupmax.pl/panelrudy" style="font-size:16px">➡️ Po rozmowie zapisz, co powiedział fachowiec: panelrudy → Forum → 📞 Telefony</a></p>
+        <a href="tel:+48${f.phone}" style="display:inline-block;margin-top:6px;padding:8px 14px;background:#b8f0b8;color:#000;text-decoration:none;font-weight:bold;border:1px solid #6b6">📞 Zadzwoń ${f.phone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}</a></p>`).join('')}
+      <p style="margin:8px 0 0"><a href="https://www.kupmax.pl/forum/thread/${g.id}" style="font-size:15px;font-weight:bold">➡️ Otwórz problem i zapisz rozmowy</a> <small>(ramka „📞 Fachowcy” pod pytaniem)</small></p>`).join('')}
   </div>`;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: 'Forum kupmax <powiadomienia@bossxd.com>', to: [to], subject: `📞 ${n} rozmów na dziś: ${[...grupy.values()][0].title.slice(0, 60)}`, html }),
+    body: JSON.stringify({ from: 'Forum kupmax <powiadomienia@bossxd.com>', to: [to], subject: `📞 ${rozmow(n)} na dziś: ${[...grupy.values()][0].title.slice(0, 60)}`, html }),
   });
   return { sent: res.ok, reason: res.ok ? '' : `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
 }
