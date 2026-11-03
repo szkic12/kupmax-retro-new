@@ -4,6 +4,7 @@
 import { forumDb } from '@/lib/forum-db';
 import { ask } from '@/lib/forum-ai';
 import { logger } from '@/lib/logger';
+import { isStale, shelfMap } from '@/lib/forum-trust';
 import { knownCardNames, ensureCard, isDrawer, cardsForThread } from '@/lib/forum-cards';
 
 const SPLIT_MODEL = 'claude-haiku-5-5'; // rozbiór = wyciąganie danych, szybki i tani model
@@ -199,13 +200,14 @@ export async function threadClaims(threadId: string) {
   return (claims || []).filter((c) => ok.has(c.post_id));
 }
 
-export function toClaim(c: Row, mine?: string) {
+export function toClaim(c: Row, mine?: string, shelfMonths?: number | null) {
   return {
     id: c.id, postId: c.post_id, kind: c.kind, body: c.body, condition: c.condition,
     author: c.is_ai ? 'AI kupmax' : c.author_nick, isAi: c.is_ai, authorId: c.author_id,
     yes: c.yes, no: c.no, done: c.done, myVote: mine || null, disputed: isDisputed(c),
     cardId: c.card_id || null, drawer: c.drawer || null,
     verdict: c.verdict || null, seal: c.seal || null,
+    checkedAt: c.checked_at || null, stale: isStale(c, shelfMonths),
   };
 }
 
@@ -217,7 +219,8 @@ export async function claimsForThread(thread: Row, userId?: string) {
     const { data } = await forumDb.from('forum_claim_votes').select('claim_id, vote').eq('user_id', userId).in('claim_id', claims.map((c) => c.id));
     (data || []).forEach((v) => votes.set(v.claim_id, v.vote));
   }
-  const byId = new Map(claims.map((c) => [c.id, toClaim(c, votes.get(c.id))]));
+  const shelf = (await shelfMap()).get(thread.category_id);
+  const byId = new Map(claims.map((c) => [c.id, toClaim(c, votes.get(c.id), shelf)]));
   const s = thread.summary as Row | null;
   const summary = s?.groups ? {
     groups: s.groups

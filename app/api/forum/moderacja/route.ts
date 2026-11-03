@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { forumDb } from '@/lib/forum-db';
 import { isCategory, reasonText } from '@/lib/forum-moderation';
-import { bumpPenalty, setSeal } from '@/lib/forum-trust';
+import { bumpPenalty, setSeal, isStale, shelfMap } from '@/lib/forum-trust';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
       forumDb.from('forum_threads').select(`${COLS}, title, category_id`).order('created_at', { ascending: false }).limit(40),
       forumDb.from('forum_posts').select(`${COLS}, thread_id, is_ai`).order('created_at', { ascending: false }).limit(40),
       forumDb.from('forum_claims').select(CLAIM_COLS).is('post_id', null).order('created_at', { ascending: false }).limit(40),
-      // Kolejka do pieczęci: kawałki z głosami, bez pieczęci
-      forumDb.from('forum_claims').select('id, kind, body, condition, author_nick, author_id, is_ai, thread_id, post_id, yes, no, done, wyes, wno, wdone, verdict, seal, created_at, forum_cards(slug, name)')
-        .eq('status', 'widoczny').is('seal', null).or('yes.gt.0,no.gt.0,done.gt.0').limit(300),
+      // Kolejka do pieczęci: kawałki ludzi bez pieczęci (AI i tak nie idzie do nauki); sporne i z głosami na górze
+      forumDb.from('forum_claims').select('id, kind, body, condition, quote, author_nick, author_id, is_ai, thread_id, post_id, yes, no, done, wyes, wno, wdone, verdict, seal, created_at, forum_cards(slug, name)')
+        .eq('status', 'widoczny').is('seal', null).eq('is_ai', false).order('created_at', { ascending: false }).limit(300),
     ]);
     if (reports.error) throw reports.error;
 
@@ -43,12 +43,25 @@ export async function GET(req: NextRequest) {
       threads: threads.data || [],
       posts: posts.data || [],
       claims: claims.data || [],
-      queue: sealQueue(pending.data || []),
+      queue: [...(await staleQueue()), ...sealQueue(pending.data || [])],
     });
   } catch (error) {
     logger.error('forum moderacja GET:', error);
     return NextResponse.json({ success: false, error: 'Błąd serwera' }, { status: 500 });
   }
+}
+
+// Timer wątpliwości: kawałki po terminie przydatności (najkrótszy termin to 12 miesięcy) wracają na górę kolejki
+async function staleQueue() {
+  const cut = new Date(Date.now() - 12 * 30.44 * 86400000).toISOString();
+  const { data } = await forumDb.from('forum_claims')
+    .select('id, kind, body, condition, quote, author_nick, author_id, is_ai, thread_id, post_id, yes, no, done, wyes, wno, wdone, verdict, seal, checked_at, created_at, forum_cards(slug, name), forum_threads(category_id)')
+    .eq('status', 'widoczny').lt('checked_at', cut).limit(200);
+  const shelf = await shelfMap();
+  return (data || [])
+    .filter((c: any) => isStale(c, c.forum_threads?.category_id ? shelf.get(c.forum_threads.category_id) : undefined))
+    .map((c: any) => ({ ...c, stale: true }))
+    .slice(0, 20);
 }
 
 // Najpierw sporne (są ✅ i ❌), potem tuż przy progu, potem z największą liczbą głosów
@@ -57,7 +70,7 @@ function sealQueue(rows: any[]) {
   const near = (c: any) => !c.verdict;
   return rows
     .sort((a, b) => Number(disputed(b)) - Number(disputed(a)) || Number(near(b)) - Number(near(a)) || (b.yes + b.no + b.done) - (a.yes + a.no + a.done))
-    .slice(0, 40);
+    .slice(0, 60);
 }
 
 // POST: usun | przywroc | zostaw | pieczec. Usunięcie zapisuje powód widoczny dla autora (DSA art. 17).

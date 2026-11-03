@@ -69,7 +69,7 @@ export async function cardPage(slug: string, userId?: string) {
   // Kawałki z wątków: tylko z widocznych odpowiedzi w widocznych wątkach spoza 18+
   const postIds = [...new Set((rows || []).map((c) => c.post_id).filter(Boolean))];
   const { data: posts } = postIds.length
-    ? await forumDb.from('forum_posts').select('id, thread_id, photos, status, forum_threads!inner(title, status, forum_categories!inner(is_adult))').in('id', postIds)
+    ? await forumDb.from('forum_posts').select('id, thread_id, photos, status, forum_threads!inner(title, status, category_id, forum_categories!inner(is_adult, shelf_months))').in('id', postIds)
     : { data: [] };
   const okPost = new Map<string, any>();
   (posts || []).forEach((p: any) => {
@@ -88,7 +88,7 @@ export async function cardPage(slug: string, userId?: string) {
     if (!c.drawer || !(c.drawer in drawers)) continue;
     const p = c.post_id ? okPost.get(c.post_id) : null;
     drawers[c.drawer].push({
-      ...toClaim(c, votes.get(c.id)),
+      ...toClaim(c, votes.get(c.id), p?.forum_threads?.forum_categories?.shelf_months),
       source: p ? { threadId: p.thread_id, title: p.forum_threads.title } : null,
       // Zdjęcia: dorzucone do karty albo z odpowiedzi, z której pochodzi kawałek
       photos: (c.photos?.length ? c.photos : p?.photos || []).slice(0, 3).map(publicPhotoUrl),

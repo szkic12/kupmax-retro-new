@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, getClientIP } from '@/lib/admin-auth';
-import { ipHash, recountClaim, refreshTrust, setSeal } from '@/lib/forum-trust';
+import { ipHash, recountClaim, refreshTrust, setSeal, touchChecked, shelfMap } from '@/lib/forum-trust';
 import { forumDb, visibleCategories } from '@/lib/forum-db';
 import { getForumUser, isAdult } from '@/lib/forum-auth';
 import { toClaim } from '@/lib/forum-claims';
@@ -66,8 +66,15 @@ export async function POST(req: NextRequest) {
 
     // Sito: ważone głosy, werdykt, kara za fałsz (lib/forum-trust)
     // Kawałek z pieczęcią: rozlicz zmieniony głos z trafnością (setSeal przelicza też werdykt)
-    const updated = claim.seal && next ? await setSeal(claimId, claim.seal) : await recountClaim(claimId);
-    return NextResponse.json({ success: true, claim: toClaim(updated, next || undefined) });
+    let updated = claim.seal && next ? await setSeal(claimId, claim.seal) : await recountClaim(claimId);
+    // ✅ albo 👨‍🍳 na kawałku z werdyktem = „dalej aktualne”: zegar przydatności od nowa
+    if ((next === 'tak' || next === 'dziala') && (updated?.verdict === 'sprawdzone' || updated?.verdict === 'praktyka')) {
+      await touchChecked(claimId);
+      updated = { ...updated, checked_at: new Date().toISOString() };
+    }
+    const { data: th } = updated?.thread_id ? await forumDb.from('forum_threads').select('category_id').eq('id', updated.thread_id).maybeSingle() : { data: null };
+    const shelf = th ? (await shelfMap()).get(th.category_id) : undefined;
+    return NextResponse.json({ success: true, claim: toClaim(updated, next || undefined, shelf) });
   } catch (error) {
     logger.error('forum claim vote:', error);
     return NextResponse.json({ success: false, error: 'Nie udało się zapisać oceny.' }, { status: 500 });

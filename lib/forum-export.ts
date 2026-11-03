@@ -6,12 +6,12 @@ import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { forumDb } from '@/lib/forum-db';
 import { client, bucket } from '@/lib/forum-voice';
-import { passedSieve } from '@/lib/forum-trust';
+import { passedSieve, isStale, shelfMap } from '@/lib/forum-trust';
 import { DRAWERS, type Drawer } from '@/lib/forum-cards';
 
 type Row = Record<string, any>;
 const PREFIX = 'forum/export';
-const FILES = ['qa', 'karty', 'warianty'] as const;
+const FILES = ['qa', 'karty', 'warianty', 'korpus'] as const;
 const DRAWER_ASK: Record<Drawer, (n: string) => string> = {
   rozpoznac: (n) => `Jak rozpoznać: ${n}?`,
   gdzie: (n) => `Gdzie znaleźć albo kupić: ${n}?`,
@@ -57,9 +57,11 @@ export async function buildExport() {
   const adultCat = new Set(cats.filter((c) => c.is_adult).map((c) => c.id));
   const cardName = new Map(cards.map((c) => [c.id, c.name]));
 
-  // Zgoda autora, dosłowny cytat, widoczny wpis i wątek
+  // Zgoda autora, dosłowny cytat, wiedza nieprzeterminowana (timer wątpliwości), widoczny wpis i wątek
+  const shelf = await shelfMap();
   const ok = claims.filter((c) => {
     if (!c.quote) return false;
+    if (isStale(c, c.thread_id ? shelf.get(threadById.get(c.thread_id)?.category_id) : undefined)) return false;
     if (!c.author_id || !consent.has(c.author_id)) return false;
     if (!c.post_id) return true; // wpis dorzucony na kartę
     const t = threadById.get(c.thread_id);
@@ -68,8 +70,8 @@ export async function buildExport() {
   const adultOf = (c: Row) => !!c.thread_id && adultCat.has(threadById.get(c.thread_id)?.category_id);
 
   const packs: Record<'ogolne' | '18', Record<(typeof FILES)[number], string[]>> = {
-    ogolne: { qa: [], karty: [], warianty: [] },
-    '18': { qa: [], karty: [], warianty: [] },
+    ogolne: { qa: [], karty: [], warianty: [], korpus: [] },
+    '18': { qa: [], karty: [], warianty: [], korpus: [] },
   };
 
   // 1. Pytanie → pełna, sprawdzona odpowiedź (kolejność z „pełnej odpowiedzi”, tylko kawałki z sita).
@@ -106,6 +108,16 @@ export async function buildExport() {
     const about = threadById.get(c.thread_id)?.title || (c.card_id ? cardName.get(c.card_id) : null);
     if (!about) continue;
     packs[adultOf(c) ? '18' : 'ogolne'].warianty.push(msg(about, line(c), { claim: c.id }));
+  }
+  // 4. Korpus dla bibliotekarza: każdy zatwierdzony cytat osobno, z autorem i źródłem (w tym szuka model)
+  for (const c of ok) {
+    const t = c.thread_id ? threadById.get(c.thread_id) : null;
+    packs[adultOf(c) ? '18' : 'ogolne'].korpus.push(JSON.stringify({
+      id: c.id, quote: line(c), kind: c.kind, author: c.author_nick,
+      thread: c.thread_id || null, title: t?.title || null,
+      card: c.card_id ? cardName.get(c.card_id) || null : null, drawer: c.drawer || null,
+      sealed: c.seal === 'tak',
+    }));
   }
   return packs;
 }

@@ -117,6 +117,7 @@ export async function recountClaim(claimId: string) {
     wyes: round(s.wyes), wno: round(s.wno), wdone: round(s.wdone),
     verdict,
     verdict_at: verdict !== claim.verdict ? new Date().toISOString() : claim.verdict_at,
+    ...(verdict && verdict !== claim.verdict ? { checked_at: new Date().toISOString() } : {}),
     penalized: shouldPenalize,
   }).eq('id', claimId).select('*').single();
   if (shouldPenalize !== !!claim.penalized) await bumpPenalty(claim.author_id, 'false_claims', shouldPenalize ? 1 : -1);
@@ -125,7 +126,8 @@ export async function recountClaim(claimId: string) {
 
 // Pieczęć Brata: ustawia werdykt i rozlicza trafność wszystkich, którzy głosowali ✅/❌
 export async function setSeal(claimId: string, seal: 'tak' | 'nie' | null) {
-  await forumDb.from('forum_claims').update({ seal, seal_at: seal ? new Date().toISOString() : null }).eq('id', claimId);
+  // Pieczęć (także ponowna, przy odświeżaniu) zeruje zegar przydatności
+  await forumDb.from('forum_claims').update({ seal, seal_at: seal ? new Date().toISOString() : null, ...(seal ? { checked_at: new Date().toISOString() } : {}) }).eq('id', claimId);
   const { data: votes } = await forumDb.from('forum_claim_votes').select('user_id, vote, scored').eq('claim_id', claimId).in('vote', ['tak', 'nie']);
   for (const v of votes || []) {
     const next = seal ? (v.vote === seal ? 'hit' : 'miss') : null;
@@ -140,6 +142,27 @@ export async function setSeal(claimId: string, seal: 'tak' | 'nie' | null) {
     await forumDb.from('forum_claim_votes').update({ scored: next }).eq('claim_id', claimId).eq('user_id', v.user_id);
   }
   return recountClaim(claimId);
+}
+
+// Timer wątpliwości (pomysł Brata): wiedza ma termin przydatności liczony od ostatniego potwierdzenia.
+// Po terminie kawałek wraca do sprawdzenia i nie idzie do nauki, dopóki ktoś go nie potwierdzi.
+export const DEFAULT_SHELF_MONTHS = 36;
+export function isStale(c: Row, shelfMonths?: number | null) {
+  if (!c.checked_at || (!c.seal && !c.verdict)) return false;
+  const months = shelfMonths || DEFAULT_SHELF_MONTHS;
+  return Date.now() - new Date(c.checked_at).getTime() > months * 30.44 * 86400000;
+}
+export const touchChecked = (claimId: string) =>
+  forumDb.from('forum_claims').update({ checked_at: new Date().toISOString() }).eq('id', claimId);
+
+// Ile miesięcy przydatności ma kategoria (mapa id → miesiące)
+let shelfCache: { map: Map<string, number>; at: number } | null = null;
+export async function shelfMap() {
+  if (shelfCache && Date.now() - shelfCache.at < 10 * 60 * 1000) return shelfCache.map;
+  const { data } = await forumDb.from('forum_categories').select('id, shelf_months');
+  const map = new Map<string, number>((data || []).map((c: Row) => [c.id, c.shelf_months || DEFAULT_SHELF_MONTHS]));
+  shelfCache = { map, at: Date.now() };
+  return map;
 }
 
 // Czy kawałek przeszedł przez sito i może iść do nauki (K10)

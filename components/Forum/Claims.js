@@ -14,6 +14,10 @@ export function leafOf(trust) {
 }
 
 function VerdictBadge({ claim }) {
+  // Timer wątpliwości: po terminie przydatności pytamy, czy dalej aktualne
+  if (claim.stale && claim.checkedAt) {
+    return <span className="cl-verdict stale" title="Wiedza się starzeje. Potwierdź ✅, jeśli dalej działa, albo daj ❌, jeśli już nie.">⏳ sprawdzone w {new Date(claim.checkedAt).getFullYear()}: czy dalej aktualne?</span>;
+  }
   if (claim.seal === 'tak') return <span className="cl-verdict ok" title="Zatwierdzone przez moderatora kupmax">✔ zatwierdzone</span>;
   if (claim.seal === 'nie') return <span className="cl-verdict bad" title="Moderator kupmax uznał za nieprawdę">✖ fałsz (zatwierdzone)</span>;
   if (claim.verdict === 'sprawdzone') return <span className="cl-verdict ok" title="Potwierdziło kilka niezależnych osób">✅ sprawdzone przez ludzi</span>;
@@ -146,6 +150,7 @@ export function ClaimStyles() {
       .cl-verdict { display: inline-block; font-size: 11px; margin-top: 3px; padding: 1px 6px; border-radius: 8px; border: 1px solid; }
       .cl-verdict.ok { background: #e6f7e6; border-color: #6b6; color: #040; }
       .cl-verdict.bad { background: #fde8e8; border-color: #d88; color: #800; }
+      .cl-verdict.stale { background: #fff4d6; border-color: #d9a400; color: #6a4a00; }
       .cl-votes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
       .cl-vote { background: #e8e8e8; border: 1px solid #aaa; border-radius: 12px; padding: 2px 10px; font-size: 12px; cursor: pointer; color: #000; }
       .cl-vote.on { background: #fff3b0; border-color: #c90; }

@@ -187,7 +187,7 @@ function Remove({ type, id, act, initial = 'inne', onDone }: { type: string; id:
   );
 }
 
-const PACK_LABEL: Record<string, string> = { qa: 'pytanie → odpowiedź', karty: 'szuflady kart', warianty: 'warianty z warunkami' };
+const PACK_LABEL: Record<string, string> = { qa: 'pytanie → odpowiedź', karty: 'szuflady kart', warianty: 'warianty', korpus: 'cytaty dla bibliotekarza' };
 
 // Paczka do nauki modelu (K10): co noc o 3:00 sama, tu podgląd, „zrób teraz” i pobieranie
 function ExportBox() {
@@ -250,9 +250,13 @@ function SealRow({ c, onDone }: { c: Item; onDone: () => void }) {
         <a href={href} target="_blank" rel="noreferrer">otwórz ↗</a>
       </div>
       <p style={{ margin: '6px 0' }}>{c.condition && <i>{c.condition}: </i>}{c.body}</p>
+      {c.quote
+        ? <p style={{ margin: '0 0 6px', fontSize: 12, color: '#555' }}>🗣️ oryginał: „{c.quote}” <small>(to idzie do nauki modelu)</small></p>
+        : !c.is_ai && <p style={{ margin: '0 0 6px', fontSize: 12, color: '#a60' }}>bez dosłownego cytatu, więc nie pójdzie do nauki</p>}
       <small>
         {c.kind === 'fakt' ? `✅ ${c.yes} (waga ${c.wyes}) · ❌ ${c.no} (waga ${c.wno})` : `👨‍🍳 ${c.done} (waga ${c.wdone})`}
         {c.verdict ? ` · sito: ${VERDICT[c.verdict]}` : ' · sito: jeszcze nie rozstrzygnęło'}
+        {c.stale && <b style={{ color: '#a60' }}> · ⏳ po terminie: ostatnio potwierdzone {new Date(c.checked_at).toLocaleDateString('pl-PL')}. Dalej aktualne?</b>}
       </small>
       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
         <button style={{ ...btn, background: '#b8f0b8' }} disabled={busy} onClick={() => seal('tak')}>{c.kind === 'fakt' ? '✔ Prawda' : '✔ Działa'}</button>
