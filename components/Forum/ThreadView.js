@@ -14,22 +14,27 @@ import ModelView from '@/components/Forum/Model3D';
 import ReportButton from '@/components/Forum/ReportButton';
 import { ClaimList, FullAnswer, leafOf } from '@/components/Forum/Claims';
 import CardText from '@/components/Forum/CardText';
+import Fachowcy from '@/components/Forum/Fachowcy';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
 // Poprawianie własnego wpisu (tytuł tylko przy wątku)
 function EditBox({ title, message, onSave, onCancel }) {
   const [t, setT] = useState(title || '');
   const [m, setM] = useState(message || '');
+  const [voice, setVoice] = useState({ mode: 'wlasny', key: null, seconds: null });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const save = async () => {
     setBusy(true); setErr('');
-    const e = await onSave(t, m);
+    // Nowe nagranie zastępuje stare; bez nowego nagrania głos zostaje ten sam
+    const e = await onSave(t, m, voice.key || voice.mode === 'lektor' ? voicePayload(voice) : null);
     setBusy(false);
     if (e) setErr(e);
   };
   return (
     <div className="edit-box">
+      <b>🎤 Nagraj jeszcze raz (zastąpi stare nagranie i tekst)</b>
+      <VoiceRecorder voice={voice} onChange={setVoice} onText={(x) => setM(x)} />
       {title !== undefined && <input value={t} onChange={(e) => setT(e.target.value)} maxLength={100} placeholder="Tytuł" />}
       <textarea rows={6} value={m} onChange={(e) => setM(e.target.value)} maxLength={12000} />
       {err && <p className="edit-err">⚠️ {err}</p>}
@@ -37,7 +42,7 @@ function EditBox({ title, message, onSave, onCancel }) {
         <button type="button" onClick={save} disabled={busy}>{busy ? '⏳' : '💾 Zapisz poprawkę'}</button>
         <button type="button" onClick={onCancel}>Anuluj</button>
       </div>
-      <small>Nagranie głosu zostaje to samo. Kawałki tego wpisu AI rozbierze od nowa.</small>
+      <small>Możesz nagrać od nowa albo tylko poprawić tekst. Kawałki tego wpisu AI rozbierze od nowa.</small>
     </div>
   );
 }
@@ -114,6 +119,10 @@ export default function ThreadView({ initial }) {
     const json = await res.json().catch(() => ({}));
     if (!json.success) return json.error || 'Nie udało się zapisać.';
     setEditing(null);
+    // Od razu na ekranie (pełne odświeżenie dojdzie zaraz)
+    const teraz = new Date().toISOString();
+    if (payload.threadId) setThread((t) => ({ ...t, title: payload.title, message: payload.message, editedAt: teraz }));
+    else setPosts((ps) => ps.map((x) => (x.id === payload.postId ? { ...x, message: payload.message, editedAt: teraz, claims: [] } : x)));
     aiAuto.current = 0; // poprawiona odpowiedź zostanie rozebrana od nowa
     fetchThread();
     return null;
@@ -448,7 +457,7 @@ export default function ThreadView({ initial }) {
               </div>
               <VoicePlayer url={thread?.voiceUrl} mode={thread?.voiceMode} seconds={thread?.voiceSeconds} />
               {editing === 'thread'
-                ? <EditBox title={thread.title} message={thread.message} onSave={(t, m) => saveEdit({ threadId: thread.id, title: t, message: m })} onCancel={() => setEditing(null)} />
+                ? <EditBox title={thread.title} message={thread.message} onSave={(t, m, v) => saveEdit({ threadId: thread.id, title: t, message: m, ...(v || {}) })} onCancel={() => setEditing(null)} />
                 : (
                   <div className="post-message">
                     <CardText text={parseEmojis(thread?.message)} cards={thread?.cards} />
@@ -460,6 +469,7 @@ export default function ThreadView({ initial }) {
           </div>
 
           <Potwierdzenie experts={thread?.experts} />
+          {me.admin && thread?.id && !thread.aiOff && <Fachowcy threadId={thread.id} onChange={fetchThread} />}
 
           <FullAnswer summary={thread?.summary} me={me} get={getClaim} onVoted={onVoted} cardOf={cardOf} />
 
@@ -507,7 +517,7 @@ export default function ThreadView({ initial }) {
                     )}
                     <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
                     {editing === post.id
-                      ? <EditBox message={post.message} onSave={(_, m) => saveEdit({ postId: post.id, message: m })} onCancel={() => setEditing(null)} />
+                      ? <EditBox message={post.message} onSave={(_, m, v) => saveEdit({ postId: post.id, message: m, ...(v || {}) })} onCancel={() => setEditing(null)} />
                       : (
                         <div className="post-message">
                           <CardText text={parseEmojis(post.message)} cards={thread?.cards} />

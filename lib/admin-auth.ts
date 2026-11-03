@@ -21,6 +21,9 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'investcrewe@gmail.com')
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+// Czy ten mail ma prawa admina (np. konto forum Dziadka = investcrewe@gmail.com)
+export const isAdminEmail = (email?: string | null) => !!email && ADMIN_EMAILS.includes(email.toLowerCase());
+
 /**
  * Verify admin from request. Accepts either:
  * - a NextAuth session belonging to an address on the admin list

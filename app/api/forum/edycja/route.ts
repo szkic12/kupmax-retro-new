@@ -4,7 +4,7 @@ import { checkRateLimit } from '@/lib/admin-auth';
 import { sanitizeInput } from '@/lib/sanitize';
 import { forumDb } from '@/lib/forum-db';
 import { getForumUser } from '@/lib/forum-auth';
-import { MAX_BODY } from '@/lib/forum-voice';
+import { MAX_BODY, voiceFields } from '@/lib/forum-voice';
 
 export const dynamic = 'force-dynamic';
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -17,10 +17,17 @@ export async function POST(req: NextRequest) {
     if (!checkRateLimit(`forum-edit:${me.user.id}`, 30, 10 * 60 * 1000).allowed) {
       return NextResponse.json({ success: false, error: 'Za dużo poprawek naraz. Chwilę odpocznij.' }, { status: 429 });
     }
-    const { threadId, postId, title: rawTitle, message: rawMessage } = await req.json();
+    const { threadId, postId, title: rawTitle, message: rawMessage, voiceKey, voiceMode, voiceSeconds } = await req.json();
     const message = sanitizeInput(String(rawMessage || ''), MAX_BODY).trim();
     if (!message) return NextResponse.json({ success: false, error: 'Wpis nie może być pusty.' }, { status: 400 });
     const now = new Date().toISOString();
+    // Nowe nagranie (albo lektor) zastępuje stare; bez niego głos zostaje
+    let voice: Record<string, any> = {};
+    if (voiceKey || voiceMode === 'lektor') {
+      const v = await voiceFields(me.user.id, { voiceKey, voiceMode, voiceSeconds }, message);
+      if ('error' in v) return NextResponse.json({ success: false, error: v.error }, { status: 400 });
+      voice = v;
+    }
 
     if (threadId) {
       if (!UUID.test(threadId)) return NextResponse.json({ success: false, error: 'Zły wątek.' }, { status: 400 });
@@ -29,7 +36,7 @@ export async function POST(req: NextRequest) {
       const { data: t } = await forumDb.from('forum_threads').select('author_id, status').eq('id', threadId).maybeSingle();
       if (!t || t.status !== 'widoczny') return NextResponse.json({ success: false, error: 'Nie ma takiego wątku.' }, { status: 404 });
       if (t.author_id !== me.user.id) return NextResponse.json({ success: false, error: 'Poprawiać możesz tylko swoje wpisy.' }, { status: 403 });
-      const { error } = await forumDb.from('forum_threads').update({ title, body: message, edited_at: now }).eq('id', threadId);
+      const { error } = await forumDb.from('forum_threads').update({ title, body: message, edited_at: now, ...voice }).eq('id', threadId);
       if (error) throw error;
       return NextResponse.json({ success: true });
     }
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (p.is_ai || p.author_id !== me.user.id) return NextResponse.json({ success: false, error: 'Poprawiać możesz tylko swoje wpisy.' }, { status: 403 });
     // Nowa treść = nowy rozbiór: stare kawałki (i ich oceny) znikają, AI rozbierze wpis od nowa przy następnym otwarciu wątku
     await forumDb.from('forum_claims').delete().eq('post_id', postId);
-    const { error } = await forumDb.from('forum_posts').update({ body: message, edited_at: now, claims_at: null }).eq('id', postId);
+    const { error } = await forumDb.from('forum_posts').update({ body: message, edited_at: now, claims_at: null, ...voice }).eq('id', postId);
     if (error) throw error;
     return NextResponse.json({ success: true });
   } catch (error) {

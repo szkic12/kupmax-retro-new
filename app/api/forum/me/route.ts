@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAdminEmail } from '@/lib/admin-auth';
 import { logger } from '@/lib/logger';
 import { sanitizeInput } from '@/lib/sanitize';
 import { forumDb } from '@/lib/forum-db';
@@ -13,7 +14,7 @@ const AVATARS = ['👤', '😀', '😎', '🤓', '🧑‍💻', '👨‍🎤', '
 export async function GET(req: NextRequest) {
   const me = await getForumUser(req);
   if (!me) return NextResponse.json({ success: false, error: 'Nie zalogowano' }, { status: 401 });
-  return NextResponse.json({ success: true, email: me.user.email, profile: me.profile, notices: me.profile ? await notices(me.user.id, (me.profile as any).notices_seen_at) : [] });
+  return NextResponse.json({ success: true, email: me.user.email, admin: isAdminEmail(me.user.email), profile: me.profile, notices: me.profile ? await notices(me.user.id, (me.profile as any).notices_seen_at) : [] });
 }
 
 // Usunięte wpisy autora, których jeszcze nie widział (powód usunięcia, DSA art. 17)

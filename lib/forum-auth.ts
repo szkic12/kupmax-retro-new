@@ -21,4 +21,11 @@ export async function getForumUser(req: NextRequest) {
   return { user: data.user, profile: (profile as ForumProfile) || null };
 }
 
+// Brat zalogowany na forum swoim adminskim mailem (ramka „📞 Fachowcy” pod problemem)
+export async function isForumAdmin(req: NextRequest) {
+  const { isAdminEmail } = await import('@/lib/admin-auth');
+  const me = await getForumUser(req);
+  return isAdminEmail(me?.user.email);
+}
+
 export const isAdult = (u: Awaited<ReturnType<typeof getForumUser>>) => !!u?.profile?.adult_confirmed_at;

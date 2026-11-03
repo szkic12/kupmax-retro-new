@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { zaplanuj, wyslijMail } from '@/lib/forum-dobor';
 import { notify } from '@/lib/telegram';
+import { isForumAdmin } from '@/lib/forum-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 // POST (Brat w panelu): { action: 'dobierz', watek? } — guzik „📞 Dobierz numery”; { action: 'mail' } — wyślij listę mailem teraz
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  if (!(await verifyAdminToken(req, body))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
+  if (!(await verifyAdminToken(req, body)) && !(await isForumAdmin(req))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
   try {
     if (body.action === 'mail') return NextResponse.json({ success: true, mail: await wyslijMail() });
     const plan = await zaplanuj({ watek: body.watek });

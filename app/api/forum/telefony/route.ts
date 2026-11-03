@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { forumDb } from '@/lib/forum-db';
-import { getForumUser } from '@/lib/forum-auth';
+import { getForumUser, isForumAdmin } from '@/lib/forum-auth';
 import { sanitizeInput } from '@/lib/sanitize';
 import { voiceFields, MAX_BODY } from '@/lib/forum-voice';
 
@@ -14,14 +14,15 @@ const STATUSES = ['do_zrobienia', 'odebral', 'nie_odebral', 'oddzwoni', 'nie_dzw
 
 // GET: lista na dziś (i zaległe „do zrobienia”/„oddzwoni”), pogrupowana po problemach. Tylko Brat.
 export async function GET(req: NextRequest) {
-  if (!(await verifyAdminToken(req))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
+  if (!(await verifyAdminToken(req)) && !(await isForumAdmin(req))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const { data: calls, error } = await forumDb.from('forum_calls')
-      .select('*, forum_contacts(*), forum_threads(id, title, body, category_id, status)')
-      // Lista na dziś i jutro (wieczorem robi się lista na jutro), zaległe „do zrobienia”/„oddzwoni” i wszystko, do czego dzwoniłeś dziś
-      .or(`plan_date.gte.${today},status.in.(do_zrobienia,oddzwoni),called_at.gte.${today}T00:00:00`)
-      .order('created_at').limit(300);
+    const watek = new URL(req.url).searchParams.get('thread');
+    let q = forumDb.from('forum_calls').select('*, forum_contacts(*), forum_threads(id, title, body, category_id, status)');
+    // ?thread= : wszystkie rozmowy o ten jeden problem (ramka pod wątkiem). Bez: lista na dziś i jutro,
+    // zaległe „do zrobienia”/„oddzwoni” i wszystko, do czego dzwoniłeś dziś
+    q = watek && UUID.test(watek) ? q.eq('thread_id', watek) : q.or(`plan_date.gte.${today},status.in.(do_zrobienia,oddzwoni),called_at.gte.${today}T00:00:00`);
+    const { data: calls, error } = await q.order('created_at').limit(300);
     if (error) throw error;
     const threadIds = [...new Set((calls || []).map((c) => c.thread_id))];
     const { data: ai } = threadIds.length
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 // POST { action: 'status', callId, status } | { action: 'odpowiedz', callId, verdict, consentName, label, message, voice… }
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  if (!(await verifyAdminToken(req, body))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
+  if (!(await verifyAdminToken(req, body)) && !(await isForumAdmin(req))) return NextResponse.json({ success: false, error: 'Brak dostępu' }, { status: 401 });
   try {
     const { action, callId } = body;
     if (!UUID.test(callId || '')) return NextResponse.json({ success: false, error: 'Zła rozmowa' }, { status: 400 });
