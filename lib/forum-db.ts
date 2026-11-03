@@ -62,6 +62,7 @@ export function toPost(p: any, wins?: Map<string, number>, trust?: Map<string, n
     message: p.body,
     isAi: p.is_ai,
     aiAsks: !!p.ai_asks,
+    expertLabel: p.expert_label || null,
     authorWins: (p.author_id && wins?.get(p.author_id)) || 0,
     authorTrust: p.author_id ? trust?.get(p.author_id) ?? null : null,
     correctsPostId: p.corrects_post_id || null,

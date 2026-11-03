@@ -408,6 +408,13 @@ export default function ThreadView({ initial }) {
                       📅 {formatDate(post.date)}
                       <ReportButton targetType="post" targetId={post.id} email={me.email} />
                     </div>
+                    {post.expertLabel && <div className="expert-label" title="Brat zadzwonił do fachowca i opowiada, co usłyszał">{post.expertLabel}</div>}
+                    {post.isAi && thread?.experts && (
+                      <div className="expert-verdict">
+                        {thread.experts.tak.length > 0 && <span className="yes" title={thread.experts.tak.join('\n')}>📞 ✔ {thread.experts.tak.length} {thread.experts.tak.length === 1 ? 'fachowiec potwierdza' : 'fachowców potwierdza'}</span>}
+                        {thread.experts.nie.length > 0 && <span className="no" title={thread.experts.nie.join('\n')}>📞 ✖ {thread.experts.nie.length} {thread.experts.nie.length === 1 ? 'fachowiec mówi' : 'fachowców mówi'}: tak się nie robi</span>}
+                      </div>
+                    )}
                     {post.correctsPostId && (
                       <a className="fix-ref" href={`#p-${post.correctsPostId}`}>
                         ✏️ Poprawka do odpowiedzi AI #{posts.findIndex((x) => x.id === post.correctsPostId) + 1}
@@ -663,6 +670,11 @@ export default function ThreadView({ initial }) {
 
         .post-removed { color: #666; font-style: italic; padding: 8px 0; font-size: 14px; }
         .ai-post { background: #eef3ff; }
+        .expert-label { display: inline-block; font-size: 12px; background: #fff3d6; border: 1px solid #d9a400; color: #5a3d00; padding: 2px 8px; margin-bottom: 6px; }
+        .expert-verdict { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; font-size: 12px; }
+        .expert-verdict span { padding: 2px 8px; border: 1px solid; border-radius: 10px; }
+        .expert-verdict .yes { background: #e6f7e6; border-color: #6b6; color: #040; }
+        .expert-verdict .no { background: #fde8e8; border-color: #d88; color: #800; }
         .ai-badge { font-size: 11px; background: #000080; color: #fff; padding: 2px 6px; margin-top: 4px; text-align: center; }
         .ai-wins { font-size: 11px; color: #806000; margin-top: 4px; text-align: center; }
         .ai-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }

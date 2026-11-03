@@ -24,8 +24,15 @@ export async function loadThread(row: Row, opts: { viewerId?: string; from?: num
   // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7) + karty (K8)
   const { claims, summary, cards } = aiOff ? { claims: [], summary: null, cards: [] } : await claimsForThread(row, opts.viewerId);
   const posts = (rows || []).map((p: any) => ({ ...toPost(p, wins, trust), claims: claims.filter((c) => c.postId === p.id) }));
+  // Telefony do fachowców: ile potwierdziło odpowiedź AI (✔), ile mówi „tak się nie robi” (✖); podpisy tylko za zgodą
+  const { data: calls } = await forumDb.from('forum_calls').select('verdict, consent_name, label').eq('thread_id', row.id).not('verdict', 'is', null);
+  const experts = (calls || []).length ? {
+    tak: (calls || []).filter((c: any) => c.verdict === 'tak').map((c: any) => c.label),
+    nie: (calls || []).filter((c: any) => c.verdict === 'nie').map((c: any) => c.label),
+  } : null;
   const thread = {
     ...toThread(row),
+    experts,
     aiOff,
     aiCan: aiCanCheck(row, rows || [], aiOff),
     claimsWait: !aiOff && (rows || []).some((p: any) => p.status === 'widoczny' && !p.claims_at),
