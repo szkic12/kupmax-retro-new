@@ -32,7 +32,10 @@ const CARD_RULES = `
 Karty wiedzy: przypnij każde twierdzenie do karty, czyli konkretnej rzeczy, o której mówi (materiał, narzędzie, roślina, zwierzę, część, urządzenie, zjawisko, np. „kamień wodny”, „krzemień”, „kołek rozporowy”).
 - card: nazwa rzeczy w mianowniku liczby pojedynczej, małymi literami, 1–3 słowa. Jeśli pasuje karta z listy ISTNIEJĄCE KARTY, użyj dokładnie jej nazwy. Nie twórz kart z ogólników („ostrzenie”, „sposób”, „rzecz”). Jeśli nie ma konkretnej rzeczy, zostaw puste.
 - drawer: do której szuflady pasuje twierdzenie: rozpoznac (jak rozpoznać, wygląd, cechy), gdzie (gdzie znaleźć, kupić, gdzie występuje), uzyc (jak użyć, przygotować, obsłużyć), pulapki (na co uważać, błędy, zagrożenia). Puste, gdy card jest puste.
-- forms: odmiany nazwy rzeczy dokładnie tak, jak stoją w tekście (np. „kamieniem wodnym”), żeby dało się je podlinkować. Pusta lista, gdy nie ma.`;
+- forms: odmiany nazwy rzeczy dokładnie tak, jak stoją w tekście (np. „kamieniem wodnym”), żeby dało się je podlinkować. Pusta lista, gdy nie ma.
+
+Cytat:
+- quote: fragment oryginalnego tekstu, z którego wziąłeś twierdzenie, skopiowany ZNAK W ZNAK (z błędami, potocznie, tak jak napisał autor). Jedno lub dwa zdania, bez dopisków od siebie. Nie poprawiaj go.`;
 
 const SPLIT_SCHEMA = {
   type: 'object',
@@ -48,8 +51,9 @@ const SPLIT_SCHEMA = {
           card: { type: 'string' },
           drawer: { type: 'string', enum: ['rozpoznac', 'gdzie', 'uzyc', 'pulapki', ''] },
           forms: { type: 'array', items: { type: 'string' } },
+          quote: { type: 'string' },
         },
-        required: ['kind', 'body', 'condition', 'card', 'drawer', 'forms'],
+        required: ['kind', 'body', 'condition', 'card', 'drawer', 'forms', 'quote'],
         additionalProperties: false,
       },
     },
@@ -57,6 +61,16 @@ const SPLIT_SCHEMA = {
   required: ['claims'],
   additionalProperties: false,
 };
+
+// Szuka cytatu w oryginale (bez różnic w spacjach i wielkości liter); zwraca fragment z oryginału albo null
+export function verbatim(quote: string, original: string) {
+  const norm = (x: string) => x.replace(/\s+/g, ' ').trim();
+  const q = norm(quote).replace(/^[„"'…]+|[”"'…]+$/g, '');
+  if (q.length < 8) return null;
+  const o = norm(original);
+  const i = o.toLowerCase().indexOf(q.toLowerCase());
+  return i >= 0 ? o.slice(i, i + q.length).slice(0, 800) : null;
+}
 
 // Rozbiór jednego tekstu na twierdzenia z kartą i szufladą. fixed = wpis dorzucony prosto do szuflady karty.
 export async function splitText(context: string, body: string, author: string, fixed?: { card: string; drawer: string }) {
@@ -76,6 +90,8 @@ export async function splitText(context: string, body: string, author: string, f
       card: fixed ? fixed.card : String(c.card || '').trim(),
       drawer: fixed ? fixed.drawer : isDrawer(c.drawer) ? c.drawer : '',
       forms: Array.isArray(c.forms) ? c.forms.map(String) : [],
+      // Cytat zostaje tylko, jeśli naprawdę stoi w oryginale (do nauki idą słowa człowieka, nie przeróbka AI)
+      quote: verbatim(String(c.quote || ''), body),
     }))
     .filter((c: Row) => c.body)
     .slice(0, MAX_CLAIMS);
@@ -94,6 +110,7 @@ export async function claimRows(claims: Row[], base: Row) {
       pos: i,
       card_id: cardId,
       drawer: cardId ? c.drawer : null,
+      quote: c.quote || null,
     });
   }
   return rows;

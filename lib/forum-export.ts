@@ -1,5 +1,5 @@
 // Eksport do nauki (K10): co noc paczka z wiedzy, która przeszła przez sito (K9).
-// Tylko kawałki od ludzi, którzy zgodzili się na naukę modelu; bez kawałków pisanych przez AI
+// Tylko dosłowne cytaty od ludzi, którzy zgodzili się na naukę modelu; bez kawałków pisanych przez AI
 // (regulamin Anthropic zabrania trenowania innych modeli na tekstach Claude'a) i bez nagrań głosu.
 // Wiedza ze strefy 18+ idzie do osobnej paczki. Format: JSONL z „messages” (user → assistant), gotowy pod QLoRA.
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
@@ -19,8 +19,9 @@ const DRAWER_ASK: Record<Drawer, (n: string) => string> = {
   pulapki: (n) => `Na co uważać: ${n}?`,
 };
 
-const cond = (c: Row) => String(c.condition || '').trim().replace(/[.?!:;,\s]+$/, '');
-const line = (c: Row) => (cond(c) ? `${cond(c)}: ${c.body}` : c.body);
+// Do nauki idzie dosłowny cytat człowieka (forum_claims.quote), nie przeróbka AI z rozbioru
+const line = (c: Row) => String(c.quote).trim();
+const uniq = (xs: string[]) => [...new Set(xs)];
 const msg = (user: string, assistant: string, meta: Row) => JSON.stringify({ messages: [{ role: 'user', content: user }, { role: 'assistant', content: assistant }], meta });
 
 async function all(table: string, select: string, filter: (q: any) => any) {
@@ -56,8 +57,9 @@ export async function buildExport() {
   const adultCat = new Set(cats.filter((c) => c.is_adult).map((c) => c.id));
   const cardName = new Map(cards.map((c) => [c.id, c.name]));
 
-  // Zgoda autora, widoczny wpis i wątek
+  // Zgoda autora, dosłowny cytat, widoczny wpis i wątek
   const ok = claims.filter((c) => {
+    if (!c.quote) return false;
     if (!c.author_id || !consent.has(c.author_id)) return false;
     if (!c.post_id) return true; // wpis dorzucony na kartę
     const t = threadById.get(c.thread_id);
@@ -83,7 +85,7 @@ export async function buildExport() {
       return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib) || String(a.created_at).localeCompare(String(b.created_at));
     });
     const question = `${t.title}\n${t.body || ''}`.trim();
-    packs[adultOf(list[0]) ? '18' : 'ogolne'].qa.push(msg(question, sorted.map(line).join('\n'), { thread: tid, claims: sorted.map((c) => c.id) }));
+    packs[adultOf(list[0]) ? '18' : 'ogolne'].qa.push(msg(question, uniq(sorted.map(line)).join('\n'), { thread: tid, claims: sorted.map((c) => c.id) }));
   }
 
   // 2. Karty: jedna para pytanie → odpowiedź na każdą szufladę
@@ -96,13 +98,14 @@ export async function buildExport() {
     const [cardId, drawer] = k.split('|') as [string, Drawer];
     const name = cardName.get(cardId);
     if (!name || !(drawer in DRAWERS)) continue;
-    packs.ogolne.karty.push(msg(DRAWER_ASK[drawer](name), list.map(line).join('\n'), { card: name, drawer, claims: list.map((c) => c.id) }));
+    packs.ogolne.karty.push(msg(DRAWER_ASK[drawer](name), uniq(list.map(line)).join('\n'), { card: name, drawer, claims: list.map((c) => c.id) }));
   }
 
-  // 3. Warianty z warunkami: „jeśli chcesz X” → „rób Y”
-  for (const c of ok.filter((x) => x.kind === 'wariant' && x.condition)) {
-    const about = c.card_id ? cardName.get(c.card_id) : threadById.get(c.thread_id)?.title;
-    packs[adultOf(c) ? '18' : 'ogolne'].warianty.push(msg(`${about ? `${about}: ` : ''}${cond(c)}?`, c.body, { claim: c.id }));
+  // 3. Warianty: pytanie z wątku (słowa człowieka) albo nazwa karty → cytat z wariantem
+  for (const c of ok.filter((x) => x.kind === 'wariant')) {
+    const about = threadById.get(c.thread_id)?.title || (c.card_id ? cardName.get(c.card_id) : null);
+    if (!about) continue;
+    packs[adultOf(c) ? '18' : 'ogolne'].warianty.push(msg(about, line(c), { claim: c.id }));
   }
   return packs;
 }
