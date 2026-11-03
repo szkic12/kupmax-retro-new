@@ -10,6 +10,14 @@ import VoiceRecorder, { voicePayload } from '@/components/Forum/VoiceRecorder';
 import PhotoPicker from '@/components/Forum/PhotoPicker';
 import ModelPicker from '@/components/Forum/ModelPicker';
 
+// Tytuł z pierwszego zdania nagrania, bez „aaa”, „witam”, „dzień dobry” i podobnych na początku
+const POWITANIA = /^(?:(?:a+|e+|y+|no|yyy|eee|hmm+|halo|siema(?:nko)?|cześć|czesc|hej|witam(?:\s+(?:serdecznie|wszystkich|was))?|dzień dobry|dzien dobry|dobry wieczór|dobry wieczor|słuchajcie|sluchajcie|mam pytanie|pytanie)[\s,.!?:;-]+)+/i;
+function tytulZGlosu(text) {
+  const pierwsze = (text.split(/(?<=[.!?])\s/)[0] || '').trim();
+  const bez = pierwsze.replace(POWITANIA, '').trim() || pierwsze;
+  return (bez.charAt(0).toUpperCase() + bez.slice(1)).slice(0, 100).replace(/[.!]$/, '');
+}
+
 export default function NewThreadPage() {
   const router = useRouter();
   const me = useForumMe();
@@ -29,7 +37,7 @@ export default function NewThreadPage() {
 
   // Tekst z nagrania dopisuje się do wiadomości; pusty tytuł bierze pierwsze zdanie
   const addSpoken = (text) => setFormData((f) => {
-    const title = f.title || (text.split(/(?<=[.!?])\s/)[0] || '').slice(0, 100).replace(/[.!?]$/, '');
+    const title = f.title || tytulZGlosu(text);
     return { ...f, title, message: f.message ? `${f.message}\n\n${text}` : text };
   });
 
