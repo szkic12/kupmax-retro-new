@@ -6,9 +6,9 @@ import { runExport, readManifest, downloadLinks } from '@/lib/forum-export';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-const DAY_MS = 20 * 60 * 60 * 1000; // co noc; częściej z zewnątrz się nie da
+const DAY_MS = 12 * 60 * 60 * 1000; // najwyżej co 12 h: ręczne „zrób teraz” w dzień nie blokuje nocnej paczki
 
-// GET ?cron=1: nocne zadanie Vercela. Bez sekretu, ale paczka powstaje najwyżej raz na 20 godzin.
+// GET ?cron=1: nocne zadanie Vercela. Bez sekretu, ale paczka powstaje najwyżej raz na 12 godzin.
 // GET (admin): ostatnia paczka z liczbami i linkami do pobrania.
 export async function GET(req: NextRequest) {
   try {
