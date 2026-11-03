@@ -34,6 +34,16 @@ export default function NewThreadPage() {
   const [photos, setPhotos] = useState([]);
   const [model, setModel] = useState(null);
   const [ai, setAi] = useState(true); // AI odpowiada od razu (w strefie 18+ nigdy)
+  const [podpowiedz, setPodpowiedz] = useState(null); // id podpowiedzi z panelu („💡 Podpowiedz problemy”)
+
+  // Z panelu: /forum/new-thread?kat=dom&tytul=…&pod=… — gotowa kategoria i tytuł, Brat tylko nagrywa
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('kat') || q.get('tytul')) {
+      setFormData((f) => ({ ...f, categoryId: q.get('kat') || f.categoryId, title: (q.get('tytul') || f.title).slice(0, 100) }));
+    }
+    if (q.get('pod')) setPodpowiedz(q.get('pod'));
+  }, []);
 
   // Tekst z nagrania dopisuje się do wiadomości; pusty tytuł bierze pierwsze zdanie
   const addSpoken = (text) => setFormData((f) => {
@@ -115,6 +125,8 @@ export default function NewThreadPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Podpowiedź z panelu odhaczona, żeby nie wracała (działa tylko dla Brata zalogowanego w panelu)
+        if (podpowiedz) fetch('/api/forum/podpowiedzi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uzyj: podpowiedz }) }).catch(() => {});
         router.push(`/forum/thread/${data.thread.id}`);
       } else {
         setError(data.error || 'Błąd tworzenia wątku');

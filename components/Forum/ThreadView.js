@@ -16,6 +16,73 @@ import { ClaimList, FullAnswer, leafOf } from '@/components/Forum/Claims';
 import CardText from '@/components/Forum/CardText';
 import { forumFetch, useForumMe } from '@/lib/forum-client';
 
+// Poprawianie własnego wpisu (tytuł tylko przy wątku)
+function EditBox({ title, message, onSave, onCancel }) {
+  const [t, setT] = useState(title || '');
+  const [m, setM] = useState(message || '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const save = async () => {
+    setBusy(true); setErr('');
+    const e = await onSave(t, m);
+    setBusy(false);
+    if (e) setErr(e);
+  };
+  return (
+    <div className="edit-box">
+      {title !== undefined && <input value={t} onChange={(e) => setT(e.target.value)} maxLength={100} placeholder="Tytuł" />}
+      <textarea rows={6} value={m} onChange={(e) => setM(e.target.value)} maxLength={12000} />
+      {err && <p className="edit-err">⚠️ {err}</p>}
+      <div className="edit-actions">
+        <button type="button" onClick={save} disabled={busy}>{busy ? '⏳' : '💾 Zapisz poprawkę'}</button>
+        <button type="button" onClick={onCancel}>Anuluj</button>
+      </div>
+      <small>Nagranie głosu zostaje to samo. Kawałki tego wpisu AI rozbierze od nowa.</small>
+    </div>
+  );
+}
+
+// Zasada Brata: „potwierdzone” dopiero po 3 zgodnych fachowcach. Z datą, bo wiedza się starzeje, i z „sprawdź u” (tylko za zgodą).
+const MIESIACE = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+function Potwierdzenie({ experts: e }) {
+  if (!e) return null;
+  const d = e.kiedy ? new Date(e.kiedy) : null;
+  const kiedy = d ? `${MIESIACE[d.getMonth()]} ${d.getFullYear()}` : '';
+  const sprawdz = e.sprawdzU?.length > 0 && (
+    <ul className="pw-lista">
+      {e.sprawdzU.map((x, i) => <li key={i}>📞 {x.label}{x.odRoku ? `, w branży od ${x.odRoku}` : ''}</li>)}
+    </ul>
+  );
+  if (e.werdykt === 'tak') {
+    return (
+      <div className={`pw-box ok${e.przeterminowane ? ' stary' : ''}`}>
+        <b>✅ Potwierdzone przez {e.tak.length} fachowców · {kiedy}</b>
+        <p>
+          {e.przeterminowane
+            ? `Tak było w ${d.getFullYear()}. Od tamtej pory mogło się zmienić, więc dzwonimy do fachowców jeszcze raz.`
+            : `Fachowcy z wieloletnim doświadczeniem niezależnie potwierdzili odpowiedź. Tak było w ${d.getFullYear()}; jeśli czytasz to później, sprawdź u nich, czy coś się nie zmieniło.`}
+        </p>
+        {sprawdz}
+      </div>
+    );
+  }
+  if (e.werdykt === 'nie') {
+    return (
+      <div className="pw-box zle">
+        <b>❌ {e.nie.length} fachowców mówi: odpowiedź AI jest zła · {kiedy}</b>
+        <p>Nie rób tak, jak napisało AI. Co mówią fachowcy, przeczytasz w odpowiedziach z 📞 poniżej.</p>
+        {sprawdz}
+      </div>
+    );
+  }
+  return (
+    <div className="pw-box wtoku">
+      <b>📞 W trakcie sprawdzania u fachowców: {Math.max(e.tak.length, e.nie.length)}/3</b>
+      <p>Odpowiedź uznamy za pewną dopiero, gdy co najmniej 3 fachowców niezależnie powie to samo.</p>
+    </div>
+  );
+}
+
 // Strona wątku. initial = treść wyrenderowana na serwerze (Google widzi pytanie i odpowiedzi od razu).
 export default function ThreadView({ initial }) {
   const params = useParams();
@@ -41,6 +108,16 @@ export default function ThreadView({ initial }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiMsg, setAiMsg] = useState('');
   const aiRunning = useRef(false);
+  const [editing, setEditing] = useState(null); // 'thread' albo id odpowiedzi, którą autor poprawia
+  const saveEdit = async (payload) => {
+    const res = await forumFetch('/api/forum/edycja', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const json = await res.json().catch(() => ({}));
+    if (!json.success) return json.error || 'Nie udało się zapisać.';
+    setEditing(null);
+    aiAuto.current = 0; // poprawiona odpowiedź zostanie rozebrana od nowa
+    fetchThread();
+    return null;
+  };
   const aiAuto = useRef(0); // ile razy strona sama zawołała AI (bezpiecznik przed pętlą)
   const [claimVotes, setClaimVotes] = useState({}); // świeże oceny twierdzeń po kliknięciu
   const getClaim = (c) => claimVotes[c.id] || c;
@@ -365,17 +442,24 @@ export default function ThreadView({ initial }) {
             </div>
             <div className="post-content">
               <div className="post-date">
-                📅 {formatDate(thread?.date)}
+                📅 {formatDate(thread?.date)}{thread?.editedAt && <small className="edited" title={`Poprawione ${formatDate(thread.editedAt)}`}> (edytowano)</small>}
+                {thread?.mine && editing !== 'thread' && <button type="button" className="edit-btn" onClick={() => setEditing('thread')}>✏️ popraw</button>}
                 <ReportButton targetType="thread" targetId={thread?.id} email={me.email} />
               </div>
               <VoicePlayer url={thread?.voiceUrl} mode={thread?.voiceMode} seconds={thread?.voiceSeconds} />
-              <div className="post-message">
-                <CardText text={parseEmojis(thread?.message)} cards={thread?.cards} />
-              </div>
+              {editing === 'thread'
+                ? <EditBox title={thread.title} message={thread.message} onSave={(t, m) => saveEdit({ threadId: thread.id, title: t, message: m })} onCancel={() => setEditing(null)} />
+                : (
+                  <div className="post-message">
+                    <CardText text={parseEmojis(thread?.message)} cards={thread?.cards} />
+                  </div>
+                )}
               <PhotoGallery photos={thread?.photos} />
               <ModelView model={thread?.model} />
             </div>
           </div>
+
+          <Potwierdzenie experts={thread?.experts} />
 
           <FullAnswer summary={thread?.summary} me={me} get={getClaim} onVoted={onVoted} cardOf={cardOf} />
 
@@ -405,7 +489,8 @@ export default function ThreadView({ initial }) {
                   ) : (
                   <div className="post-content">
                     <div className="post-date">
-                      📅 {formatDate(post.date)}
+                      📅 {formatDate(post.date)}{post.editedAt && <small className="edited" title={`Poprawione ${formatDate(post.editedAt)}`}> (edytowano)</small>}
+                      {post.mine && editing !== post.id && <button type="button" className="edit-btn" onClick={() => setEditing(post.id)}>✏️ popraw</button>}
                       <ReportButton targetType="post" targetId={post.id} email={me.email} />
                     </div>
                     {post.expertLabel && <div className="expert-label" title="Brat zadzwonił do fachowca i opowiada, co usłyszał">{post.expertLabel}</div>}
@@ -421,9 +506,13 @@ export default function ThreadView({ initial }) {
                       </a>
                     )}
                     <VoicePlayer url={post.voiceUrl} mode={post.voiceMode} seconds={post.voiceSeconds} />
-                    <div className="post-message">
-                      <CardText text={parseEmojis(post.message)} cards={thread?.cards} />
-                    </div>
+                    {editing === post.id
+                      ? <EditBox message={post.message} onSave={(_, m) => saveEdit({ postId: post.id, message: m })} onCancel={() => setEditing(null)} />
+                      : (
+                        <div className="post-message">
+                          <CardText text={parseEmojis(post.message)} cards={thread?.cards} />
+                        </div>
+                      )}
                     <PhotoGallery photos={post.photos} />
                     <ModelView model={post.model} />
                     <ClaimList claims={post.claims} me={me} get={getClaim} onVoted={onVoted} cardOf={cardOf} />
@@ -670,6 +759,22 @@ export default function ThreadView({ initial }) {
 
         .post-removed { color: #666; font-style: italic; padding: 8px 0; font-size: 14px; }
         .ai-post { background: #eef3ff; }
+        .edit-btn { background: none; border: none; color: #000080; font-size: 12px; cursor: pointer; padding: 2px 4px; }
+        .edit-btn:hover { text-decoration: underline; }
+        .edited { color: #777; font-size: 11px; }
+        .edit-box { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; padding: 8px; background: #fffbe6; border: 1px solid #d9a400; }
+        .edit-box input, .edit-box textarea { width: 100%; box-sizing: border-box; padding: 6px; font-size: 14px; border: 2px inset #fff; font-family: inherit; }
+        .edit-box small { color: #555; font-size: 12px; }
+        .edit-actions { display: flex; gap: 8px; }
+        .edit-actions button { padding: 6px 12px; background: #c0c0c0; border: 2px solid; border-color: #fff #808080 #808080 #fff; cursor: pointer; color: #000; }
+        .edit-err { color: #c00; margin: 0; font-size: 13px; }
+        .pw-box { margin: 14px 0; padding: 10px 12px; border: 2px solid; font-size: 14px; line-height: 1.45; }
+        .pw-box p { margin: 6px 0 0; }
+        .pw-box.ok { background: #e8f8e8; border-color: #4a4; color: #063; }
+        .pw-box.ok.stary { background: #fff6e0; border-color: #d9a400; color: #5a3d00; }
+        .pw-box.zle { background: #fde8e8; border-color: #c55; color: #700; }
+        .pw-box.wtoku { background: #f4f4f4; border-color: #aaa; color: #333; }
+        .pw-lista { margin: 6px 0 0; padding-left: 18px; }
         .expert-label { display: inline-block; font-size: 12px; background: #fff3d6; border: 1px solid #d9a400; color: #5a3d00; padding: 2px 8px; margin-bottom: 6px; }
         .expert-verdict { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; font-size: 12px; }
         .expert-verdict span { padding: 2px 8px; border: 1px solid; border-radius: 10px; }

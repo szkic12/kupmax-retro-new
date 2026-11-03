@@ -9,6 +9,10 @@
     {
       "path": "/api/forum/export?cron=1",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/forum/telefony/dobierz?cron=1",
+      "schedule": "0 4 * * *"
     }
   ]
 }

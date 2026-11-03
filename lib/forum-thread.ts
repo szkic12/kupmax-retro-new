@@ -2,6 +2,8 @@
 import { forumDb, toThread, toPost, visibleCategories } from '@/lib/forum-db';
 import { aiCanCheck } from '@/lib/forum-ai';
 import { claimsForThread } from '@/lib/forum-claims';
+import { stanFachowcow } from '@/lib/forum-experts';
+import { shelfMap } from '@/lib/forum-trust';
 
 type Row = Record<string, any>;
 
@@ -23,15 +25,22 @@ export async function loadThread(row: Row, opts: { viewerId?: string; from?: num
   const aiOff = !!cat?.is_adult;
   // Twierdzenia przy odpowiedziach + pełna odpowiedź (K7) + karty (K8)
   const { claims, summary, cards } = aiOff ? { claims: [], summary: null, cards: [] } : await claimsForThread(row, opts.viewerId);
-  const posts = (rows || []).map((p: any) => ({ ...toPost(p, wins, trust), claims: claims.filter((c) => c.postId === p.id) }));
+  // mine = wpis tego, kto ogląda (guzik ✏️ edytuj); samego id autora nie wysyłamy
+  const posts = (rows || []).map((p: any) => ({ ...toPost(p, wins, trust), claims: claims.filter((c) => c.postId === p.id), mine: !!opts.viewerId && p.author_id === opts.viewerId && !p.is_ai }));
   // Telefony do fachowców: ile potwierdziło odpowiedź AI (✔), ile mówi „tak się nie robi” (✖); podpisy tylko za zgodą
-  const { data: calls } = await forumDb.from('forum_calls').select('verdict, consent_name, label').eq('thread_id', row.id).not('verdict', 'is', null);
+  const { data: calls } = await forumDb.from('forum_calls').select('verdict, consent_name, label, called_at, forum_contacts(od_roku)').eq('thread_id', row.id).not('verdict', 'is', null);
+  const stan = stanFachowcow(calls || [], (await shelfMap()).get(row.category_id));
   const experts = (calls || []).length ? {
     tak: (calls || []).filter((c: any) => c.verdict === 'tak').map((c: any) => c.label),
     nie: (calls || []).filter((c: any) => c.verdict === 'nie').map((c: any) => c.label),
+    werdykt: stan.werdykt, kiedy: stan.kiedy, przeterminowane: stan.przeterminowane,
+    // „Sprawdź u”: tylko ci, którzy zgodzili się na podpis, z rokiem założenia firmy
+    sprawdzU: (calls || []).filter((c: any) => c.consent_name && c.verdict === stan.werdykt)
+      .map((c: any) => ({ label: c.label, odRoku: c.forum_contacts?.od_roku || null })),
   } : null;
   const thread = {
     ...toThread(row),
+    mine: !!opts.viewerId && row.author_id === opts.viewerId,
     experts,
     aiOff,
     aiCan: aiCanCheck(row, rows || [], aiOff),

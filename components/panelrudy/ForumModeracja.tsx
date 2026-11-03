@@ -201,6 +201,18 @@ function Telefony() {
     setD(j.success ? j : { error: j.error || 'Błąd' });
   }, []);
   useEffect(() => { load(); }, [load]);
+  const [dobor, setDobor] = useState<Item>(null);
+  const dobierz = async () => {
+    setDobor({ busy: true });
+    const j = await (await fetch('/api/forum/telefony/dobierz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dobierz' }) })).json().catch(() => ({}));
+    setDobor(j.success ? { msg: j.rozmow ? `✅ Dobrane: ${j.rozmow} rozmów do ${j.problemow} problemów.` : 'Nie ma nowych problemów bez fachowców. Nagraj coś na forum 🎤' } : { msg: `⚠️ ${j.error || 'Błąd'}` });
+    load();
+  };
+  const mail = async () => {
+    setDobor({ busy: true });
+    const j = await (await fetch('/api/forum/telefony/dobierz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mail' }) })).json().catch(() => ({}));
+    setDobor({ msg: j.mail?.sent ? '📧 Mail z listą wysłany.' : `⚠️ Mail nie poszedł: ${j.mail?.reason || j.error || 'błąd'}` });
+  };
   const todo = (d?.groups || []).reduce((n: number, g: Item) => n + g.calls.filter((c: Item) => ['do_zrobienia', 'oddzwoni'].includes(c.status)).length, 0);
   return (
     <div>
@@ -209,9 +221,18 @@ function Telefony() {
         Niczego nie sprzedajesz ani nie reklamujesz. Kto powie „nie dzwońcie”, ten dostaje ⛔ i system już nigdy go nie poda.
         Podpis imieniem albo firmą tylko za zgodą.
       </div>
+      <Podpowiedzi />
+      <div style={{ ...box, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <b>2. Nagrałeś problemy?</b>
+        <button style={{ ...btn, background: '#b8f0b8', fontWeight: 'bold' }} disabled={dobor?.busy} onClick={dobierz}>{dobor?.busy ? '⏳ AI dobiera…' : '📞 Dobierz numery'}</button>
+        <button style={btn} disabled={dobor?.busy} onClick={mail}>📧 Wyślij listę na maila</button>
+        {dobor?.msg && <span>{dobor.msg}</span>}
+        <small style={{ width: '100%', color: '#555' }}>Codziennie o 5:00 rano strona sama dobiera numery do nowych problemów i wysyła ci maila.</small>
+      </div>
+      <b>3. Dzwonisz:</b>
       {!d && <p>⏳</p>}
       {d?.error && <p style={{ color: '#c00' }}>⚠️ {d.error}</p>}
-      {d && !d.error && d.groups.length === 0 && <p>Na dziś nie ma listy. Nagraj problemy na forum, a lista się zrobi (skrypt dobierz.py na laptopie).</p>}
+      {d && !d.error && d.groups.length === 0 && <p>Na razie pusto. Nagraj problemy i kliknij „📞 Dobierz numery”.</p>}
       {d?.groups?.length > 0 && <p><b>{todo}</b> rozmów do zrobienia.</p>}
       {(d?.groups || []).map((g: Item) => (
         <div key={g.thread.id} style={{ ...box, borderLeft: '4px solid #000080' }}>
@@ -221,6 +242,50 @@ function Telefony() {
           {g.calls.map((c: Item) => <CallRow key={c.id} c={c} onDone={load} />)}
         </div>
       ))}
+    </div>
+  );
+}
+
+const KATEGORIE: [string, string][] = [['dom', '🏠 Dom i remont'], ['zrob-to-sam', '🔧 Zrób to sam'], ['auto', '🚗 Auto i motor'], ['komputery', '💻 Komputery i telefony'],
+  ['praca', '💰 Praca i pieniądze'], ['urzedy', '🏛️ Urzędy i prawo'], ['zdrowie', '❤️ Zdrowie'], ['glowa', '🧠 Głowa, związki, rodzina'], ['dzieci', '👶 Dzieci i szkoła'],
+  ['zwierzeta', '🐾 Zwierzęta'], ['kuchnia', '🍳 Kuchnia'], ['ogrod', '🌱 Ogród i natura'], ['muzyka', '🎵 Muzyka i sztuka'], ['gry', '🎮 Gry i rozrywka'],
+  ['podroze', '✈️ Podróże'], ['retro', '📺 Retro i wspomnienia'], ['o-wszystkim', '💬 O wszystkim'], ['medytacja', '🧘 Medytacja']];
+
+// 1. Podpowiedzi problemów do nagrania: AI podsuwa życiowe problemy, których jeszcze nie ma na forum
+function Podpowiedzi() {
+  const [kat, setKat] = useState('dom');
+  const [lista, setLista] = useState<Item[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    setLista(null);
+    fetch(`/api/forum/podpowiedzi?kat=${kat}`, { cache: 'no-store' }).then((r) => r.json()).then((j) => setLista(j.podpowiedzi || [])).catch(() => setLista([]));
+  }, [kat]);
+  const nowe = async () => {
+    setBusy(true); setErr('');
+    const j = await (await fetch('/api/forum/podpowiedzi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kat }) })).json().catch(() => ({}));
+    setBusy(false);
+    if (j.success) setLista(j.podpowiedzi); else setErr(j.error || 'Nie wyszło');
+  };
+  return (
+    <div style={{ ...box, borderLeft: '4px solid #c90' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <b>1. Co nagrać?</b>
+        <select value={kat} onChange={(e) => setKat(e.target.value)} style={{ fontSize: 13, padding: 3 }}>
+          {KATEGORIE.map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+        </select>
+        <button style={btn} disabled={busy} onClick={nowe}>{busy ? '⏳ AI myśli…' : '💡 Podpowiedz problemy'}</button>
+      </div>
+      {err && <p style={{ color: '#c00' }}>⚠️ {err}</p>}
+      {lista && lista.length === 0 && <p style={{ fontSize: 12, color: '#555' }}>Kliknij „💡 Podpowiedz problemy”. Możesz też nagrać coś swojego, co sam przeżyłeś.</p>}
+      <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+        {(lista || []).map((p) => (
+          <li key={p.id} style={{ margin: '4px 0' }}>
+            <a href={`/forum/new-thread?kat=${kat}&tytul=${encodeURIComponent(p.title)}&pod=${p.id}`} target="_blank" rel="noreferrer">🎤 {p.title}</a>
+          </li>
+        ))}
+      </ul>
+      <a href={`/forum/new-thread?kat=${kat}`} target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>➕ albo nagraj swój problem</a>
     </div>
   );
 }

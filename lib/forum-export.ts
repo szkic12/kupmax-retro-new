@@ -1,5 +1,5 @@
 // Eksport do nauki (K10): co noc paczka z wiedzy, która przeszła przez sito (K9).
-// Tylko dosłowne cytaty od ludzi, którzy zgodzili się na naukę modelu; bez kawałków pisanych przez AI
+// Tylko dosłowne cytaty fachowców (opowiedziane przez Brata) z problemów potwierdzonych przez 3 zgodnych fachowców, z pieczęcią, od ludzi ze zgodą; bez kawałków pisanych przez AI
 // (regulamin Anthropic zabrania trenowania innych modeli na tekstach Claude'a) i bez nagrań głosu.
 // Wiedza ze strefy 18+ idzie do osobnej paczki. Format: JSONL z „messages” (user → assistant), gotowy pod QLoRA.
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
@@ -7,6 +7,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { forumDb } from '@/lib/forum-db';
 import { client, bucket } from '@/lib/forum-voice';
 import { passedSieve, isStale, shelfMap } from '@/lib/forum-trust';
+import { stanFachowcow } from '@/lib/forum-experts';
 import { DRAWERS, type Drawer } from '@/lib/forum-cards';
 
 type Row = Record<string, any>;
@@ -44,7 +45,7 @@ export async function buildExport() {
   const cardIds = [...new Set(claims.map((c) => c.card_id).filter(Boolean))];
   const [threads, posts, cats, cards] = await Promise.all([
     threadIds.length ? all('forum_threads', 'id, title, body, author_id, status, category_id, summary', (q) => q.in('id', threadIds)) : [],
-    postIds.length ? all('forum_posts', 'id, status', (q) => q.in('id', postIds)) : [],
+    postIds.length ? all('forum_posts', 'id, status, expert_label', (q) => q.in('id', postIds)) : [],
     all('forum_categories', 'id, is_adult', (q) => q),
     cardIds.length ? all('forum_cards', 'id, name', (q) => q.in('id', cardIds)) : [],
   ]);
@@ -54,6 +55,10 @@ export async function buildExport() {
   const consent = new Set(profs.filter((p) => p.consent_training).map((p) => p.user_id));
   const threadById = new Map(threads.map((t) => [t.id, t]));
   const postOk = new Set(posts.filter((p) => p.status === 'widoczny').map((p) => p.id));
+  // ZASADA BRATA: do nauki idzie tylko wiedza od fachowców (wpis z 📞), z problemu potwierdzonego przez co najmniej 3 zgodnych fachowców
+  const odFachowca = new Set(posts.filter((p) => p.expert_label).map((p) => p.id));
+  const calls = threadIds.length ? await all('forum_calls', 'thread_id, verdict, called_at', (q) => q.in('thread_id', threadIds).not('verdict', 'is', null)) : [];
+  const potwierdzone = new Set(threadIds.filter((tid) => stanFachowcow(calls.filter((c) => c.thread_id === tid)).werdykt));
   const adultCat = new Set(cats.filter((c) => c.is_adult).map((c) => c.id));
   const cardName = new Map(cards.map((c) => [c.id, c.name]));
 
@@ -63,7 +68,7 @@ export async function buildExport() {
     if (!c.quote) return false;
     if (isStale(c, c.thread_id ? shelf.get(threadById.get(c.thread_id)?.category_id) : undefined)) return false;
     if (!c.author_id || !consent.has(c.author_id)) return false;
-    if (!c.post_id) return true; // wpis dorzucony na kartę
+    if (!c.post_id || !odFachowca.has(c.post_id) || !potwierdzone.has(c.thread_id)) return false;
     const t = threadById.get(c.thread_id);
     return postOk.has(c.post_id) && t?.status === 'widoczny';
   });
