@@ -120,8 +120,8 @@ const esc = (s: string) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&a
 // Poranny mail do Brata z listą na dziś (Resend)
 export async function wyslijMail() {
   const key = process.env.RESEND_API_KEY;
-  // Lista telefonów idzie do Brata na prywatną skrzynkę (ADMIN_EMAIL na Vercelu to skrzynka firmowa)
-  const to = process.env.FORUM_TELEFONY_MAIL || 'investcrewe@gmail.com';
+  // Lista telefonów idzie na skrzynkę firmową (decyzja Brata 04.11: maile od forum na kupmax, nie na Gmaila)
+  const to = process.env.FORUM_TELEFONY_MAIL || process.env.ADMIN_EMAIL || 'kontakt@kupmax.pl';
   if (!key) return { sent: false, reason: 'brak RESEND_API_KEY' };
   const { data: calls } = await forumDb.from('forum_calls')
     .select('id, status, forum_contacts(name, phone, miasto, osoba, branza), forum_threads(id, title, status)')
